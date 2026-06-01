@@ -135,8 +135,11 @@ export default function Cocina() {
               
               <div className="card-dark" style={{ padding: '16px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Orden</p>
-                  <code className="code-dark" style={{ fontWeight: 600, padding: '2px 4px', borderRadius: '4px' }}>{comanda.id.substring(0,6).toUpperCase()}</code>
+                  <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Ubicación</p>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {comanda.mesa ? `Mesa ${comanda.mesa}` : 'S/D'}
+                  </span>
+                  <code className="code-dark" style={{ marginLeft: '8px', fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px' }}>{comanda.id.substring(0,6).toUpperCase()}</code>
                 </div>
                 <span className={`badge badge-${comanda.estado.toLowerCase()}`}>{comanda.estado}</span>
               </div>
