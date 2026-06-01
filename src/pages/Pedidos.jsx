@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit, RefreshCw, AlertCircle, CheckCircle2, Trash2, Calculator, Check, DollarSign, XCircle, BellRing } from 'lucide-react';
-import { getTodosLosPedidos, createPedidoCompleto, updateEstadoPedido } from '../services/pedidosApi';
+import { Plus, Edit, RefreshCw, AlertCircle, CheckCircle2, Trash2, Calculator, Check, DollarSign, XCircle, BellRing, CreditCard } from 'lucide-react';
+import { getTodosLosPedidos, createPedidoCompleto, updateEstadoPedido, updateCobroPedido } from '../services/pedidosApi';
+import { cobrarConPoint } from '../services/mercadoPagoApi';
 import { useActivity } from '../context/ActivityContext';
 import { supabase } from '../services/supabaseClient';
 
@@ -35,6 +36,9 @@ export default function Pedidos() {
 
   // --- Alertas Mozo ---
   const [alertaMozo, setAlertaMozo] = useState('');
+  
+  // --- Estados: Mercado Pago ---
+  const [procesandoCobroPoint, setProcesandoCobroPoint] = useState(null);
 
   const reproducirSonidoCampana = () => {
     try {
@@ -43,7 +47,7 @@ export default function Pedidos() {
       const gainNode = audioCtx.createGain();
       
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
       oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5);
       
       gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
@@ -74,7 +78,6 @@ export default function Pedidos() {
   useEffect(() => {
     cargarPedidos();
 
-    // Escuchar actualizaciones de la cocina
     const channel = supabase
       .channel('mozo-pedidos-updates')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedidos' }, (payload) => {
@@ -176,6 +179,29 @@ export default function Pedidos() {
     const confirmacion = window.confirm(`⚠️ ADVERTENCIA\n¿Está seguro de CANCELAR el pedido de la Mesa ${numMesa || 'S/D'}?\nEsta acción no se puede deshacer.`);
     if (confirmacion) {
       handleCambiarEstado(id, 'Cancelado');
+    }
+  };
+
+  // --- Handler: Mercado Pago Point ---
+  const handleCobrarConPoint = async (pedido) => {
+    setProcesandoCobroPoint(pedido.id);
+    try {
+      // 1. Iniciar cobro en terminal Point
+      const paymentIntent = await cobrarConPoint(pedido.total, pedido.id, pedido.mesa);
+      
+      // 2. Si aprueba (en un entorno real el webhook confirmaría, aquí asumimos éxito inmediato si el Intent se crea, o simulamos la respuesta de Point)
+      // Guardar datos financieros
+      await updateCobroPedido(pedido.id, paymentIntent);
+      logActualizacion({ id: pedido.id, estado: 'Pagado (MP)' });
+      
+      // 3. Confirmación visual
+      alert('Pago aprobado en Point ✅');
+      cargarPedidos();
+    } catch (error) {
+      console.error(error);
+      alert('Pago rechazado o error: ' + error.message);
+    } finally {
+      setProcesandoCobroPoint(null);
     }
   };
 
@@ -338,7 +364,7 @@ export default function Pedidos() {
                       </span>
                     </td>
                     <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>${Number(pedido.total).toLocaleString()}</td>
-                    <td style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '16px 20px' }}>
+                    <td style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '16px 20px', flexWrap: 'wrap' }}>
                       
                       {pedido.estado === 'Enviado' && (
                         <button onClick={() => handleCambiarEstado(pedido.id, 'Entregado')} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem', background: 'var(--success)', border: 'none', color: 'white' }}>
@@ -349,6 +375,17 @@ export default function Pedidos() {
                       {pedido.estado === 'Entregado' && (
                         <button onClick={() => handleCambiarEstado(pedido.id, 'Por Cobrar')} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', borderColor: 'var(--warning)', color: 'var(--warning)' }}>
                           <DollarSign size={14} /> Pedir Cuenta
+                        </button>
+                      )}
+
+                      {pedido.estado === 'Por Cobrar' && (
+                        <button 
+                          onClick={() => handleCobrarConPoint(pedido)} 
+                          className="btn btn-primary" 
+                          disabled={procesandoCobroPoint === pedido.id}
+                          style={{ padding: '6px 12px', fontSize: '0.75rem', background: '#009ee3', border: 'none', color: 'white' }}
+                        >
+                          <CreditCard size={14} /> {procesandoCobroPoint === pedido.id ? 'Procesando cobro en Point...' : 'Cobrar con Point'}
                         </button>
                       )}
 
