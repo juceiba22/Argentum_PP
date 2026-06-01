@@ -37,8 +37,9 @@ export default function Pedidos() {
   // --- Alertas Mozo ---
   const [alertaMozo, setAlertaMozo] = useState('');
   
-  // --- Estados: Mercado Pago ---
+  // --- Estados: Mercado Pago (Simulado) ---
   const [procesandoCobroPoint, setProcesandoCobroPoint] = useState(null);
+  const [qrPago, setQrPago] = useState(null);
 
   const reproducirSonidoCampana = () => {
     try {
@@ -182,24 +183,32 @@ export default function Pedidos() {
     }
   };
 
-  // --- Handler: Mercado Pago Point ---
-  const handleCobrarConPoint = async (pedido) => {
+  // --- Handler: Mercado Pago Point (Simulación con QR) ---
+  const handleCobrarConPoint = (pedido) => {
+    // En lugar de llamar al posnet real, abrimos un modal con un QR genérico para pruebas
+    setQrPago(pedido);
+  };
+
+  const handleConfirmarPagoSimulado = async (pedido) => {
+    setQrPago(null);
     setProcesandoCobroPoint(pedido.id);
     try {
-      // 1. Iniciar cobro en terminal Point
-      const paymentIntent = await cobrarConPoint(pedido.total, pedido.id, pedido.mesa);
+      // Simulamos la respuesta de la API de Mercado Pago
+      const paymentIntentSimulado = {
+        id: `SIMULADO-${Date.now()}`,
+        status: 'approved'
+      };
       
-      // 2. Si aprueba (en un entorno real el webhook confirmaría, aquí asumimos éxito inmediato si el Intent se crea, o simulamos la respuesta de Point)
-      // Guardar datos financieros
-      await updateCobroPedido(pedido.id, paymentIntent);
-      logActualizacion({ id: pedido.id, estado: 'Pagado (MP)' });
+      // Guardar datos financieros en Supabase
+      await updateCobroPedido(pedido.id, paymentIntentSimulado);
+      logActualizacion({ id: pedido.id, estado: 'Pagado (QR Simulado)' });
       
-      // 3. Confirmación visual
-      alert('Pago aprobado en Point ✅');
+      // Confirmación visual
+      alert('Pago aprobado mediante QR ✅');
       cargarPedidos();
     } catch (error) {
       console.error(error);
-      alert('Pago rechazado o error: ' + error.message);
+      alert('Error al procesar el pago: ' + error.message);
     } finally {
       setProcesandoCobroPoint(null);
     }
@@ -411,6 +420,35 @@ export default function Pedidos() {
           100% { box-shadow: 0 0 0 0 rgba(74, 124, 89, 0); }
         }
       `}</style>
+
+      {/* MODAL QR DE PRUEBA */}
+      {qrPago && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.85)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999 }}>
+          <div className="card-dark animate-fade-in" style={{ padding: '32px', borderRadius: '16px', textAlign: 'center', maxWidth: '400px', border: '1px solid var(--glass-border)' }}>
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Mesa {qrPago.mesa || 'S/D'}</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '1.1rem' }}>Total a cobrar: <strong style={{color: 'var(--accent-primary)'}}>${Number(qrPago.total).toLocaleString()}</strong></p>
+            
+            <div style={{ background: 'white', padding: '16px', borderRadius: '12px', display: 'inline-block', marginBottom: '24px', border: '4px solid #009ee3' }}>
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=MercadoPago_Mesa_${qrPago.mesa}_Monto_${qrPago.total}`} 
+                alt="QR de Pago" 
+                style={{ display: 'block', borderRadius: '8px' }}
+              />
+            </div>
+            
+            <p style={{ color: '#009ee3', fontWeight: 600, fontSize: '0.9rem', marginBottom: '24px' }}>Escanea con Mercado Pago (Modo Prueba)</p>
+
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
+              <button onClick={() => setQrPago(null)} className="btn btn-secondary">
+                Cancelar
+              </button>
+              <button onClick={() => handleConfirmarPagoSimulado(qrPago)} className="btn btn-primary" style={{ background: 'var(--success)', border: 'none', color: 'white' }}>
+                Simular Pago Aprobado
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
