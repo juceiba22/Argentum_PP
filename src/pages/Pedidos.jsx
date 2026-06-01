@@ -1,7 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit, RefreshCw, AlertCircle, CheckCircle2, Trash2 } from 'lucide-react';
+import { Plus, Edit, RefreshCw, AlertCircle, CheckCircle2, Trash2, Calculator } from 'lucide-react';
 import { getTodosLosPedidos, createPedidoCompleto, updateEstadoPedido } from '../services/pedidosApi';
 import { useActivity } from '../context/ActivityContext';
+
+const MENU_RESTAURANTE = [
+  { id: 1, nombre: 'Ostras Frescas al Limón', precio: 25.50 },
+  { id: 2, nombre: 'Ceviche de Salmón Rosado', precio: 32.00 },
+  { id: 3, nombre: 'Risotto de Hongos Trufados', precio: 45.00 },
+  { id: 4, nombre: 'Bife de Chorizo Angus (400g)', precio: 68.00 },
+  { id: 5, nombre: 'Merluza Negra a la Mantequilla', precio: 75.00 },
+  { id: 6, nombre: 'Vino Tinto Malbec Gran Reserva', precio: 120.00 },
+  { id: 7, nombre: 'Tiramisú Clásico Italiano', precio: 18.00 },
+  { id: 8, nombre: 'Café Espresso Doble', precio: 6.00 }
+];
 
 export default function Pedidos() {
   const { logPedido, logActualizacion } = useActivity();
@@ -50,10 +61,24 @@ export default function Pedidos() {
     }
   };
 
-  const handleItemChange = (index, field, value) => {
+  const handleProductoChange = (index, nombreProducto) => {
+    const productoInfo = MENU_RESTAURANTE.find(p => p.nombre === nombreProducto);
     const actualizados = [...nuevoItems];
-    actualizados[index][field] = value;
+    actualizados[index].producto_nombre = nombreProducto;
+    if (productoInfo) {
+      actualizados[index].precio_unitario = productoInfo.precio;
+    }
     setNuevoItems(actualizados);
+  };
+
+  const handleCantidadChange = (index, cantidad) => {
+    const actualizados = [...nuevoItems];
+    actualizados[index].cantidad = cantidad;
+    setNuevoItems(actualizados);
+  };
+
+  const calcularTotal = () => {
+    return nuevoItems.reduce((acc, item) => acc + (Number(item.precio_unitario) || 0) * (Number(item.cantidad) || 0), 0);
   };
 
   const handleCrearPedido = async (e) => {
@@ -65,7 +90,7 @@ export default function Pedidos() {
     // Validar items
     for (let item of nuevoItems) {
       if (!item.producto_nombre || !item.precio_unitario || !item.cantidad) {
-        setCrearError('Todos los campos de los ítems son obligatorios.');
+        setCrearError('Todos los ítems deben tener un producto seleccionado y cantidad válida.');
         setCreando(false);
         return;
       }
@@ -113,8 +138,8 @@ export default function Pedidos() {
     <div className="animate-fade-in">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Gestión de Pedidos</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Administra el flujo de órdenes en tiempo real</p>
+          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Toma de Órdenes</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Módulo operativo para Mozos de Salón</p>
         </div>
         <button onClick={cargarPedidos} className="btn btn-secondary">
           <RefreshCw size={16} /> Recargar Tabla
@@ -124,18 +149,18 @@ export default function Pedidos() {
       {/* SECCIÓN 1: TABLA DE HISTORIAL DE PEDIDOS */}
       <div className="glass-panel" style={{ overflow: 'hidden', marginBottom: '32px' }}>
         <div style={{ padding: '20px', borderBottom: '1px solid var(--glass-border)' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 600 }}>Órdenes Recientes</h3>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 600 }}>Órdenes Activas e Históricas</h3>
         </div>
         
         <div className="table-responsive">
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.02)' }}>
-                <th style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.85rem', textTransform: 'uppercase' }}>ID Pedido</th>
-                <th style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.85rem', textTransform: 'uppercase' }}>Cliente</th>
-                <th style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.85rem', textTransform: 'uppercase' }}>Fecha</th>
-                <th style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.85rem', textTransform: 'uppercase' }}>Total</th>
-                <th style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.85rem', textTransform: 'uppercase' }}>Estado</th>
+                <th>ID Pedido</th>
+                <th>Cliente</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Estado</th>
               </tr>
             </thead>
             <tbody>
@@ -145,16 +170,16 @@ export default function Pedidos() {
                 <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay pedidos registrados.</td></tr>
               ) : (
                 pedidos.map(pedido => (
-                  <tr key={pedido.id} style={{ borderBottom: '1px solid var(--glass-border)', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <tr key={pedido.id} style={{ borderBottom: '1px solid var(--glass-border)', transition: 'background 0.2s' }}>
+                    <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
                       <code className="code-dark" style={{ fontSize: '0.8rem', padding: '4px', borderRadius: '4px' }}>{pedido.id.substring(0,8)}...</code>
                     </td>
-                    <td style={{ padding: '16px 20px', fontWeight: 500 }}>
+                    <td style={{ fontWeight: 500 }}>
                       {pedido.clientes ? pedido.clientes.nombre : <span style={{ color: 'var(--danger)' }}>Cliente Borrado</span>}
                     </td>
-                    <td style={{ padding: '16px 20px', color: 'var(--text-secondary)' }}>{new Date(pedido.created_at).toLocaleDateString()}</td>
-                    <td style={{ padding: '16px 20px', fontWeight: 600 }}>${Number(pedido.total).toLocaleString()}</td>
-                    <td style={{ padding: '16px 20px' }}>
+                    <td style={{ color: 'var(--text-secondary)' }}>{new Date(pedido.created_at).toLocaleDateString()}</td>
+                    <td style={{ fontWeight: 600 }}>${Number(pedido.total).toLocaleString()}</td>
+                    <td>
                       <span className={`badge badge-${pedido.estado.toLowerCase()}`}>
                         {pedido.estado}
                       </span>
@@ -172,7 +197,7 @@ export default function Pedidos() {
         {/* SECCIÓN 2: CREAR PEDIDO (FORMULARIO CON ÍTEMS) */}
         <div className="glass-panel" style={{ padding: '24px' }}>
           <h2 style={{ fontSize: '1.25rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Plus size={20} color="var(--accent-primary)" /> Crear Nuevo Pedido
+            <Plus size={20} color="var(--accent-primary)" /> Generar Comanda
           </h2>
 
           <form onSubmit={handleCrearPedido}>
@@ -189,53 +214,75 @@ export default function Pedidos() {
             </div>
 
             <div style={{ marginTop: '24px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="input-label" style={{ marginBottom: 0 }}>Ítems de Compra</label>
+              <label className="input-label" style={{ marginBottom: 0 }}>Productos de Carta</label>
               <button type="button" onClick={handleAgregarItem} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.8rem' }}>
                 + Añadir Ítem
               </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-              {nuevoItems.map((item, index) => (
-                <div key={index} className="card-dark" style={{ padding: '16px', borderRadius: '10px', position: 'relative' }}>
-                  {nuevoItems.length > 1 && (
-                    <button type="button" onClick={() => handleEliminarItem(index)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>
-                      <Trash2 size={16} />
-                    </button>
-                  )}
-                  
-                  <div className="input-group" style={{ marginBottom: '12px' }}>
-                    <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Nombre del Producto</label>
-                    <input type="text" className="input-field" style={{ padding: '8px 12px' }} value={item.producto_nombre} onChange={(e) => handleItemChange(index, 'producto_nombre', e.target.value)} required />
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Precio Unit. ($)</label>
-                      <input type="number" step="0.01" className="input-field" style={{ padding: '8px 12px' }} value={item.precio_unitario} onChange={(e) => handleItemChange(index, 'precio_unitario', parseFloat(e.target.value) || '')} required />
+              {nuevoItems.map((item, index) => {
+                const subtotal = (Number(item.precio_unitario) || 0) * (Number(item.cantidad) || 0);
+                return (
+                  <div key={index} className="card-dark" style={{ padding: '16px', borderRadius: '8px', position: 'relative' }}>
+                    {nuevoItems.length > 1 && (
+                      <button type="button" onClick={() => handleEliminarItem(index)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                    
+                    <div className="input-group" style={{ marginBottom: '12px', paddingRight: '24px' }}>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Producto</label>
+                      <select 
+                        className="input-field" 
+                        style={{ padding: '8px 12px', appearance: 'auto', cursor: 'pointer' }} 
+                        value={item.producto_nombre} 
+                        onChange={(e) => handleProductoChange(index, e.target.value)} 
+                        required
+                      >
+                        <option value="" disabled>Seleccione un plato...</option>
+                        {MENU_RESTAURANTE.map(p => (
+                          <option key={p.id} value={p.nombre}>{p.nombre} - ${p.precio.toFixed(2)}</option>
+                        ))}
+                      </select>
                     </div>
-                    <div className="input-group" style={{ width: '80px', marginBottom: 0 }}>
-                      <label style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Cant.</label>
-                      <input type="number" min="1" className="input-field" style={{ padding: '8px 12px' }} value={item.cantidad} onChange={(e) => handleItemChange(index, 'cantidad', parseInt(e.target.value) || 1)} required />
+                    
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
+                      <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>CANTIDAD</label>
+                        <input type="number" min="1" className="input-field" style={{ padding: '8px 12px' }} value={item.cantidad} onChange={(e) => handleCantidadChange(index, parseInt(e.target.value) || 1)} required />
+                      </div>
+                      <div style={{ width: '120px', textAlign: 'right', paddingBottom: '8px' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Subtotal</p>
+                        <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--accent-primary)' }}>${subtotal.toLocaleString()}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
+                <Calculator size={20} />
+                <span style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>Total Estimado</span>
+              </div>
+              <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>${calcularTotal().toLocaleString()}</span>
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={creando}>
-              {creando ? 'Guardando en la nube...' : 'Guardar Pedido'}
+              {creando ? 'Generando Comanda...' : 'Guardar Pedido'}
             </button>
           </form>
 
           {/* Alertas Crear */}
           {crearError && (
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--danger)', borderRadius: '8px', color: '#fca5a5', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
+            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(183, 65, 52, 0.05)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
               <AlertCircle size={18} style={{ flexShrink: 0 }} /> <span>{crearError}</span>
             </div>
           )}
           {crearExito && (
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', borderRadius: '8px', color: '#6ee7b7', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(74, 124, 89, 0.05)', border: '1px solid var(--success)', borderRadius: '4px', color: 'var(--success)', display: 'flex', gap: '8px', alignItems: 'center' }}>
               <CheckCircle2 size={18} /> {crearExito}
             </div>
           )}
@@ -264,7 +311,7 @@ export default function Pedidos() {
               <label className="input-label">Nuevo Estado</label>
               <select 
                 className="input-field" 
-                style={{ appearance: 'none', cursor: 'pointer' }}
+                style={{ appearance: 'auto', cursor: 'pointer' }}
                 value={updateEstado}
                 onChange={(e) => setUpdateEstado(e.target.value)}
               >
@@ -283,12 +330,12 @@ export default function Pedidos() {
 
           {/* Alertas Actualizar */}
           {updateError && (
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--danger)', borderRadius: '8px', color: '#fca5a5', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
+            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(183, 65, 52, 0.05)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
               <AlertCircle size={18} style={{ flexShrink: 0 }} /> <span>{updateError}</span>
             </div>
           )}
           {updateExito && (
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', borderRadius: '8px', color: '#6ee7b7', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(74, 124, 89, 0.05)', border: '1px solid var(--success)', borderRadius: '4px', color: 'var(--success)', display: 'flex', gap: '8px', alignItems: 'center' }}>
               <CheckCircle2 size={18} /> {updateExito}
             </div>
           )}
