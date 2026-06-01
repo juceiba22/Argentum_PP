@@ -1,17 +1,38 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail } from 'lucide-react';
+import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorAuth, setErrorAuth] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Fake login
-    if (email && password) {
-      navigate('/dashboard');
+    setErrorAuth('');
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error(error);
+      setErrorAuth(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,8 +85,15 @@ export default function Login() {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '24px', padding: '12px' }}>
-            Iniciar Sesión
+          {errorAuth && (
+            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--danger)', borderRadius: '8px', color: '#fca5a5', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <AlertCircle size={18} /> 
+              <span>{errorAuth}</span>
+            </div>
+          )}
+
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '24px', padding: '12px' }} disabled={loading}>
+            {loading ? 'Iniciando...' : 'Iniciar Sesión'}
           </button>
         </form>
       </div>
