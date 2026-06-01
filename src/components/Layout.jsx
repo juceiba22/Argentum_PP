@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Users, ShoppingBag, LogOut, Menu, X } from 'lucide-react';
+import { supabase } from '../services/supabaseClient';
 
 export default function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -11,6 +13,12 @@ export default function Layout() {
     { path: '/clientes', label: 'Clientes', icon: <Users size={20} /> },
     { path: '/pedidos', label: 'Pedidos', icon: <ShoppingBag size={20} /> },
   ];
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    await supabase.auth.signOut();
+    navigate('/');
+  };
 
   return (
     <div className="app-container">
@@ -51,10 +59,14 @@ export default function Layout() {
         </nav>
 
         <div className="sidebar-footer">
-          <Link to="/" className="sidebar-link logout-link">
+          <button 
+            onClick={handleLogout} 
+            className="sidebar-link logout-link" 
+            style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', fontSize: 'inherit' }}
+          >
             <LogOut size={20} />
             Cerrar Sesión
-          </Link>
+          </button>
         </div>
       </aside>
 
