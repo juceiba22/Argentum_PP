@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Clientes from './pages/Clientes';
 import Pedidos from './pages/Pedidos';
 import Cocina from './pages/Cocina';
+import RegistrosCaja from './pages/RegistrosCaja';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -54,7 +55,8 @@ function App() {
             {/* Rutas Protegidas (Requieren Sesión) */}
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><Dashboard /></ProtectedRoute>} />
-              <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><Clientes /></ProtectedRoute>} />
+              <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
+              <Route path="/registros" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><RegistrosCaja /></ProtectedRoute>} />
               <Route path="/pedidos" element={<ProtectedRoute allowedRoles={['admin', 'mozo']}><Pedidos /></ProtectedRoute>} />
               <Route path="/cocina" element={<ProtectedRoute allowedRoles={['admin', 'cocina']}><Cocina /></ProtectedRoute>} />
             </Route>

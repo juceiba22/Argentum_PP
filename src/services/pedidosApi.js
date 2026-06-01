@@ -62,6 +62,18 @@ export const updateEstadoPedido = async (pedidoId, nuevoEstado) => {
   return data;
 };
 
+// 5. Obtener cobros realizados (Auditoría de Caja)
+export const getCobrosRealizados = async () => {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select('*')
+    .eq('estado', 'Pagado')
+    .order('fecha_cobro', { ascending: false, nullsFirst: false });
+
+  if (error) throw error;
+  return data;
+};
+
 // 4. Actualizar estado y datos de cobro financiero desde Point
 export const updateCobroPedido = async (pedidoId, paymentData) => {
   const { data, error } = await supabase
