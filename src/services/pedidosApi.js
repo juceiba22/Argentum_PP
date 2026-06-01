@@ -4,10 +4,7 @@ import { supabase } from './supabaseClient';
 export const getTodosLosPedidos = async () => {
   const { data, error } = await supabase
     .from('pedidos')
-    .select(`
-      *,
-      clientes ( nombre )
-    `)
+    .select('*')
     .order('created_at', { ascending: false });
 
   if (error) throw error;
@@ -15,7 +12,7 @@ export const getTodosLosPedidos = async () => {
 };
 
 // 2. Crear un pedido y sus ítems de forma relacionada
-export const createPedidoCompleto = async (clienteId, items) => {
+export const createPedidoCompleto = async (mesa, items) => {
   // A. Calcular el total del pedido sumando subtotal de los items
   const totalPedido = items.reduce((acc, item) => acc + (item.cantidad * item.precio_unitario), 0);
 
@@ -24,7 +21,7 @@ export const createPedidoCompleto = async (clienteId, items) => {
     .from('pedidos')
     .insert([
       { 
-        cliente_id: clienteId, 
+        mesa: parseInt(mesa, 10), 
         estado: 'Pendiente', 
         total: totalPedido 
       }

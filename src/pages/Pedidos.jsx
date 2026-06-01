@@ -4,14 +4,20 @@ import { getTodosLosPedidos, createPedidoCompleto, updateEstadoPedido } from '..
 import { useActivity } from '../context/ActivityContext';
 
 const MENU_RESTAURANTE = [
-  { id: 1, nombre: 'Ostras Frescas al Limón', precio: 25.50 },
-  { id: 2, nombre: 'Ceviche de Salmón Rosado', precio: 32.00 },
-  { id: 3, nombre: 'Risotto de Hongos Trufados', precio: 45.00 },
-  { id: 4, nombre: 'Bife de Chorizo Angus (400g)', precio: 68.00 },
-  { id: 5, nombre: 'Merluza Negra a la Mantequilla', precio: 75.00 },
-  { id: 6, nombre: 'Vino Tinto Malbec Gran Reserva', precio: 120.00 },
-  { id: 7, nombre: 'Tiramisú Clásico Italiano', precio: 18.00 },
-  { id: 8, nombre: 'Café Espresso Doble', precio: 6.00 }
+  // Platos
+  { id: 1, nombre: 'Ostras Frescas al Limón', precio: 25.50, categoria: 'Platos' },
+  { id: 2, nombre: 'Ceviche de Salmón Rosado', precio: 32.00, categoria: 'Platos' },
+  { id: 3, nombre: 'Risotto de Hongos Trufados', precio: 45.00, categoria: 'Platos' },
+  { id: 4, nombre: 'Bife de Chorizo Angus (400g)', precio: 68.00, categoria: 'Platos' },
+  { id: 5, nombre: 'Merluza Negra a la Mantequilla', precio: 75.00, categoria: 'Platos' },
+  { id: 7, nombre: 'Tiramisú Clásico Italiano', precio: 18.00, categoria: 'Platos' },
+  // Bebidas
+  { id: 6, nombre: 'Vino Tinto Malbec Gran Reserva', precio: 120.00, categoria: 'Bebidas' },
+  { id: 8, nombre: 'Café Espresso Doble', precio: 6.00, categoria: 'Bebidas' },
+  { id: 9, nombre: 'Jugo Natural de Naranja', precio: 8.00, categoria: 'Bebidas' },
+  { id: 10, nombre: 'Agua Mineral San Pellegrino', precio: 5.00, categoria: 'Bebidas' },
+  { id: 11, nombre: 'Gaseosa Cola / Lima Limón', precio: 4.50, categoria: 'Bebidas' },
+  { id: 12, nombre: 'Gin Tonic de Autor', precio: 15.00, categoria: 'Bebidas' }
 ];
 
 export default function Pedidos() {
@@ -20,7 +26,7 @@ export default function Pedidos() {
   const [loadingPedidos, setLoadingPedidos] = useState(true);
 
   // --- Estados: Crear Pedido ---
-  const [nuevoClienteId, setNuevoClienteId] = useState('');
+  const [mesa, setMesa] = useState('');
   const [nuevoItems, setNuevoItems] = useState([{ producto_nombre: '', precio_unitario: '', cantidad: 1 }]);
   const [creando, setCreando] = useState(false);
   const [crearError, setCrearError] = useState('');
@@ -87,7 +93,12 @@ export default function Pedidos() {
     setCrearError('');
     setCrearExito('');
 
-    // Validar items
+    if (!mesa) {
+      setCrearError('Debes seleccionar un número de mesa.');
+      setCreando(false);
+      return;
+    }
+
     for (let item of nuevoItems) {
       if (!item.producto_nombre || !item.precio_unitario || !item.cantidad) {
         setCrearError('Todos los ítems deben tener un producto seleccionado y cantidad válida.');
@@ -97,21 +108,20 @@ export default function Pedidos() {
     }
 
     try {
-      const pedidoData = await createPedidoCompleto(nuevoClienteId, nuevoItems);
-      setCrearExito('¡Pedido creado correctamente!');
+      const pedidoData = await createPedidoCompleto(mesa, nuevoItems);
+      setCrearExito('¡Comanda generada correctamente!');
       logPedido({ id: pedidoData.id, estado: pedidoData.estado, total: pedidoData.total });
-      setNuevoClienteId('');
+      setMesa('');
       setNuevoItems([{ producto_nombre: '', precio_unitario: '', cantidad: 1 }]);
       cargarPedidos(); // Recargar tabla
     } catch (error) {
       console.error(error);
-      setCrearError(error.message || 'Error al crear el pedido. Revisa el ID del cliente.');
+      setCrearError(error.message || 'Error al generar la comanda. Verifica los datos.');
     } finally {
       setCreando(false);
     }
   };
 
-  // --- Handlers: Actualizar Estado ---
   const handleActualizarEstado = async (e) => {
     e.preventDefault();
     if (!updatePedidoId) return;
@@ -125,7 +135,7 @@ export default function Pedidos() {
       setUpdateExito('¡Estado actualizado correctamente!');
       logActualizacion({ id: updatePedidoId, estado: updateEstado });
       setUpdatePedidoId('');
-      cargarPedidos(); // Recargar tabla
+      cargarPedidos(); 
     } catch (error) {
       console.error(error);
       setUpdateError(error.message || 'Error al actualizar el estado. Revisa el ID.');
@@ -133,6 +143,10 @@ export default function Pedidos() {
       setActualizando(false);
     }
   };
+
+  // Separar carta para renderizar
+  const platosMenu = MENU_RESTAURANTE.filter(i => i.categoria === 'Platos');
+  const bebidasMenu = MENU_RESTAURANTE.filter(i => i.categoria === 'Bebidas');
 
   return (
     <div className="animate-fade-in">
@@ -157,7 +171,7 @@ export default function Pedidos() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.02)' }}>
                 <th>ID Pedido</th>
-                <th>Cliente</th>
+                <th>Ubicación</th>
                 <th>Fecha</th>
                 <th>Total</th>
                 <th>Estado</th>
@@ -174,8 +188,8 @@ export default function Pedidos() {
                     <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
                       <code className="code-dark" style={{ fontSize: '0.8rem', padding: '4px', borderRadius: '4px' }}>{pedido.id.substring(0,8)}...</code>
                     </td>
-                    <td style={{ fontWeight: 500 }}>
-                      {pedido.clientes ? pedido.clientes.nombre : <span style={{ color: 'var(--danger)' }}>Cliente Borrado</span>}
+                    <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {pedido.mesa ? `Mesa ${pedido.mesa}` : <span style={{ color: 'var(--warning)', fontWeight: 500 }}>S/D</span>}
                     </td>
                     <td style={{ color: 'var(--text-secondary)' }}>{new Date(pedido.created_at).toLocaleDateString()}</td>
                     <td style={{ fontWeight: 600 }}>${Number(pedido.total).toLocaleString()}</td>
@@ -202,19 +216,23 @@ export default function Pedidos() {
 
           <form onSubmit={handleCrearPedido}>
             <div className="input-group">
-              <label className="input-label">ID del Cliente (UUID)</label>
-              <input 
-                type="text" 
+              <label className="input-label">Mesa</label>
+              <select 
                 className="input-field" 
-                placeholder="Pega el ID del cliente aquí" 
-                value={nuevoClienteId}
-                onChange={(e) => setNuevoClienteId(e.target.value)}
+                style={{ appearance: 'auto', cursor: 'pointer' }}
+                value={mesa}
+                onChange={(e) => setMesa(e.target.value)}
                 required
-              />
+              >
+                <option value="" disabled>Seleccione el número de mesa...</option>
+                {[...Array(20)].map((_, i) => (
+                  <option key={i+1} value={i+1}>Mesa {i+1}</option>
+                ))}
+              </select>
             </div>
 
             <div style={{ marginTop: '24px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="input-label" style={{ marginBottom: 0 }}>Productos de Carta</label>
+              <label className="input-label" style={{ marginBottom: 0 }}>Carta (Platos y Bebidas)</label>
               <button type="button" onClick={handleAgregarItem} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.8rem' }}>
                 + Añadir Ítem
               </button>
@@ -232,7 +250,7 @@ export default function Pedidos() {
                     )}
                     
                     <div className="input-group" style={{ marginBottom: '12px', paddingRight: '24px' }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Producto</label>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Consumo</label>
                       <select 
                         className="input-field" 
                         style={{ padding: '8px 12px', appearance: 'auto', cursor: 'pointer' }} 
@@ -240,10 +258,17 @@ export default function Pedidos() {
                         onChange={(e) => handleProductoChange(index, e.target.value)} 
                         required
                       >
-                        <option value="" disabled>Seleccione un plato...</option>
-                        {MENU_RESTAURANTE.map(p => (
-                          <option key={p.id} value={p.nombre}>{p.nombre} - ${p.precio.toFixed(2)}</option>
-                        ))}
+                        <option value="" disabled>Seleccione una opción...</option>
+                        <optgroup label="🍽️ PLATOS PRINCIPALES Y POSTRES">
+                          {platosMenu.map(p => (
+                            <option key={p.id} value={p.nombre}>{p.nombre} - ${p.precio.toFixed(2)}</option>
+                          ))}
+                        </optgroup>
+                        <optgroup label="🍷 BEBIDAS">
+                          {bebidasMenu.map(p => (
+                            <option key={p.id} value={p.nombre}>{p.nombre} - ${p.precio.toFixed(2)}</option>
+                          ))}
+                        </optgroup>
                       </select>
                     </div>
                     
@@ -271,7 +296,7 @@ export default function Pedidos() {
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={creando}>
-              {creando ? 'Generando Comanda...' : 'Guardar Pedido'}
+              {creando ? 'Generando Comanda...' : 'Enviar a Cocina'}
             </button>
           </form>
 
