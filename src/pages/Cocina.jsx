@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChefHat, Check, RefreshCw } from 'lucide-react';
+import { ChefHat, Check, RefreshCw, BellRing } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { updateEstadoPedido } from '../services/pedidosApi';
 import { useActivity } from '../context/ActivityContext';
@@ -9,11 +9,33 @@ export default function Cocina() {
   const [comandas, setComandas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [despachando, setDespachando] = useState(null);
+  const [alertaNueva, setAlertaNueva] = useState(false);
+
+  const reproducirSonidoCampana = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      // Sonido tipo "Ding"
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(1046.50, audioCtx.currentTime); // C6
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 1);
+    } catch (e) {
+      console.warn('El navegador bloqueó el audio automático', e);
+    }
+  };
 
   const cargarComandas = async () => {
     setLoading(true);
     try {
-      // Traer pedidos Pendientes o Pagados, ordenados del más viejo al más nuevo (FIFO)
       const { data, error } = await supabase
         .from('pedidos')
         .select(`
@@ -35,10 +57,18 @@ export default function Cocina() {
   useEffect(() => {
     cargarComandas();
     
-    // Opcional: Podríamos suscribirnos a real-time aquí
+    // Suscripción Realtime a Inserciones (Nuevos Pedidos)
     const channel = supabase
       .channel('schema-db-changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, cargarComandas)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pedidos' }, (payload) => {
+        reproducirSonidoCampana();
+        setAlertaNueva(true);
+        setTimeout(() => setAlertaNueva(false), 4000); // Apagar alerta visual a los 4s
+        cargarComandas();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedidos' }, () => {
+        cargarComandas(); // Recargar si un estado se actualiza externamente
+      })
       .subscribe();
 
     return () => {
@@ -49,9 +79,8 @@ export default function Cocina() {
   const handleDespachar = async (pedidoId) => {
     setDespachando(pedidoId);
     try {
-      await updateEstadoPedido(pedidoId, 'Enviado'); // "Enviado" significa que salió de cocina
+      await updateEstadoPedido(pedidoId, 'Enviado'); 
       logActualizacion({ id: pedidoId, estado: 'Enviado' });
-      // Remover de la vista inmediatamente para mayor agilidad
       setComandas(prev => prev.filter(c => c.id !== pedidoId));
     } catch (error) {
       console.error("Error al despachar:", error);
@@ -66,12 +95,28 @@ export default function Cocina() {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div>
           <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Tablero de Cocina</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Visualización de comandas activas</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Visualización de comandas activas en tiempo real</p>
         </div>
-        <button onClick={cargarComandas} className="btn btn-secondary">
-          <RefreshCw size={16} /> Actualizar
-        </button>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          {alertaNueva && (
+            <div style={{ background: 'var(--warning)', color: 'white', padding: '8px 16px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '8px', animation: 'pulse 1.5s infinite' }}>
+              <BellRing size={18} /> ¡Nueva Comanda!
+            </div>
+          )}
+          <button onClick={cargarComandas} className="btn btn-secondary">
+            <RefreshCw size={16} /> Actualizar
+          </button>
+        </div>
       </header>
+
+      {/* Agregar animación de pulso al CSS si no existe globalmente */}
+      <style>{`
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(210, 142, 61, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(210, 142, 61, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(210, 142, 61, 0); }
+        }
+      `}</style>
 
       {loading && comandas.length === 0 ? (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
@@ -86,9 +131,8 @@ export default function Cocina() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '24px', alignItems: 'start' }}>
           {comandas.map(comanda => (
-            <div key={comanda.id} className="glass-panel" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', borderTop: `4px solid ${comanda.estado === 'Pendiente' ? 'var(--warning)' : 'var(--accent-primary)'}` }}>
+            <div key={comanda.id} className="glass-panel animate-fade-in" style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', borderTop: `4px solid ${comanda.estado === 'Pendiente' ? 'var(--warning)' : 'var(--accent-primary)'}` }}>
               
-              {/* Header Comanda */}
               <div className="card-dark" style={{ padding: '16px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Orden</p>
@@ -97,7 +141,6 @@ export default function Cocina() {
                 <span className={`badge badge-${comanda.estado.toLowerCase()}`}>{comanda.estado}</span>
               </div>
 
-              {/* Items Comanda */}
               <div style={{ padding: '20px', flex: 1 }}>
                 {(!comanda.items_pedido || comanda.items_pedido.length === 0) ? (
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>Sin ítems registrados.</p>
@@ -117,7 +160,6 @@ export default function Cocina() {
                 </div>
               </div>
 
-              {/* Action Comanda */}
               <div style={{ padding: '16px', background: 'var(--card-bg)' }}>
                 <button 
                   onClick={() => handleDespachar(comanda.id)} 
