@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingBag, LogOut, Menu, X, ChefHat } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, LogOut, Menu, X, ChefHat, Wallet } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -13,7 +13,8 @@ export default function Layout() {
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, allowed: ['admin', 'caja'] },
-    { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin', 'caja'] },
+    { path: '/registros', label: 'Auditoría', icon: <Wallet size={20} />, allowed: ['admin', 'caja'] },
+    { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
     { path: '/pedidos', label: 'Pedidos', icon: <ShoppingBag size={20} />, allowed: ['admin', 'mozo'] },
     { path: '/cocina', label: 'Cocina', icon: <ChefHat size={20} />, allowed: ['admin', 'cocina'] },
   ];
