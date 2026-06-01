@@ -18,11 +18,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/" replace />;
   }
 
-  // Si se especifican roles permitidos y el rol del usuario no está, lo mandamos a su ruta por defecto
   if (allowedRoles && !allowedRoles.includes(role)) {
+    if (role === 'caja') return <Navigate to="/dashboard" replace />;
     if (role === 'cocina') return <Navigate to="/cocina" replace />;
     if (role === 'mozo') return <Navigate to="/pedidos" replace />;
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -33,9 +33,10 @@ const LoginRedirect = () => {
   const { user, role } = useAuth();
   
   if (user) {
+    if (role === 'caja') return <Navigate to="/dashboard" replace />;
     if (role === 'cocina') return <Navigate to="/cocina" replace />;
     if (role === 'mozo') return <Navigate to="/pedidos" replace />;
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard" replace />; // Admin por defecto
   }
   
   return <Login />;
@@ -52,8 +53,8 @@ function App() {
             
             {/* Rutas Protegidas (Requieren Sesión) */}
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><Dashboard /></ProtectedRoute>} />
-              <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin', 'mozo']}><Clientes /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><Dashboard /></ProtectedRoute>} />
+              <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><Clientes /></ProtectedRoute>} />
               <Route path="/pedidos" element={<ProtectedRoute allowedRoles={['admin', 'mozo']}><Pedidos /></ProtectedRoute>} />
               <Route path="/cocina" element={<ProtectedRoute allowedRoles={['admin', 'cocina']}><Cocina /></ProtectedRoute>} />
             </Route>

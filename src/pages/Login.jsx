@@ -26,9 +26,29 @@ export default function Login() {
       }
 
       if (data.user) {
-        const userRole = data.user.user_metadata?.role || 'admin';
-        if (userRole === 'cocina') navigate('/cocina');
-        else if (userRole === 'mozo') navigate('/pedidos');
+        let newRole = data.user.user_metadata?.role;
+        const normalizedEmail = email.toLowerCase();
+        
+        // 1. Inyección de roles duros según el correo
+        if (normalizedEmail === 'mozo@argentum.com') newRole = 'mozo';
+        else if (normalizedEmail === 'cocina@argentum.com') newRole = 'cocina';
+        else if (normalizedEmail === 'caja@argentum.com') newRole = 'caja';
+        else if (normalizedEmail === 'admin@argentum.com' || normalizedEmail === 'juceiba22@gmail.com') newRole = 'admin';
+        else if (!newRole) newRole = 'admin';
+
+        // 2. Guardar en Supabase permanentemente si es diferente al actual
+        if (data.user.user_metadata?.role !== newRole) {
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: { role: newRole }
+          });
+          if (updateError) {
+            console.error("Error asignando rol:", updateError);
+          }
+        }
+
+        // 3. Redirección basada en el nuevo rol asignado
+        if (newRole === 'cocina') navigate('/cocina');
+        else if (newRole === 'mozo') navigate('/pedidos');
         else navigate('/dashboard');
       }
     } catch (error) {
