@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Plus, Search, ChevronDown, ChevronUp, Package, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { createCliente, getClienteById, getPedidosByClienteId } from '../services/clientesApi';
+import { useActivity } from '../context/ActivityContext';
 
 export default function Clientes() {
+  const { logCliente } = useActivity();
   // Crear Cliente State
   const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', email: '', telefono: '' });
   const [creando, setCreando] = useState(false);
@@ -27,6 +29,7 @@ export default function Clientes() {
     try {
       const data = await createCliente(nuevoCliente);
       setClienteCreadoId(data.id);
+      logCliente({ id: data.id, nombre: nuevoCliente.nombre, email: nuevoCliente.email });
       setNuevoCliente({ nombre: '', email: '', telefono: '' }); // Limpiar
     } catch (err) {
       console.error(err);

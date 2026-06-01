@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Clientes from './pages/Clientes';
 import Pedidos from './pages/Pedidos';
 import { supabase } from './services/supabaseClient';
+import { ActivityProvider } from './context/ActivityContext';
 import './index.css';
 
 function App() {
@@ -36,8 +37,9 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
+    <ActivityProvider>
+      <Router>
+        <Routes>
         {/* Ruta Pública (Login) */}
         <Route 
           path="/" 
@@ -58,7 +60,8 @@ function App() {
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </Router>
+      </Router>
+    </ActivityProvider>
   );
 }
 
