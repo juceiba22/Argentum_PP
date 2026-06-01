@@ -26,7 +26,10 @@ export default function Login() {
       }
 
       if (data.user) {
-        navigate('/dashboard');
+        const userRole = data.user.user_metadata?.role || 'admin';
+        if (userRole === 'cocina') navigate('/cocina');
+        else if (userRole === 'mozo') navigate('/pedidos');
+        else navigate('/dashboard');
       }
     } catch (error) {
       console.error(error);
