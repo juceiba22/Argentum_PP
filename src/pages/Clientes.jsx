@@ -137,7 +137,7 @@ export default function Clientes() {
                 <CheckCircle2 size={20} /> ¡Cliente creado con éxito!
               </div>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>ID Generado:</p>
-              <code style={{ fontSize: '0.9rem', background: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '4px', display: 'block', marginTop: '4px', wordBreak: 'break-all' }}>
+              <code className="code-dark" style={{ fontSize: '0.9rem', padding: '4px 8px', borderRadius: '4px', display: 'block', marginTop: '4px', wordBreak: 'break-all' }}>
                 {clienteCreadoId}
               </code>
             </div>
@@ -175,8 +175,8 @@ export default function Clientes() {
           {/* Resultados */}
           {clienteEncontrado && (
             <div className="animate-fade-in">
-              <div style={{ padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'white' }}>{clienteEncontrado.nombre}</h3>
+              <div className="card-dark" style={{ padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
+                <h3 className="text-white" style={{ fontSize: '1.1rem', fontWeight: 600 }}>{clienteEncontrado.nombre}</h3>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>{clienteEncontrado.email} • {clienteEncontrado.telefono || 'Sin teléfono'}</p>
               </div>
 
@@ -207,7 +207,7 @@ export default function Clientes() {
 
                       {/* Desglose de Ítems (Expansible) */}
                       {expandedRowId === pedido.id && (
-                        <div style={{ padding: '16px', background: 'rgba(0,0,0,0.3)', borderTop: '1px solid var(--glass-border)' }}>
+                        <div className="card-dark" style={{ padding: '16px', borderTop: '1px solid var(--glass-border)' }}>
                           <h5 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <Package size={14} /> Ítems del Pedido
                           </h5>

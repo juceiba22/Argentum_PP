@@ -42,11 +42,11 @@ export default function Login() {
       alignItems: 'center', 
       justifyContent: 'center', 
       height: '100vh',
-      background: 'radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 40%), radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.15), transparent 40%)'
+      background: 'radial-gradient(circle at top right, rgba(197, 160, 89, 0.05), transparent 50%), radial-gradient(circle at bottom left, rgba(197, 160, 89, 0.05), transparent 50%)'
     }}>
       <div className="glass-panel animate-fade-in" style={{ padding: '40px', width: '100%', maxWidth: '420px' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 800, background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '8px' }}>
+          <h1 className="brand-title" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>
             Argentum
           </h1>
           <p style={{ color: 'var(--text-secondary)' }}>Ingresa tus credenciales para continuar</p>
@@ -86,7 +86,7 @@ export default function Login() {
           </div>
 
           {errorAuth && (
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--danger)', borderRadius: '8px', color: '#fca5a5', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(183, 65, 52, 0.05)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <AlertCircle size={18} /> 
               <span>{errorAuth}</span>
             </div>

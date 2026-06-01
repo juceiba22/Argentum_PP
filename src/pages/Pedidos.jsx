@@ -130,7 +130,7 @@ export default function Pedidos() {
         <div className="table-responsive">
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.2)' }}>
+              <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.02)' }}>
                 <th style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.85rem', textTransform: 'uppercase' }}>ID Pedido</th>
                 <th style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.85rem', textTransform: 'uppercase' }}>Cliente</th>
                 <th style={{ padding: '16px 20px', color: 'var(--text-secondary)', fontWeight: 500, fontSize: '0.85rem', textTransform: 'uppercase' }}>Fecha</th>
@@ -147,7 +147,7 @@ export default function Pedidos() {
                 pedidos.map(pedido => (
                   <tr key={pedido.id} style={{ borderBottom: '1px solid var(--glass-border)', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
                     <td style={{ padding: '16px 20px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      <code style={{ fontSize: '0.8rem', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '4px' }}>{pedido.id.substring(0,8)}...</code>
+                      <code className="code-dark" style={{ fontSize: '0.8rem', padding: '4px', borderRadius: '4px' }}>{pedido.id.substring(0,8)}...</code>
                     </td>
                     <td style={{ padding: '16px 20px', fontWeight: 500 }}>
                       {pedido.clientes ? pedido.clientes.nombre : <span style={{ color: 'var(--danger)' }}>Cliente Borrado</span>}
@@ -197,7 +197,7 @@ export default function Pedidos() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
               {nuevoItems.map((item, index) => (
-                <div key={index} style={{ padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '10px', position: 'relative' }}>
+                <div key={index} className="card-dark" style={{ padding: '16px', borderRadius: '10px', position: 'relative' }}>
                   {nuevoItems.length > 1 && (
                     <button type="button" onClick={() => handleEliminarItem(index)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>
                       <Trash2 size={16} />
