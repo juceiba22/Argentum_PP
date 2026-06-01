@@ -61,3 +61,22 @@ export const updateEstadoPedido = async (pedidoId, nuevoEstado) => {
   if (error) throw error;
   return data;
 };
+
+// 4. Actualizar estado y datos de cobro financiero desde Point
+export const updateCobroPedido = async (pedidoId, paymentData) => {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .update({ 
+      estado: 'Pagado',
+      payment_id: paymentData.id ? String(paymentData.id) : `POINT-${Date.now()}`,
+      payment_status: paymentData.status || 'approved',
+      medio_pago: 'mercado_pago_point',
+      fecha_cobro: new Date().toISOString()
+    })
+    .eq('id', pedidoId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
