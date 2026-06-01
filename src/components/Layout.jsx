@@ -1,18 +1,24 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingBag, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, LogOut, Menu, X, ChefHat } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const { role } = useAuth();
+
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { path: '/clientes', label: 'Clientes', icon: <Users size={20} /> },
-    { path: '/pedidos', label: 'Pedidos', icon: <ShoppingBag size={20} /> },
+    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, allowed: ['admin'] },
+    { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin', 'mozo'] },
+    { path: '/pedidos', label: 'Pedidos', icon: <ShoppingBag size={20} />, allowed: ['admin', 'mozo'] },
+    { path: '/cocina', label: 'Cocina', icon: <ChefHat size={20} />, allowed: ['admin', 'cocina'] },
   ];
+
+  const visibleNavItems = navItems.filter(item => item.allowed.includes(role || 'admin'));
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -38,7 +44,7 @@ export default function Layout() {
 
         <nav className="sidebar-nav">
           <ul>
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const isActive = location.pathname.startsWith(item.path);
               return (
                 <li key={item.path}>
