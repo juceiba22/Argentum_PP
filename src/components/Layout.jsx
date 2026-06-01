@@ -12,8 +12,8 @@ export default function Layout() {
   const { role } = useAuth();
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, allowed: ['admin'] },
-    { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin', 'mozo'] },
+    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, allowed: ['admin', 'caja'] },
+    { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin', 'caja'] },
     { path: '/pedidos', label: 'Pedidos', icon: <ShoppingBag size={20} />, allowed: ['admin', 'mozo'] },
     { path: '/cocina', label: 'Cocina', icon: <ChefHat size={20} />, allowed: ['admin', 'cocina'] },
   ];
