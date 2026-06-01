@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit, RefreshCw, AlertCircle, CheckCircle2, Trash2, Calculator } from 'lucide-react';
+import { Plus, Edit, RefreshCw, AlertCircle, CheckCircle2, Trash2, Calculator, Check, DollarSign, XCircle, BellRing } from 'lucide-react';
 import { getTodosLosPedidos, createPedidoCompleto, updateEstadoPedido } from '../services/pedidosApi';
 import { useActivity } from '../context/ActivityContext';
+import { supabase } from '../services/supabaseClient';
 
 const MENU_RESTAURANTE = [
   // Platos
@@ -32,12 +33,31 @@ export default function Pedidos() {
   const [crearError, setCrearError] = useState('');
   const [crearExito, setCrearExito] = useState('');
 
-  // --- Estados: Actualizar Estado ---
-  const [updatePedidoId, setUpdatePedidoId] = useState('');
-  const [updateEstado, setUpdateEstado] = useState('Pendiente');
-  const [actualizando, setActualizando] = useState(false);
-  const [updateError, setUpdateError] = useState('');
-  const [updateExito, setUpdateExito] = useState('');
+  // --- Alertas Mozo ---
+  const [alertaMozo, setAlertaMozo] = useState('');
+
+  const reproducirSonidoCampana = () => {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5
+      oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5);
+      
+      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.5);
+    } catch (e) {
+      console.warn('El navegador bloqueó el audio automático', e);
+    }
+  };
 
   const cargarPedidos = async () => {
     setLoadingPedidos(true);
@@ -53,6 +73,23 @@ export default function Pedidos() {
 
   useEffect(() => {
     cargarPedidos();
+
+    // Escuchar actualizaciones de la cocina
+    const channel = supabase
+      .channel('mozo-pedidos-updates')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedidos' }, (payload) => {
+        if (payload.new.estado === 'Enviado' && payload.old.estado !== 'Enviado') {
+          reproducirSonidoCampana();
+          setAlertaMozo(`¡Mesa ${payload.new.mesa || 'S/D'} lista para retirar!`);
+          setTimeout(() => setAlertaMozo(''), 6000);
+        }
+        cargarPedidos();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // --- Handlers: Crear Pedido ---
@@ -109,11 +146,12 @@ export default function Pedidos() {
 
     try {
       const pedidoData = await createPedidoCompleto(mesa, nuevoItems);
-      setCrearExito('¡Comanda generada correctamente!');
+      setCrearExito('¡Comanda enviada a cocina!');
       logPedido({ id: pedidoData.id, estado: pedidoData.estado, total: pedidoData.total });
       setMesa('');
       setNuevoItems([{ producto_nombre: '', precio_unitario: '', cantidad: 1 }]);
-      cargarPedidos(); // Recargar tabla
+      cargarPedidos();
+      setTimeout(() => setCrearExito(''), 3000);
     } catch (error) {
       console.error(error);
       setCrearError(error.message || 'Error al generar la comanda. Verifica los datos.');
@@ -122,25 +160,22 @@ export default function Pedidos() {
     }
   };
 
-  const handleActualizarEstado = async (e) => {
-    e.preventDefault();
-    if (!updatePedidoId) return;
-
-    setActualizando(true);
-    setUpdateError('');
-    setUpdateExito('');
-
+  // --- Handlers: Acciones Rápidas ---
+  const handleCambiarEstado = async (id, nuevoEstado) => {
     try {
-      await updateEstadoPedido(updatePedidoId, updateEstado);
-      setUpdateExito('¡Estado actualizado correctamente!');
-      logActualizacion({ id: updatePedidoId, estado: updateEstado });
-      setUpdatePedidoId('');
-      cargarPedidos(); 
+      await updateEstadoPedido(id, nuevoEstado);
+      logActualizacion({ id, estado: nuevoEstado });
+      cargarPedidos();
     } catch (error) {
       console.error(error);
-      setUpdateError(error.message || 'Error al actualizar el estado. Revisa el ID.');
-    } finally {
-      setActualizando(false);
+      alert('Error al actualizar el estado del pedido.');
+    }
+  };
+
+  const handleCancelar = (id, numMesa) => {
+    const confirmacion = window.confirm(`⚠️ ADVERTENCIA\n¿Está seguro de CANCELAR el pedido de la Mesa ${numMesa || 'S/D'}?\nEsta acción no se puede deshacer.`);
+    if (confirmacion) {
+      handleCambiarEstado(id, 'Cancelado');
     }
   };
 
@@ -155,48 +190,174 @@ export default function Pedidos() {
           <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Toma de Órdenes</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Módulo operativo para Mozos de Salón</p>
         </div>
-        <button onClick={cargarPedidos} className="btn btn-secondary">
-          <RefreshCw size={16} /> Recargar Tabla
-        </button>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          {alertaMozo && (
+            <div style={{ background: 'var(--success)', color: 'white', padding: '8px 16px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '8px', animation: 'pulse 1.5s infinite' }}>
+              <BellRing size={18} /> {alertaMozo}
+            </div>
+          )}
+          <button onClick={cargarPedidos} className="btn btn-secondary">
+            <RefreshCw size={16} /> Recargar Tabla
+          </button>
+        </div>
       </header>
 
-      {/* SECCIÓN 1: TABLA DE HISTORIAL DE PEDIDOS */}
+      {/* SECCIÓN 1: CREAR PEDIDO */}
+      <div className="glass-panel" style={{ padding: '24px', marginBottom: '32px' }}>
+        <h2 style={{ fontSize: '1.25rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Plus size={20} color="var(--accent-primary)" /> Generar Comanda
+        </h2>
+
+        <form onSubmit={handleCrearPedido}>
+          <div className="input-group" style={{ maxWidth: '300px' }}>
+            <label className="input-label">Mesa Destino</label>
+            <select 
+              className="input-field" 
+              style={{ appearance: 'auto', cursor: 'pointer', background: 'var(--bg-color)', fontWeight: 700 }}
+              value={mesa}
+              onChange={(e) => setMesa(e.target.value)}
+              required
+            >
+              <option value="" disabled>Seleccione número de mesa...</option>
+              {[...Array(20)].map((_, i) => (
+                <option key={i+1} value={i+1}>Mesa {i+1}</option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ marginTop: '24px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <label className="input-label" style={{ marginBottom: 0 }}>Carta (Platos y Bebidas)</label>
+            <button type="button" onClick={handleAgregarItem} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }}>
+              + Añadir Ítem
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+            {nuevoItems.map((item, index) => {
+              const subtotal = (Number(item.precio_unitario) || 0) * (Number(item.cantidad) || 0);
+              return (
+                <div key={index} className="card-dark" style={{ padding: '16px', borderRadius: '8px', position: 'relative', display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {nuevoItems.length > 1 && (
+                    <button type="button" onClick={() => handleEliminarItem(index)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                  
+                  <div className="input-group" style={{ flex: '2', minWidth: '250px', marginBottom: 0, paddingRight: nuevoItems.length > 1 ? '30px' : '0' }}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Consumo</label>
+                    <select 
+                      className="input-field" 
+                      style={{ padding: '8px 12px', appearance: 'auto', cursor: 'pointer' }} 
+                      value={item.producto_nombre} 
+                      onChange={(e) => handleProductoChange(index, e.target.value)} 
+                      required
+                    >
+                      <option value="" disabled>Seleccione una opción...</option>
+                      <optgroup label="🍽️ PLATOS PRINCIPALES Y POSTRES">
+                        {platosMenu.map(p => (
+                          <option key={p.id} value={p.nombre}>{p.nombre} - ${p.precio.toFixed(2)}</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="🍷 BEBIDAS">
+                        {bebidasMenu.map(p => (
+                          <option key={p.id} value={p.nombre}>{p.nombre} - ${p.precio.toFixed(2)}</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </div>
+                  
+                  <div className="input-group" style={{ width: '100px', marginBottom: 0 }}>
+                    <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>CANT.</label>
+                    <input type="number" min="1" className="input-field" style={{ padding: '8px 12px', textAlign: 'center' }} value={item.cantidad} onChange={(e) => handleCantidadChange(index, parseInt(e.target.value) || 1)} required />
+                  </div>
+                  
+                  <div style={{ width: '100px', textAlign: 'right' }}>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Subtotal</p>
+                    <p style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--accent-primary)' }}>${subtotal.toLocaleString()}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
+              <Calculator size={20} />
+              <span style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>Total Estimado</span>
+            </div>
+            <span style={{ fontSize: '1.75rem', fontWeight: 800 }}>${calcularTotal().toLocaleString()}</span>
+          </div>
+
+          <button type="submit" className="btn btn-primary" style={{ padding: '14px 24px' }} disabled={creando}>
+            {creando ? 'Enviando a Cocina...' : 'Generar e Imprimir Comanda'}
+          </button>
+        </form>
+
+        {crearError && (
+          <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(183, 65, 52, 0.05)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
+            <AlertCircle size={18} style={{ flexShrink: 0 }} /> <span>{crearError}</span>
+          </div>
+        )}
+        {crearExito && (
+          <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(74, 124, 89, 0.05)', border: '1px solid var(--success)', borderRadius: '4px', color: 'var(--success)', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <CheckCircle2 size={18} /> {crearExito}
+          </div>
+        )}
+      </div>
+
+      {/* SECCIÓN 2: TABLA DE HISTORIAL DE PEDIDOS */}
       <div className="glass-panel" style={{ overflow: 'hidden', marginBottom: '32px' }}>
         <div style={{ padding: '20px', borderBottom: '1px solid var(--glass-border)' }}>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 600 }}>Órdenes Activas e Históricas</h3>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 600 }}>Gestión de Salón (Órdenes Activas)</h3>
         </div>
         
         <div className="table-responsive">
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.02)' }}>
-                <th>ID Pedido</th>
-                <th>Ubicación</th>
-                <th>Fecha</th>
-                <th>Total</th>
+                <th>Mesa</th>
                 <th>Estado</th>
+                <th>Total</th>
+                <th>Acciones de Mozo</th>
               </tr>
             </thead>
             <tbody>
               {loadingPedidos ? (
-                <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando órdenes desde la nube...</td></tr>
+                <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando órdenes...</td></tr>
               ) : pedidos.length === 0 ? (
-                <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay pedidos registrados.</td></tr>
+                <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay pedidos registrados.</td></tr>
               ) : (
                 pedidos.map(pedido => (
                   <tr key={pedido.id} style={{ borderBottom: '1px solid var(--glass-border)', transition: 'background 0.2s' }}>
-                    <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
-                      <code className="code-dark" style={{ fontSize: '0.8rem', padding: '4px', borderRadius: '4px' }}>{pedido.id.substring(0,8)}...</code>
-                    </td>
-                    <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <td style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '1.1rem' }}>
                       {pedido.mesa ? `Mesa ${pedido.mesa}` : <span style={{ color: 'var(--warning)', fontWeight: 500 }}>S/D</span>}
                     </td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{new Date(pedido.created_at).toLocaleDateString()}</td>
-                    <td style={{ fontWeight: 600 }}>${Number(pedido.total).toLocaleString()}</td>
                     <td>
-                      <span className={`badge badge-${pedido.estado.toLowerCase()}`}>
+                      <span className={`badge badge-${pedido.estado.toLowerCase().replace(' ', '-')}`}>
                         {pedido.estado}
                       </span>
+                    </td>
+                    <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>${Number(pedido.total).toLocaleString()}</td>
+                    <td style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '16px 20px' }}>
+                      
+                      {pedido.estado === 'Enviado' && (
+                        <button onClick={() => handleCambiarEstado(pedido.id, 'Entregado')} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.75rem', background: 'var(--success)', border: 'none', color: 'white' }}>
+                          <Check size={14} /> Entregado
+                        </button>
+                      )}
+
+                      {pedido.estado === 'Entregado' && (
+                        <button onClick={() => handleCambiarEstado(pedido.id, 'Por Cobrar')} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', borderColor: 'var(--warning)', color: 'var(--warning)' }}>
+                          <DollarSign size={14} /> Pedir Cuenta
+                        </button>
+                      )}
+
+                      {(pedido.estado === 'Pendiente' || pedido.estado === 'Enviado') && (
+                        <button onClick={() => handleCancelar(pedido.id, pedido.mesa)} className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.75rem', borderColor: 'var(--danger)', color: 'var(--danger)' }}>
+                          <XCircle size={14} /> Cancelar
+                        </button>
+                      )}
+
                     </td>
                   </tr>
                 ))
@@ -205,168 +366,14 @@ export default function Pedidos() {
           </table>
         </div>
       </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-        
-        {/* SECCIÓN 2: CREAR PEDIDO (FORMULARIO CON ÍTEMS) */}
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Plus size={20} color="var(--accent-primary)" /> Generar Comanda
-          </h2>
-
-          <form onSubmit={handleCrearPedido}>
-            <div className="input-group">
-              <label className="input-label">Mesa</label>
-              <select 
-                className="input-field" 
-                style={{ appearance: 'auto', cursor: 'pointer' }}
-                value={mesa}
-                onChange={(e) => setMesa(e.target.value)}
-                required
-              >
-                <option value="" disabled>Seleccione el número de mesa...</option>
-                {[...Array(20)].map((_, i) => (
-                  <option key={i+1} value={i+1}>Mesa {i+1}</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ marginTop: '24px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <label className="input-label" style={{ marginBottom: 0 }}>Carta (Platos y Bebidas)</label>
-              <button type="button" onClick={handleAgregarItem} className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '0.8rem' }}>
-                + Añadir Ítem
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-              {nuevoItems.map((item, index) => {
-                const subtotal = (Number(item.precio_unitario) || 0) * (Number(item.cantidad) || 0);
-                return (
-                  <div key={index} className="card-dark" style={{ padding: '16px', borderRadius: '8px', position: 'relative' }}>
-                    {nuevoItems.length > 1 && (
-                      <button type="button" onClick={() => handleEliminarItem(index)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}>
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                    
-                    <div className="input-group" style={{ marginBottom: '12px', paddingRight: '24px' }}>
-                      <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Consumo</label>
-                      <select 
-                        className="input-field" 
-                        style={{ padding: '8px 12px', appearance: 'auto', cursor: 'pointer' }} 
-                        value={item.producto_nombre} 
-                        onChange={(e) => handleProductoChange(index, e.target.value)} 
-                        required
-                      >
-                        <option value="" disabled>Seleccione una opción...</option>
-                        <optgroup label="🍽️ PLATOS PRINCIPALES Y POSTRES">
-                          {platosMenu.map(p => (
-                            <option key={p.id} value={p.nombre}>{p.nombre} - ${p.precio.toFixed(2)}</option>
-                          ))}
-                        </optgroup>
-                        <optgroup label="🍷 BEBIDAS">
-                          {bebidasMenu.map(p => (
-                            <option key={p.id} value={p.nombre}>{p.nombre} - ${p.precio.toFixed(2)}</option>
-                          ))}
-                        </optgroup>
-                      </select>
-                    </div>
-                    
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-end' }}>
-                      <div className="input-group" style={{ flex: 1, marginBottom: 0 }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>CANTIDAD</label>
-                        <input type="number" min="1" className="input-field" style={{ padding: '8px 12px' }} value={item.cantidad} onChange={(e) => handleCantidadChange(index, parseInt(e.target.value) || 1)} required />
-                      </div>
-                      <div style={{ width: '120px', textAlign: 'right', paddingBottom: '8px' }}>
-                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Subtotal</p>
-                        <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--accent-primary)' }}>${subtotal.toLocaleString()}</p>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
-                <Calculator size={20} />
-                <span style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px' }}>Total Estimado</span>
-              </div>
-              <span style={{ fontSize: '1.5rem', fontWeight: 700 }}>${calcularTotal().toLocaleString()}</span>
-            </div>
-
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={creando}>
-              {creando ? 'Generando Comanda...' : 'Enviar a Cocina'}
-            </button>
-          </form>
-
-          {/* Alertas Crear */}
-          {crearError && (
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(183, 65, 52, 0.05)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
-              <AlertCircle size={18} style={{ flexShrink: 0 }} /> <span>{crearError}</span>
-            </div>
-          )}
-          {crearExito && (
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(74, 124, 89, 0.05)', border: '1px solid var(--success)', borderRadius: '4px', color: 'var(--success)', display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <CheckCircle2 size={18} /> {crearExito}
-            </div>
-          )}
-        </div>
-
-        {/* SECCIÓN 3: ACTUALIZAR ESTADO DE PEDIDO */}
-        <div className="glass-panel" style={{ padding: '24px', alignSelf: 'start' }}>
-          <h2 style={{ fontSize: '1.25rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Edit size={20} color="var(--warning)" /> Actualizar Estado
-          </h2>
-
-          <form onSubmit={handleActualizarEstado}>
-            <div className="input-group">
-              <label className="input-label">ID del Pedido (UUID)</label>
-              <input 
-                type="text" 
-                className="input-field" 
-                placeholder="Pega el ID del pedido aquí" 
-                value={updatePedidoId}
-                onChange={(e) => setUpdatePedidoId(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="input-group">
-              <label className="input-label">Nuevo Estado</label>
-              <select 
-                className="input-field" 
-                style={{ appearance: 'auto', cursor: 'pointer' }}
-                value={updateEstado}
-                onChange={(e) => setUpdateEstado(e.target.value)}
-              >
-                <option value="Pendiente">Pendiente</option>
-                <option value="Pagado">Pagado</option>
-                <option value="Enviado">Enviado</option>
-                <option value="Entregado">Entregado</option>
-                <option value="Cancelado">Cancelado</option>
-              </select>
-            </div>
-
-            <button type="submit" className="btn btn-secondary" style={{ width: '100%', marginTop: '16px' }} disabled={actualizando}>
-              {actualizando ? 'Actualizando...' : 'Actualizar'}
-            </button>
-          </form>
-
-          {/* Alertas Actualizar */}
-          {updateError && (
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(183, 65, 52, 0.05)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '0.9rem', display: 'flex', gap: '8px' }}>
-              <AlertCircle size={18} style={{ flexShrink: 0 }} /> <span>{updateError}</span>
-            </div>
-          )}
-          {updateExito && (
-            <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(74, 124, 89, 0.05)', border: '1px solid var(--success)', borderRadius: '4px', color: 'var(--success)', display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <CheckCircle2 size={18} /> {updateExito}
-            </div>
-          )}
-        </div>
-
-      </div>
+      
+      <style>{`
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(74, 124, 89, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(74, 124, 89, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(74, 124, 89, 0); }
+        }
+      `}</style>
     </div>
   );
 }
