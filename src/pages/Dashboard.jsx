@@ -97,15 +97,15 @@ export default function Dashboard() {
         <div style={{ padding: '24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
           
           {/* Bloque 1: Último Cliente */}
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="card-dark" style={{ padding: '20px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--text-secondary)' }}>
               <UserCheck size={18} /> <span style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Último Cliente Creado</span>
             </div>
             {activity.ultimoCliente ? (
               <div>
-                <p style={{ fontWeight: 600, fontSize: '1.1rem', color: 'white' }}>{activity.ultimoCliente.nombre}</p>
+                <p className="text-white" style={{ fontWeight: 600, fontSize: '1.1rem' }}>{activity.ultimoCliente.nombre}</p>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{activity.ultimoCliente.email}</p>
-                <code style={{ display: 'block', marginTop: '8px', fontSize: '0.75rem', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '4px', color: '#6ee7b7' }}>ID: {activity.ultimoCliente.id.substring(0,8)}...</code>
+                <code className="code-dark" style={{ display: 'block', marginTop: '8px', fontSize: '0.75rem', padding: '4px', borderRadius: '4px' }}>ID: {activity.ultimoCliente.id.substring(0,8)}...</code>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', textAlign: 'right' }}>{formatearHora(activity.ultimoCliente.time)}</p>
               </div>
             ) : (
@@ -114,17 +114,17 @@ export default function Dashboard() {
           </div>
 
           {/* Bloque 2: Último Pedido */}
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="card-dark" style={{ padding: '20px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--text-secondary)' }}>
               <PackageCheck size={18} /> <span style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Último Pedido Generado</span>
             </div>
             {activity.ultimoPedido ? (
               <div>
-                <p style={{ fontWeight: 600, fontSize: '1.1rem', color: 'white' }}>Total: ${Number(activity.ultimoPedido.total).toLocaleString()}</p>
+                <p className="text-white" style={{ fontWeight: 600, fontSize: '1.1rem' }}>Total: ${Number(activity.ultimoPedido.total).toLocaleString()}</p>
                 <div style={{ marginTop: '8px' }}>
                   <span className={`badge badge-${activity.ultimoPedido.estado.toLowerCase()}`}>{activity.ultimoPedido.estado}</span>
                 </div>
-                <code style={{ display: 'block', marginTop: '8px', fontSize: '0.75rem', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '4px', color: '#6ee7b7' }}>ID: {activity.ultimoPedido.id.substring(0,8)}...</code>
+                <code className="code-dark" style={{ display: 'block', marginTop: '8px', fontSize: '0.75rem', padding: '4px', borderRadius: '4px' }}>ID: {activity.ultimoPedido.id.substring(0,8)}...</code>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', textAlign: 'right' }}>{formatearHora(activity.ultimoPedido.time)}</p>
               </div>
             ) : (
@@ -133,7 +133,7 @@ export default function Dashboard() {
           </div>
 
           {/* Bloque 3: Última Actualización */}
-          <div style={{ background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="card-dark" style={{ padding: '20px', borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--text-secondary)' }}>
               <RefreshCw size={18} /> <span style={{ fontSize: '0.9rem', fontWeight: 600, textTransform: 'uppercase' }}>Última Actualización</span>
             </div>
@@ -141,7 +141,7 @@ export default function Dashboard() {
               <div>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>Nuevo Estado:</p>
                 <span className={`badge badge-${activity.ultimaActualizacion.estado.toLowerCase()}`}>{activity.ultimaActualizacion.estado}</span>
-                <code style={{ display: 'block', marginTop: '16px', fontSize: '0.75rem', background: 'rgba(0,0,0,0.3)', padding: '4px', borderRadius: '4px', color: '#fca5a5' }}>ID: {activity.ultimaActualizacion.id.substring(0,8)}...</code>
+                <code className="code-dark" style={{ display: 'block', marginTop: '16px', fontSize: '0.75rem', padding: '4px', borderRadius: '4px' }}>ID: {activity.ultimaActualizacion.id.substring(0,8)}...</code>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px', textAlign: 'right' }}>{formatearHora(activity.ultimaActualizacion.time)}</p>
               </div>
             ) : (
