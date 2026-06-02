@@ -1,0 +1,44 @@
+import { supabase } from './supabaseClient';
+
+export const getInventario = async () => {
+  const { data, error } = await supabase
+    .from('inventario')
+    .select('*')
+    .order('nombre', { ascending: true });
+
+  if (error) throw error;
+  return data;
+};
+
+export const addMercaderia = async (item) => {
+  const { data, error } = await supabase
+    .from('inventario')
+    .insert([item])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const updateMercaderia = async (id, itemData) => {
+  const { data, error } = await supabase
+    .from('inventario')
+    .update({ ...itemData, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+export const deleteMercaderia = async (id) => {
+  const { error } = await supabase
+    .from('inventario')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+  return true;
+};

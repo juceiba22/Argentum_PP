@@ -7,6 +7,7 @@ import Clientes from './pages/Clientes';
 import Pedidos from './pages/Pedidos';
 import Cocina from './pages/Cocina';
 import RegistrosCaja from './pages/RegistrosCaja';
+import Inventario from './pages/Inventario';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -57,6 +58,7 @@ function App() {
               <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><Dashboard /></ProtectedRoute>} />
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
               <Route path="/registros" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><RegistrosCaja /></ProtectedRoute>} />
+              <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
               <Route path="/pedidos" element={<ProtectedRoute allowedRoles={['admin', 'mozo']}><Pedidos /></ProtectedRoute>} />
               <Route path="/cocina" element={<ProtectedRoute allowedRoles={['admin', 'cocina']}><Cocina /></ProtectedRoute>} />
             </Route>
