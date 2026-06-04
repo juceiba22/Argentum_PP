@@ -8,6 +8,7 @@ import Pedidos from './pages/Pedidos';
 import Cocina from './pages/Cocina';
 import RegistrosCaja from './pages/RegistrosCaja';
 import Inventario from './pages/Inventario';
+import Market from './pages/Market';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -61,6 +62,7 @@ function App() {
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
               <Route path="/pedidos" element={<ProtectedRoute allowedRoles={['admin', 'mozo']}><Pedidos /></ProtectedRoute>} />
               <Route path="/cocina" element={<ProtectedRoute allowedRoles={['admin', 'cocina']}><Cocina /></ProtectedRoute>} />
+              <Route path="/market" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><Market /></ProtectedRoute>} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" replace />} />
