@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingBag, LogOut, Menu, X, ChefHat, Wallet, Package } from 'lucide-react';
+import { LayoutDashboard, Users, ShoppingBag, LogOut, Menu, X, ChefHat, Wallet, Package, Store } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,6 +16,7 @@ export default function Layout() {
     { path: '/registros', label: 'Auditoría', icon: <Wallet size={20} />, allowed: ['admin', 'caja'] },
     { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
     { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] },
+    { path: '/market', label: 'Mercado', icon: <Store size={20} />, allowed: ['admin', 'caja'] },
     { path: '/pedidos', label: 'Pedidos', icon: <ShoppingBag size={20} />, allowed: ['admin', 'mozo'] },
     { path: '/cocina', label: 'Cocina', icon: <ChefHat size={20} />, allowed: ['admin', 'cocina'] },
   ];
