@@ -129,7 +129,6 @@ export default function RegistrosCaja() {
             <thead>
               <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.02)' }}>
                 <th>Fecha y Hora</th>
-                <th>Mesa</th>
                 <th>ID Pedido</th>
                 <th>Medio de Pago</th>
                 <th>Monto</th>
@@ -137,17 +136,14 @@ export default function RegistrosCaja() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando registros contables...</td></tr>
+                <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando registros contables...</td></tr>
               ) : cobros.length === 0 ? (
-                <tr><td colSpan="5" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay cobros registrados en la base de datos.</td></tr>
+                <tr><td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>No hay cobros registrados en la base de datos.</td></tr>
               ) : (
                 cobros.map(cobro => (
                   <tr key={cobro.id} style={{ borderBottom: '1px solid var(--glass-border)', transition: 'background 0.2s' }}>
                     <td style={{ color: 'var(--text-secondary)' }}>
                       {formatearFecha(cobro.fecha_cobro || cobro.updated_at)}
-                    </td>
-                    <td style={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-                      {cobro.mesa ? `Mesa ${cobro.mesa}` : <span style={{ color: 'var(--warning)', fontWeight: 500 }}>S/D</span>}
                     </td>
                     <td>
                       <code className="code-dark" style={{ fontSize: '0.75rem', padding: '4px', borderRadius: '4px' }}>
