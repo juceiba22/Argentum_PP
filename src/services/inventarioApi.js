@@ -42,3 +42,22 @@ export const deleteMercaderia = async (id) => {
   if (error) throw error;
   return true;
 };
+
+export const uploadImage = async (file) => {
+  if (!file) return null;
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+  const filePath = `${fileName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('productos')
+    .upload(filePath, file);
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage
+    .from('productos')
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+};
