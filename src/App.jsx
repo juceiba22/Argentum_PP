@@ -7,6 +7,8 @@ import Clientes from './pages/Clientes';
 import RegistrosCaja from './pages/RegistrosCaja';
 import Inventario from './pages/Inventario';
 import Market from './pages/Market';
+import GestionPromociones from './pages/GestionPromociones';
+import PromocionesPublicas from './pages/PromocionesPublicas';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -20,7 +22,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(role)) {
-    if (role === 'caja') return <Navigate to="/dashboard" replace />;
     return <Navigate to="/" replace />;
   }
 
@@ -32,7 +33,6 @@ const LoginRedirect = () => {
   const { user, role } = useAuth();
   
   if (user) {
-    if (role === 'caja') return <Navigate to="/dashboard" replace />;
     return <Navigate to="/dashboard" replace />; // Admin por defecto
   }
   
@@ -48,13 +48,17 @@ function App() {
             {/* Ruta Pública (Login) */}
             <Route path="/" element={<LoginRedirect />} />
             
+            {/* Ruta Pública de Promociones */}
+            <Route path="/promociones" element={<PromocionesPublicas />} />
+            
             {/* Rutas Protegidas (Requieren Sesión) */}
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><Dashboard /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><Dashboard /></ProtectedRoute>} />
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
-              <Route path="/registros" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><RegistrosCaja /></ProtectedRoute>} />
+              <Route path="/registros" element={<ProtectedRoute allowedRoles={['admin']}><RegistrosCaja /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
-              <Route path="/market" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><Market /></ProtectedRoute>} />
+              <Route path="/market" element={<ProtectedRoute allowedRoles={['admin']}><Market /></ProtectedRoute>} />
+              <Route path="/gestion-promociones" element={<ProtectedRoute allowedRoles={['admin']}><GestionPromociones /></ProtectedRoute>} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" replace />} />
