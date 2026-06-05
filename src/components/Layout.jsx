@@ -17,8 +17,6 @@ export default function Layout() {
     { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
     { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] },
     { path: '/market', label: 'Mercado', icon: <Store size={20} />, allowed: ['admin', 'caja'] },
-    { path: '/pedidos', label: 'Pedidos', icon: <ShoppingBag size={20} />, allowed: ['admin', 'mozo'] },
-    { path: '/cocina', label: 'Cocina', icon: <ChefHat size={20} />, allowed: ['admin', 'cocina'] },
   ];
 
   const visibleNavItems = navItems.filter(item => item.allowed.includes(role || 'admin'));

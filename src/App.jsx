@@ -4,8 +4,6 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Clientes from './pages/Clientes';
-import Pedidos from './pages/Pedidos';
-import Cocina from './pages/Cocina';
 import RegistrosCaja from './pages/RegistrosCaja';
 import Inventario from './pages/Inventario';
 import Market from './pages/Market';
@@ -23,8 +21,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (allowedRoles && !allowedRoles.includes(role)) {
     if (role === 'caja') return <Navigate to="/dashboard" replace />;
-    if (role === 'cocina') return <Navigate to="/cocina" replace />;
-    if (role === 'mozo') return <Navigate to="/pedidos" replace />;
     return <Navigate to="/" replace />;
   }
 
@@ -37,8 +33,6 @@ const LoginRedirect = () => {
   
   if (user) {
     if (role === 'caja') return <Navigate to="/dashboard" replace />;
-    if (role === 'cocina') return <Navigate to="/cocina" replace />;
-    if (role === 'mozo') return <Navigate to="/pedidos" replace />;
     return <Navigate to="/dashboard" replace />; // Admin por defecto
   }
   
@@ -60,8 +54,6 @@ function App() {
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
               <Route path="/registros" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><RegistrosCaja /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
-              <Route path="/pedidos" element={<ProtectedRoute allowedRoles={['admin', 'mozo']}><Pedidos /></ProtectedRoute>} />
-              <Route path="/cocina" element={<ProtectedRoute allowedRoles={['admin', 'cocina']}><Cocina /></ProtectedRoute>} />
               <Route path="/market" element={<ProtectedRoute allowedRoles={['admin', 'caja']}><Market /></ProtectedRoute>} />
             </Route>
             
