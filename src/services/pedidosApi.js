@@ -92,3 +92,20 @@ export const updateCobroPedido = async (pedidoId, paymentData) => {
   if (error) throw error;
   return data;
 };
+
+// 6. Registrar venta directa desde Market
+export const registrarVentaDirecta = async (total, medioPago) => {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .insert([{
+      estado: 'Pagado',
+      total: total,
+      medio_pago: medioPago,
+      fecha_cobro: new Date().toISOString()
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};

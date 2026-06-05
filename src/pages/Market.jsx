@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft } from 'lucide-react';
 import { getInventario, updateMercaderia } from '../services/inventarioApi';
+import { registrarVentaDirecta } from '../services/pedidosApi';
 
 export default function Market() {
   const [productos, setProductos] = useState([]);
@@ -68,6 +69,9 @@ export default function Market() {
       await updateMercaderia(selectedProduct.id, {
         cantidad: nuevaCantidad
       });
+
+      // Registrar la venta en la auditoría
+      await registrarVentaDirecta(precioTotal, metodoPago);
 
       // Formatear el método de pago para el mensaje
       const metodosLegibles = {
