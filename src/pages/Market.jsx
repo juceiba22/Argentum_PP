@@ -108,14 +108,29 @@ export default function Market() {
               }}
               onClick={() => handleProductClick(producto)}
             >
-              <div style={{
-                background: 'rgba(255,255,255,0.05)',
-                padding: '24px',
-                borderRadius: '50%',
-                marginBottom: '16px'
-              }}>
-                <Tag size={48} color="var(--accent-primary)" />
-              </div>
+              {producto.imagen_url ? (
+                <img 
+                  src={producto.imagen_url} 
+                  alt={producto.nombre} 
+                  style={{
+                    width: '100px',
+                    height: '100px',
+                    objectFit: 'cover',
+                    borderRadius: '50%',
+                    marginBottom: '16px',
+                    border: '4px solid rgba(255,255,255,0.05)'
+                  }} 
+                />
+              ) : (
+                <div style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  padding: '24px',
+                  borderRadius: '50%',
+                  marginBottom: '16px'
+                }}>
+                  <Tag size={48} color="var(--accent-primary)" />
+                </div>
+              )}
               <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '8px' }}>{producto.nombre}</h3>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>
                 Stock: {Number(producto.cantidad).toLocaleString()} {producto.unidad_medida}

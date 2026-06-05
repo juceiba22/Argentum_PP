@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PackageSearch, Plus, Trash2, Edit2, Check, X, AlertCircle, TrendingUp } from 'lucide-react';
-import { getInventario, addMercaderia, updateMercaderia, deleteMercaderia } from '../services/inventarioApi';
+import { getInventario, addMercaderia, updateMercaderia, deleteMercaderia, uploadImage } from '../services/inventarioApi';
 
 const UNIDADES_MEDIDA = ['kg', 'gramos', 'unidades', 'paquetes', 'litros'];
 
@@ -13,12 +13,14 @@ export default function Inventario() {
   const [nuevaCantidad, setNuevaCantidad] = useState('');
   const [nuevaUnidad, setNuevaUnidad] = useState('kg');
   const [nuevoPrecio, setNuevoPrecio] = useState('');
+  const [nuevaImagen, setNuevaImagen] = useState(null);
   const [creando, setCreando] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   // Estados para edición
   const [editandoId, setEditandoId] = useState(null);
   const [editForm, setEditForm] = useState({});
+  const [editImagen, setEditImagen] = useState(null);
 
   const cargarInventario = async () => {
     setLoading(true);
@@ -52,17 +54,27 @@ export default function Inventario() {
     }
 
     try {
+      let imagenUrl = null;
+      if (nuevaImagen) {
+        imagenUrl = await uploadImage(nuevaImagen);
+      }
+
       await addMercaderia({
         nombre: nuevoNombre,
         cantidad: Number(nuevaCantidad),
         unidad_medida: nuevaUnidad,
-        precio_unitario: Number(nuevoPrecio)
+        precio_unitario: Number(nuevoPrecio),
+        imagen_url: imagenUrl
       });
       
       setNuevoNombre('');
       setNuevaCantidad('');
       setNuevaUnidad('kg');
       setNuevoPrecio('');
+      setNuevaImagen(null);
+      // Resetear el input file
+      const fileInput = document.getElementById('file-upload-nuevo');
+      if (fileInput) fileInput.value = '';
       cargarInventario();
     } catch (error) {
       console.error(error);
@@ -91,17 +103,25 @@ export default function Inventario() {
       nombre: item.nombre,
       cantidad: item.cantidad,
       unidad_medida: item.unidad_medida,
-      precio_unitario: item.precio_unitario
+      precio_unitario: item.precio_unitario,
+      imagen_url: item.imagen_url
     });
+    setEditImagen(null);
   };
 
   const guardarEdicion = async (id) => {
     try {
+      let imagenUrl = editForm.imagen_url;
+      if (editImagen) {
+        imagenUrl = await uploadImage(editImagen);
+      }
+
       await updateMercaderia(id, {
         nombre: editForm.nombre,
         cantidad: Number(editForm.cantidad),
         unidad_medida: editForm.unidad_medida,
-        precio_unitario: Number(editForm.precio_unitario)
+        precio_unitario: Number(editForm.precio_unitario),
+        imagen_url: imagenUrl
       });
       setEditandoId(null);
       cargarInventario();
@@ -156,6 +176,10 @@ export default function Inventario() {
               <label className="input-label">Costo por {nuevaUnidad === 'unidades' ? 'unidad' : nuevaUnidad}</label>
               <input type="number" step="0.01" className="input-field" value={nuevoPrecio} onChange={e => setNuevoPrecio(e.target.value)} placeholder="$" />
             </div>
+            <div className="input-group" style={{ flex: '1', minWidth: '150px', marginBottom: 0 }}>
+              <label className="input-label">Imagen (Opcional)</label>
+              <input id="file-upload-nuevo" type="file" accept="image/*" className="input-field" onChange={e => setNuevaImagen(e.target.files[0])} style={{ padding: '8px' }} />
+            </div>
             <button type="submit" className="btn btn-primary" disabled={creando} style={{ height: '42px', padding: '0 24px' }}>
               {creando ? 'Guardando...' : 'Agregar'}
             </button>
@@ -198,8 +222,16 @@ export default function Inventario() {
                       <tr key={item.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                         <td style={{ fontWeight: 600 }}>
                           {isEditing ? (
-                            <input type="text" className="input-field" value={editForm.nombre} onChange={e => setEditForm({...editForm, nombre: e.target.value})} style={{ padding: '4px 8px' }} />
-                          ) : item.nombre}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                              <input type="text" className="input-field" value={editForm.nombre} onChange={e => setEditForm({...editForm, nombre: e.target.value})} style={{ padding: '4px 8px' }} />
+                              <input type="file" accept="image/*" onChange={e => setEditImagen(e.target.files[0])} style={{ fontSize: '0.8rem' }} />
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              {item.imagen_url && <img src={item.imagen_url} alt={item.nombre} style={{ width: '32px', height: '32px', objectFit: 'cover', borderRadius: '4px' }} />}
+                              {item.nombre}
+                            </div>
+                          )}
                         </td>
                         <td>
                           {isEditing ? (
