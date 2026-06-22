@@ -144,3 +144,38 @@ export const registrarCompraCompleta = async (compraData, items, usuario_auditor
 
   return compra;
 };
+
+// ==========================================
+// MÓDULO: GASTOS (OPERATIVOS)
+// ==========================================
+export const getGastos = async () => {
+  const { data, error } = await supabase
+    .from('gastos')
+    .select('*')
+    .order('fecha', { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
+export const registrarGasto = async (gasto, usuario_auditoria) => {
+  // 1. Insertar en tabla `gastos`
+  const { data: nuevoGasto, error: gastoError } = await supabase
+    .from('gastos')
+    .insert([{ ...gasto }])
+    .select()
+    .single();
+  
+  if (gastoError) throw gastoError;
+
+  // 2. Registrar el Egreso Financiero
+  await registrarMovimiento({
+    tipo: 'EGRESO',
+    monto: nuevoGasto.importe,
+    categoria: nuevoGasto.categoria_principal, // 'Costos Fijos', 'Depreciación de Capital', 'Salario / Ganancia'
+    origen_id: nuevoGasto.id,
+    descripcion: nuevoGasto.rubro,
+    usuario_auditoria
+  });
+
+  return nuevoGasto;
+};

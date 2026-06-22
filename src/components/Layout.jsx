@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,6 +21,7 @@ export default function Layout() {
     { path: '/erp/proveedores', label: 'Proveedores (ERP)', icon: <Truck size={20} />, allowed: ['admin'] },
     { path: '/erp/compras', label: 'Compras (ERP)', icon: <ShoppingCart size={20} />, allowed: ['admin'] },
     { path: '/erp/dashboard-liquidez', label: 'Cash Flow (ERP)', icon: <Activity size={20} />, allowed: ['admin'] },
+    { path: '/erp/gastos', label: 'Gastos (ERP)', icon: <Receipt size={20} />, allowed: ['admin'] },
     { path: '/erp/dashboard-proveedores', label: 'Analítica Prov. (ERP)', icon: <BarChart2 size={20} />, allowed: ['admin'] },
   ];
 

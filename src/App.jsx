@@ -11,6 +11,7 @@ import GestionPromociones from './pages/GestionPromociones';
 import PromocionesPublicas from './pages/PromocionesPublicas';
 import Proveedores from './pages/Proveedores';
 import Compras from './pages/Compras';
+import Gastos from './pages/Gastos';
 import DashboardProveedores from './pages/DashboardProveedores';
 import DashboardLiquidez from './pages/DashboardLiquidez';
 import { ActivityProvider } from './context/ActivityContext';
@@ -66,6 +67,7 @@ function App() {
               {/* ERP Rutas */}
               <Route path="/erp/proveedores" element={<ProtectedRoute allowedRoles={['admin']}><Proveedores /></ProtectedRoute>} />
               <Route path="/erp/compras" element={<ProtectedRoute allowedRoles={['admin']}><Compras /></ProtectedRoute>} />
+              <Route path="/erp/gastos" element={<ProtectedRoute allowedRoles={['admin']}><Gastos /></ProtectedRoute>} />
               <Route path="/erp/dashboard-proveedores" element={<ProtectedRoute allowedRoles={['admin']}><DashboardProveedores /></ProtectedRoute>} />
               <Route path="/erp/dashboard-liquidez" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLiquidez /></ProtectedRoute>} />
             </Route>
