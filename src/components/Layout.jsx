@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, ShoppingBag, LogOut, Menu, X, ChefHat, Wallet, Package, Store, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -18,6 +18,10 @@ export default function Layout() {
     { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] },
     { path: '/market', label: 'Mercado', icon: <Store size={20} />, allowed: ['admin'] },
     { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
+    { path: '/erp/proveedores', label: 'Proveedores (ERP)', icon: <Truck size={20} />, allowed: ['admin'] },
+    { path: '/erp/compras', label: 'Compras (ERP)', icon: <ShoppingCart size={20} />, allowed: ['admin'] },
+    { path: '/erp/dashboard-liquidez', label: 'Cash Flow (ERP)', icon: <Activity size={20} />, allowed: ['admin'] },
+    { path: '/erp/dashboard-proveedores', label: 'Analítica Prov. (ERP)', icon: <BarChart2 size={20} />, allowed: ['admin'] },
   ];
 
   const visibleNavItems = navItems.filter(item => item.allowed.includes(role || 'admin'));

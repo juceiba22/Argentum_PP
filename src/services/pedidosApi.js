@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { registrarMovimiento } from './erpApi';
 
 // 1. Obtener todos los pedidos junto con el nombre del cliente
 export const getTodosLosPedidos = async () => {
@@ -107,5 +108,19 @@ export const registrarVentaDirecta = async (total, medioPago) => {
     .single();
 
   if (error) throw error;
+
+  try {
+    await registrarMovimiento({
+      tipo: 'INGRESO',
+      monto: total,
+      categoria: 'Venta',
+      origen_id: data.id,
+      descripcion: `Venta Mostrador (${medioPago})`,
+      usuario_auditoria: 'Sistema'
+    });
+  } catch (e) {
+    console.error("No se pudo registrar el movimiento financiero", e);
+  }
+
   return data;
 };
