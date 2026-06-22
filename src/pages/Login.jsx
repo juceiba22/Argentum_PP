@@ -30,10 +30,7 @@ export default function Login() {
         const normalizedEmail = email.toLowerCase();
         
         // 1. Inyección de roles duros según el correo
-        if (normalizedEmail === 'mozo@argentum.com') newRole = 'mozo';
-        else if (normalizedEmail === 'cocina@argentum.com') newRole = 'cocina';
-        else if (normalizedEmail === 'caja@argentum.com') newRole = 'caja';
-        else if (normalizedEmail === 'admin@argentum.com' || normalizedEmail === 'juceiba22@gmail.com') newRole = 'admin';
+        if (normalizedEmail === 'admin@argentum.com' || normalizedEmail === 'juceiba22@gmail.com') newRole = 'admin';
         else if (!newRole) newRole = 'admin';
 
         // 2. Guardar en Supabase permanentemente si es diferente al actual
@@ -47,9 +44,7 @@ export default function Login() {
         }
 
         // 3. Redirección basada en el nuevo rol asignado
-        if (newRole === 'cocina') navigate('/cocina');
-        else if (newRole === 'mozo') navigate('/pedidos');
-        else navigate('/dashboard');
+        navigate('/dashboard');
       }
     } catch (error) {
       console.error(error);

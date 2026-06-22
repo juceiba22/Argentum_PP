@@ -21,7 +21,7 @@ export default async function handler(req, res) {
     accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-TU_ACCESS_TOKEN_AQUI' 
   });
 
-  const { total, pedidoId, mesa } = req.body;
+  const { total, pedidoId } = req.body;
 
   if (!total || !pedidoId) {
     return res.status(400).json({ success: false, error: 'Faltan parámetros: total y/o pedidoId' });
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       device_id: DEVICE_ID,
       body: {
         amount: Number(total),
-        description: `Cobro Mesa ${mesa || 'S/D'} - Pedido ${pedidoId}`,
+        description: `Venta de Carnicería - Pedido ${pedidoId}`,
         payment: {
           installments: 1,
           type: "default", // Permite débito, crédito, QR y billetera

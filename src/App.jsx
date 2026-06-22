@@ -9,6 +9,10 @@ import Inventario from './pages/Inventario';
 import Market from './pages/Market';
 import GestionPromociones from './pages/GestionPromociones';
 import PromocionesPublicas from './pages/PromocionesPublicas';
+import Proveedores from './pages/Proveedores';
+import Compras from './pages/Compras';
+import DashboardProveedores from './pages/DashboardProveedores';
+import DashboardLiquidez from './pages/DashboardLiquidez';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -59,6 +63,11 @@ function App() {
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
               <Route path="/market" element={<ProtectedRoute allowedRoles={['admin']}><Market /></ProtectedRoute>} />
               <Route path="/gestion-promociones" element={<ProtectedRoute allowedRoles={['admin']}><GestionPromociones /></ProtectedRoute>} />
+              {/* ERP Rutas */}
+              <Route path="/erp/proveedores" element={<ProtectedRoute allowedRoles={['admin']}><Proveedores /></ProtectedRoute>} />
+              <Route path="/erp/compras" element={<ProtectedRoute allowedRoles={['admin']}><Compras /></ProtectedRoute>} />
+              <Route path="/erp/dashboard-proveedores" element={<ProtectedRoute allowedRoles={['admin']}><DashboardProveedores /></ProtectedRoute>} />
+              <Route path="/erp/dashboard-liquidez" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLiquidez /></ProtectedRoute>} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,40 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Users, ShoppingBag, DollarSign, Clock, UserCheck, PackageCheck, RefreshCw, BellRing, Check } from 'lucide-react';
+import { Users, ShoppingBag, DollarSign, Clock, UserCheck, PackageCheck, RefreshCw } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useActivity } from '../context/ActivityContext';
-import { updateEstadoPedido } from '../services/pedidosApi';
 
 export default function Dashboard() {
   const { activity } = useActivity();
   const [stats, setStats] = useState({ clientes: 0, pedidos: 0, ingresos: 0 });
   const [loadingStats, setLoadingStats] = useState(true);
-  
-  // --- Estados de Caja ---
-  const [cobrosPendientes, setCobrosPendientes] = useState([]);
-  const [alertaCaja, setAlertaCaja] = useState('');
-  const [procesandoCobro, setProcesandoCobro] = useState(null);
-
-  const reproducirSonidoCaja = () => {
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const oscillator = audioCtx.createOscillator();
-      const gainNode = audioCtx.createGain();
-      
-      oscillator.type = 'triangle';
-      oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-      oscillator.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
-      gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioCtx.destination);
-      
-      oscillator.start();
-      oscillator.stop(audioCtx.currentTime + 0.4);
-    } catch (e) {
-      console.warn('Audio bloqueado', e);
-    }
-  };
 
   const fetchDashboardData = async () => {
     setLoadingStats(true);
@@ -46,15 +18,6 @@ export default function Dashboard() {
       
       const ingresos = ingresosData ? ingresosData.reduce((acc, curr) => acc + Number(curr.total), 0) : 0;
       setStats({ clientes: clientesCount || 0, pedidos: pedidosCount || 0, ingresos });
-
-      // 2. Cobros Pendientes
-      const { data: cobrosData } = await supabase
-        .from('pedidos')
-        .select('*')
-        .eq('estado', 'Por Cobrar')
-        .order('updated_at', { ascending: false });
-      
-      setCobrosPendientes(cobrosData || []);
     } catch (error) {
       console.error("Error cargando dashboard:", error);
     } finally {
@@ -64,41 +27,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-
-    // Escuchar tiempo real para alertas de Caja
-    const channel = supabase
-      .channel('caja-dashboard-updates')
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pedidos' }, (payload) => {
-        if (payload.new.estado === 'Por Cobrar' && payload.old.estado !== 'Por Cobrar') {
-          reproducirSonidoCaja();
-          setAlertaCaja(`¡Mesa ${payload.new.mesa || 'S/D'} solicitó la cuenta!`);
-          setTimeout(() => setAlertaCaja(''), 8000);
-        }
-        fetchDashboardData(); // Refrescar stats y cobros
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pedidos' }, () => {
-        fetchDashboardData();
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
-
-  const handleCobrar = async (id) => {
-    setProcesandoCobro(id);
-    try {
-      await updateEstadoPedido(id, 'Pagado');
-      setCobrosPendientes(prev => prev.filter(c => c.id !== id));
-      fetchDashboardData(); // Refrescar ingresos
-    } catch (error) {
-      console.error("Error al cobrar:", error);
-      alert('Error procesando el cobro');
-    } finally {
-      setProcesandoCobro(null);
-    }
-  };
 
   const statCards = [
     { title: 'Clientes Totales', value: loadingStats ? '...' : stats.clientes, icon: <Users size={24} />, color: '#3b82f6' },
@@ -118,50 +47,11 @@ export default function Dashboard() {
           <p style={{ color: 'var(--text-secondary)' }}>Resumen en tiempo real y módulo de Caja</p>
         </div>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          {alertaCaja && (
-            <div style={{ background: 'var(--danger)', color: 'white', padding: '8px 16px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '8px', animation: 'pulse 1.5s infinite' }}>
-              <BellRing size={18} /> {alertaCaja}
-            </div>
-          )}
           <button onClick={fetchDashboardData} className="btn btn-secondary">
             <RefreshCw size={16} /> Actualizar
           </button>
         </div>
       </header>
-
-      {/* COBROS PENDIENTES (CAJA) */}
-      {cobrosPendientes.length > 0 && (
-        <div className="glass-panel" style={{ marginBottom: '32px', border: '2px solid var(--warning)' }}>
-          <div style={{ padding: '20px', background: 'rgba(210, 142, 61, 0.05)', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <DollarSign size={24} color="var(--warning)" />
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--warning)' }}>Cuentas por Cobrar</h3>
-          </div>
-          <div style={{ padding: '24px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-            {cobrosPendientes.map(pedido => (
-              <div key={pedido.id} className="card-dark" style={{ width: '300px', padding: '20px', borderRadius: '8px', borderLeft: '4px solid var(--warning)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-                  <div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Mesa</p>
-                    <p style={{ fontSize: '1.5rem', fontWeight: 800 }}>{pedido.mesa || 'S/D'}</p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Total</p>
-                    <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)' }}>${Number(pedido.total).toLocaleString()}</p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => handleCobrar(pedido.id)}
-                  disabled={procesandoCobro === pedido.id}
-                  className="btn btn-primary" 
-                  style={{ width: '100%', background: 'var(--success)', border: 'none', color: 'white', display: 'flex', gap: '8px' }}
-                >
-                  <Check size={18} /> {procesandoCobro === pedido.id ? 'Procesando...' : 'Marcar como Pagado'}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ESTADÍSTICAS REALES */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
