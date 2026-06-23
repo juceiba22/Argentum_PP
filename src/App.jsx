@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
 import Clientes from './pages/Clientes';
 import RegistrosCaja from './pages/RegistrosCaja';
 import Inventario from './pages/Inventario';
@@ -38,7 +37,7 @@ const LoginRedirect = () => {
   const { user, role } = useAuth();
   
   if (user) {
-    return <Navigate to="/dashboard" replace />; // Admin por defecto
+    return <Navigate to="/registros" replace />; // Admin por defecto
   }
   
   return <Login />;
@@ -58,7 +57,6 @@ function App() {
             
             {/* Rutas Protegidas (Requieren Sesión) */}
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><Dashboard /></ProtectedRoute>} />
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
               <Route path="/registros" element={<ProtectedRoute allowedRoles={['admin']}><RegistrosCaja /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />

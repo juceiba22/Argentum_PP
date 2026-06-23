@@ -66,8 +66,8 @@ export default function RegistrosCaja() {
     <div className="animate-fade-in">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Auditoría de Caja</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Registro detallado de todos los cobros y conciliación</p>
+          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Flujo de Caja</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Registro detallado de cobros e ingresos por Caja</p>
         </div>
         <button onClick={cargarCobros} className="btn btn-secondary">
           <RefreshCw size={16} /> Refrescar Cierre
@@ -131,6 +131,8 @@ export default function RegistrosCaja() {
                 <th>Fecha y Hora</th>
                 <th>ID Pedido</th>
                 <th>Medio de Pago</th>
+                <th>Comisiones</th>
+                <th>Liquidez</th>
                 <th>Monto</th>
               </tr>
             </thead>
@@ -162,6 +164,17 @@ export default function RegistrosCaja() {
                       ) : (
                         <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', fontStyle: 'italic' }}>Efectivo / Manual</span>
                       )}
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      {cobro.medio_pago === 'mercado_pago_point' ? '1.5% a 6%' : 
+                       (cobro.medio_pago && cobro.medio_pago.includes('Tarjeta')) ? '1.8% a 3%' : 
+                       '0%'}
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      {cobro.medio_pago === 'mercado_pago_point' ? 'En el acto / 14 días' : 
+                       (cobro.medio_pago === 'Efectivo' || !cobro.medio_pago) ? 'Inmediata' : 
+                       (cobro.medio_pago === 'Cuenta DNI' || cobro.medio_pago === 'Transferencia') ? 'Inmediata' : 
+                       '48 hs hábiles'}
                     </td>
                     <td style={{ fontWeight: 800, color: 'var(--success)', fontSize: '1.1rem' }}>
                       ${Number(cobro.total).toLocaleString()}
