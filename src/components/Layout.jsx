@@ -12,7 +12,6 @@ export default function Layout() {
   const { role } = useAuth();
 
   const navItems = [
-    { path: '/registros', label: 'Caja', icon: <Wallet size={20} />, allowed: ['admin'] },
     { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
     { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] },
     { path: '/market', label: 'Mercado', icon: <Store size={20} />, allowed: ['admin'] },
