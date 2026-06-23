@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Clientes from './pages/Clientes';
-import RegistrosCaja from './pages/RegistrosCaja';
 import Inventario from './pages/Inventario';
 import Market from './pages/Market';
 import GestionPromociones from './pages/GestionPromociones';
@@ -37,7 +36,7 @@ const LoginRedirect = () => {
   const { user, role } = useAuth();
   
   if (user) {
-    return <Navigate to="/registros" replace />; // Admin por defecto
+    return <Navigate to="/erp/dashboard-liquidez" replace />; // Admin por defecto
   }
   
   return <Login />;
@@ -58,7 +57,6 @@ function App() {
             {/* Rutas Protegidas (Requieren Sesión) */}
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
-              <Route path="/registros" element={<ProtectedRoute allowedRoles={['admin']}><RegistrosCaja /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
               <Route path="/market" element={<ProtectedRoute allowedRoles={['admin']}><Market /></ProtectedRoute>} />
               <Route path="/gestion-promociones" element={<ProtectedRoute allowedRoles={['admin']}><GestionPromociones /></ProtectedRoute>} />
