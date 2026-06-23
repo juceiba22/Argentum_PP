@@ -16,7 +16,8 @@ const CATEGORIAS_Y_RUBROS = {
     'Equipamiento'
   ],
   'Salario / Ganancia': [
-    'Salario / Ganancia'
+    'Salario',
+    'Ganancia'
   ]
 };
 
@@ -33,6 +34,14 @@ export default function Gastos() {
   const [rubro, setRubro] = useState('');
   const [importe, setImporte] = useState('');
   const [descripcion, setDescripcion] = useState('');
+
+  // Extra fields
+  const [regularidad, setRegularidad] = useState('Mensual');
+  const [diaPago, setDiaPago] = useState('');
+  const [modalidad, setModalidad] = useState('');
+  const [tipoEquipamiento, setTipoEquipamiento] = useState('');
+  const [marca, setMarca] = useState('');
+  const [vidaUtil, setVidaUtil] = useState('');
 
   const fetchData = async () => {
     setLoading(true);
@@ -62,13 +71,23 @@ export default function Gastos() {
     setMensaje(null);
 
     try {
+      let finalDescripcion = descripcion;
+      
+      if (categoriaPrincipal === 'Costos Fijos') {
+        const extraData = `[${regularidad} | Día: ${diaPago || 'S/D'} | Mod: ${modalidad || 'S/D'}]`;
+        finalDescripcion = descripcion ? `${extraData} ${descripcion}` : extraData;
+      } else if (categoriaPrincipal === 'Depreciación de Capital') {
+        const extraData = `[Eq: ${tipoEquipamiento || 'S/D'} | Marca: ${marca || 'S/D'} | Vida Útil: ${vidaUtil ? vidaUtil + ' años' : 'S/D'}]`;
+        finalDescripcion = descripcion ? `${extraData} ${descripcion}` : extraData;
+      }
+
       await registrarGasto(
         {
           fecha,
           categoria_principal: categoriaPrincipal,
           rubro,
           importe: Number(importe),
-          descripcion
+          descripcion: finalDescripcion
         },
         user?.email || 'Sistema'
       );
@@ -80,6 +99,12 @@ export default function Gastos() {
       setRubro('');
       setImporte('');
       setDescripcion('');
+      setRegularidad('Mensual');
+      setDiaPago('');
+      setModalidad('');
+      setTipoEquipamiento('');
+      setMarca('');
+      setVidaUtil('');
       
       fetchData();
     } catch (error) {
@@ -191,6 +216,48 @@ export default function Gastos() {
                 ))}
               </select>
             </div>
+
+            {categoriaPrincipal === 'Costos Fijos' && (
+              <>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label">Regularidad</label>
+                  <select className="input-field" value={regularidad} onChange={e => setRegularidad(e.target.value)} style={{ appearance: 'auto' }}>
+                    <option value="Mensual">Mensual</option>
+                    <option value="Bimestral">Bimestral</option>
+                    <option value="Anual">Anual</option>
+                  </select>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="input-group" style={{ marginBottom: 0 }}>
+                    <label className="input-label">Día de Pago/Cobro</label>
+                    <input type="number" min="1" max="31" className="input-field" value={diaPago} onChange={e => setDiaPago(e.target.value)} placeholder="Ej. 10" />
+                  </div>
+                  <div className="input-group" style={{ marginBottom: 0 }}>
+                    <label className="input-label">Modalidad</label>
+                    <input type="text" className="input-field" value={modalidad} onChange={e => setModalidad(e.target.value)} placeholder="Ej. Transferencia..." />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {categoriaPrincipal === 'Depreciación de Capital' && (
+              <>
+                <div className="input-group" style={{ marginBottom: 0 }}>
+                  <label className="input-label">Tipo Equipamiento</label>
+                  <input type="text" className="input-field" value={tipoEquipamiento} onChange={e => setTipoEquipamiento(e.target.value)} placeholder="Ej. Heladera Exhibidora" />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div className="input-group" style={{ marginBottom: 0 }}>
+                    <label className="input-label">Marca</label>
+                    <input type="text" className="input-field" value={marca} onChange={e => setMarca(e.target.value)} placeholder="Ej. Gafa" />
+                  </div>
+                  <div className="input-group" style={{ marginBottom: 0 }}>
+                    <label className="input-label">Vida Útil (Años)</label>
+                    <input type="number" className="input-field" value={vidaUtil} onChange={e => setVidaUtil(e.target.value)} placeholder="Ej. 5" />
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="input-group" style={{ marginBottom: 0 }}>
               <label className="input-label">Importe ($)</label>

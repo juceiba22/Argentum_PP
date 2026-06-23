@@ -96,6 +96,18 @@ export const getCompras = async () => {
   return data;
 };
 
+export const getComprasDetalle = async () => {
+  const { data, error } = await supabase
+    .from('compras_detalle')
+    .select(`
+      *,
+      compras (fecha, estado)
+    `)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data;
+};
+
 export const registrarCompraCompleta = async (compraData, items, usuario_auditoria) => {
   // 1. Insertar en tabla `compras`
   const { data: compra, error: compraError } = await supabase

@@ -29,12 +29,20 @@ export default function Layout() {
       allowed: ['admin'],
       subItems: [
         { path: '/erp/compras', label: 'Compras', icon: <ShoppingCart size={20} />, allowed: ['admin'] },
-        { path: '/erp/proveedores', label: 'Proveedores ERP', icon: <Truck size={20} />, allowed: ['admin'] },
+        { path: '/erp/proveedores', label: 'Alta Proveedores', icon: <Truck size={20} />, allowed: ['admin'] },
         { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] }
       ]
     },
     { path: '/erp/dashboard-liquidez', label: 'Cash Flow (ERP)', icon: <Activity size={20} />, allowed: ['admin'] },
-    { path: '/erp/gastos', label: 'Gastos (ERP)', icon: <Receipt size={20} />, allowed: ['admin'] },
+    { 
+      label: 'Costos (ERP)', 
+      icon: <Receipt size={20} />, 
+      allowed: ['admin'],
+      subItems: [
+        { path: '/erp/gastos', label: 'Registro de Gastos', icon: <Receipt size={20} />, allowed: ['admin'] },
+        { path: '/erp/calculadora-costos', label: 'Calculadora', icon: <BarChart2 size={20} />, allowed: ['admin'] }
+      ]
+    },
     { path: '/erp/dashboard-proveedores', label: 'Analítica Prov. (ERP)', icon: <BarChart2 size={20} />, allowed: ['admin'] },
   ];
 

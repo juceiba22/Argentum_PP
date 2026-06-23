@@ -61,8 +61,8 @@ export default function Proveedores() {
     <div className="animate-fade-in">
       <header style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Directorio de Proveedores</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Módulo ERP: Gestión de proveedores para reposición de inventario.</p>
+          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Alta Proveedores</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Módulo Gestión de proveedores</p>
         </div>
       </header>
 
