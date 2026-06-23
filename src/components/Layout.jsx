@@ -8,16 +8,31 @@ export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedMenus, setExpandedMenus] = useState({});
+
+  const toggleSubmenu = (label) => {
+    setExpandedMenus(prev => ({
+      ...prev,
+      [label]: !prev[label]
+    }));
+  };
 
   const { role } = useAuth();
 
   const navItems = [
     { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
-    { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] },
     { path: '/market', label: 'Mercado', icon: <Store size={20} />, allowed: ['admin'] },
     { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
-    { path: '/erp/proveedores', label: 'Proveedores (ERP)', icon: <Truck size={20} />, allowed: ['admin'] },
-    { path: '/erp/compras', label: 'Compras (ERP)', icon: <ShoppingCart size={20} />, allowed: ['admin'] },
+    { 
+      label: 'Compras e Inventario', 
+      icon: <Package size={20} />, 
+      allowed: ['admin'],
+      subItems: [
+        { path: '/erp/compras', label: 'Compras', icon: <ShoppingCart size={20} />, allowed: ['admin'] },
+        { path: '/erp/proveedores', label: 'Proveedores ERP', icon: <Truck size={20} />, allowed: ['admin'] },
+        { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] }
+      ]
+    },
     { path: '/erp/dashboard-liquidez', label: 'Cash Flow (ERP)', icon: <Activity size={20} />, allowed: ['admin'] },
     { path: '/erp/gastos', label: 'Gastos (ERP)', icon: <Receipt size={20} />, allowed: ['admin'] },
     { path: '/erp/dashboard-proveedores', label: 'Analítica Prov. (ERP)', icon: <BarChart2 size={20} />, allowed: ['admin'] },
@@ -50,6 +65,45 @@ export default function Layout() {
         <nav className="sidebar-nav">
           <ul>
             {visibleNavItems.map((item) => {
+              if (item.subItems) {
+                const isExpanded = expandedMenus[item.label];
+                return (
+                  <li key={item.label}>
+                    <div 
+                      className="sidebar-link"
+                      onClick={() => toggleSubmenu(item.label)}
+                      style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className="link-icon">{item.icon}</span>
+                        {item.label}
+                      </div>
+                      <span style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s', fontSize: '0.8rem' }}>▼</span>
+                    </div>
+                    {isExpanded && (
+                      <ul style={{ paddingLeft: '16px', listStyle: 'none', marginTop: '4px' }}>
+                        {item.subItems.map(subItem => {
+                          const isActive = location.pathname.startsWith(subItem.path);
+                          return (
+                            <li key={subItem.path} style={{ marginBottom: '4px' }}>
+                              <Link 
+                                to={subItem.path} 
+                                className={`sidebar-link ${isActive ? 'active' : ''}`}
+                                onClick={() => setMobileMenuOpen(false)}
+                                style={{ padding: '8px 16px', fontSize: '0.9rem' }}
+                              >
+                                <span className="link-icon" style={{ marginRight: '8px' }}>{subItem.icon}</span>
+                                {subItem.label}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </li>
+                );
+              }
+
               const isActive = location.pathname.startsWith(item.path);
               return (
                 <li key={item.path}>
