@@ -44,7 +44,7 @@ export default function Login() {
         }
 
         // 3. Redirección basada en el nuevo rol asignado
-        navigate('/dashboard');
+        navigate('/registros');
       }
     } catch (error) {
       console.error(error);

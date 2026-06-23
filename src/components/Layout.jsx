@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt } from 'lucide-react';
+import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -12,8 +12,7 @@ export default function Layout() {
   const { role } = useAuth();
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} />, allowed: ['admin'] },
-    { path: '/registros', label: 'Auditoría', icon: <Wallet size={20} />, allowed: ['admin'] },
+    { path: '/registros', label: 'Caja', icon: <Wallet size={20} />, allowed: ['admin'] },
     { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
     { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] },
     { path: '/market', label: 'Mercado', icon: <Store size={20} />, allowed: ['admin'] },
