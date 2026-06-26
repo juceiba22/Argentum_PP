@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2, Megaphone } from 'lucide-react';
+import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2, Megaphone, UserPlus } from 'lucide-react';
 import { getInventario, updateMercaderia } from '../services/inventarioApi';
 import { getPromocionesActivas } from '../services/promocionesApi';
 import { registrarVentaDirecta } from '../services/pedidosApi';
 import { createCliente } from '../services/clientesApi';
-import { UserPlus } from 'lucide-react';
 
 export default function Market() {
   const [productos, setProductos] = useState([]);
   const [promociones, setPromociones] = useState([]);
   const [loading, setLoading] = useState(true);
   
+  // Responsive State
+  const [isMobile, setIsMobile] = useState(false);
+  const [isCartModalOpen, setIsCartModalOpen] = useState(false);
+
   // Estado del Carrito
   const [carrito, setCarrito] = useState([]);
   
@@ -31,6 +34,13 @@ export default function Market() {
   const [isClienteModalOpen, setIsClienteModalOpen] = useState(false);
   const [clienteForm, setClienteForm] = useState({ nombre: '', apellido: '', telefono: '' });
   const [creandoCliente, setCreandoCliente] = useState(false);
+
+  useEffect(() => {
+    const checkResponsive = () => setIsMobile(window.innerWidth < 1024);
+    checkResponsive();
+    window.addEventListener('resize', checkResponsive);
+    return () => window.removeEventListener('resize', checkResponsive);
+  }, []);
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -108,12 +118,14 @@ export default function Market() {
     const newCarrito = [...carrito];
     newCarrito.splice(index, 1);
     setCarrito(newCarrito);
+    if (newCarrito.length === 0) setIsCartModalOpen(false);
   };
 
   const totalCarrito = carrito.reduce((acc, item) => acc + item.subtotal, 0);
 
   const iniciarCobro = () => {
     if (carrito.length === 0) return;
+    setIsCartModalOpen(false); // Cierra modal de carrito en mobile si está abierto
     setStep('metodos');
     setMetodoPago(null);
     setIsCheckoutOpen(true);
@@ -159,7 +171,6 @@ export default function Market() {
 
     setProcesando(true);
     try {
-      // 1. Actualizar el inventario restando la cantidad vendida
       for (const cartItem of carrito) {
         const prodDb = productos.find(p => p.id === cartItem.itemNormalizado.id_original);
         if (prodDb) {
@@ -169,7 +180,6 @@ export default function Market() {
         }
       }
 
-      // 2. Registrar la venta
       const itemsParaVenta = carrito.map(c => ({
         producto: { 
            id: c.itemNormalizado.id_original, 
@@ -207,11 +217,110 @@ export default function Market() {
     }
   };
 
+  const renderCarritoUI = () => (
+    <div className={isMobile ? "" : "glass-panel"} style={{ 
+      padding: isMobile ? '0' : '24px', 
+      position: isMobile ? 'relative' : 'sticky', 
+      top: isMobile ? '0' : '24px', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: isMobile ? '80vh' : 'calc(100vh - 100px)' 
+    }}>
+      <h2 style={{ fontSize: '1.5rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '16px' }}>
+        <ShoppingCart size={24} color="var(--accent-primary)" /> Carrito {isMobile && <span style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>({carrito.length} ítems)</span>}
+      </h2>
+
+      <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px', paddingRight: '8px' }}>
+        {carrito.length === 0 ? (
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '40px 0' }}>
+            <ShoppingCart size={48} style={{ opacity: 0.2, margin: '0 auto 16px auto' }} />
+            <p>El carrito está vacío</p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {carrito.map((item, index) => (
+              <div key={index} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                background: item.itemNormalizado.es_promocion ? 'rgba(236, 72, 153, 0.1)' : (isMobile ? 'var(--panel-bg)' : 'rgba(255,255,255,0.02)'), 
+                padding: '12px', 
+                borderRadius: '8px',
+                border: item.itemNormalizado.es_promocion ? '1px solid rgba(236, 72, 153, 0.3)' : '1px solid var(--glass-border)'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <p style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px', color: item.itemNormalizado.es_promocion ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
+                    {item.itemNormalizado.nombre_mostrar}
+                  </p>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                    {item.cantidad} {item.itemNormalizado.unidad_medida} x ${(item.itemNormalizado.precio_unitario_calculado).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontWeight: 800, color: 'var(--success)' }}>
+                    ${item.subtotal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+                  </span>
+                  <button 
+                    onClick={() => removeFromCart(index)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop: 'auto', background: isMobile ? 'var(--bg-color)' : 'transparent' }}>
+        {/* CLIENTE INFO / BUTTON */}
+        <div style={{ marginBottom: '16px' }}>
+          {clienteAsignado ? (
+            <div style={{ padding: '12px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid #38bdf8', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '4px' }}>Cliente Asignado:</p>
+                <p style={{ fontWeight: 600 }}>{clienteAsignado.nombre}</p>
+              </div>
+              <button onClick={() => setClienteAsignado(null)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Remover Cliente">
+                <X size={20} />
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setIsClienteModalOpen(true)}
+              style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px dashed var(--glass-border)', borderRadius: '8px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+              className="hover-scale"
+            >
+              <UserPlus size={20} /> Asignar Cliente (Opcional)
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Total:</span>
+          <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--success)' }}>
+            ${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+          </span>
+        </div>
+        
+        <button
+          onClick={iniciarCobro}
+          className="btn btn-primary"
+          disabled={carrito.length === 0}
+          style={{ width: '100%', padding: '16px', fontSize: '1.2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+        >
+          <Banknote size={24} /> Cobrar
+        </button>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="animate-fade-in" style={{ paddingBottom: '40px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+    <div className="animate-fade-in" style={{ paddingBottom: isMobile && carrito.length > 0 ? '100px' : '40px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
       
       {/* COLUMNA IZQUIERDA: PRODUCTOS Y PROMOCIONES */}
-      <div style={{ flex: '1 1 60%' }}>
+      <div style={{ flex: isMobile ? '1 1 100%' : '1 1 60%' }}>
         <header style={{ marginBottom: '32px' }}>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Punto de Venta</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Seleccione promociones o productos para agregarlos al carrito</p>
@@ -342,98 +451,46 @@ export default function Market() {
         )}
       </div>
 
-      {/* COLUMNA DERECHA: CARRITO */}
-      <div style={{ flex: '0 0 350px', display: 'flex', flexDirection: 'column' }}>
-        <div className="glass-panel" style={{ padding: '24px', position: 'sticky', top: '24px', display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
-          <h2 style={{ fontSize: '1.5rem', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '16px' }}>
-            <ShoppingCart size={24} color="var(--accent-primary)" /> Carrito
-          </h2>
+      {/* COLUMNA DERECHA: CARRITO (SOLO DESKTOP) */}
+      {!isMobile && (
+        <div style={{ flex: '0 0 350px', display: 'flex', flexDirection: 'column' }}>
+          {renderCarritoUI()}
+        </div>
+      )}
 
-          <div style={{ flex: 1, overflowY: 'auto', marginBottom: '20px', paddingRight: '8px' }}>
-            {carrito.length === 0 ? (
-              <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '40px 0' }}>
-                <ShoppingCart size={48} style={{ opacity: 0.2, margin: '0 auto 16px auto' }} />
-                <p>El carrito está vacío</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {carrito.map((item, index) => (
-                  <div key={index} style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between', 
-                    background: item.itemNormalizado.es_promocion ? 'rgba(236, 72, 153, 0.1)' : 'rgba(255,255,255,0.02)', 
-                    padding: '12px', 
-                    borderRadius: '8px',
-                    border: item.itemNormalizado.es_promocion ? '1px solid rgba(236, 72, 153, 0.3)' : '1px solid rgba(255,255,255,0.05)'
-                  }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px', color: item.itemNormalizado.es_promocion ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
-                        {item.itemNormalizado.nombre_mostrar}
-                      </p>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                        {item.cantidad} {item.itemNormalizado.unidad_medida} x ${(item.itemNormalizado.precio_unitario_calculado).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
-                      </p>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontWeight: 800, color: 'var(--success)' }}>
-                        ${item.subtotal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
-                      </span>
-                      <button 
-                        onClick={() => removeFromCart(index)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px' }}
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+      {/* FLOATING BOTTOM BAR (SOLO MOBILE) */}
+      {isMobile && carrito.length > 0 && !isCartModalOpen && !isCheckoutOpen && !selectedProduct && !isClienteModalOpen && (
+        <div className="animate-fade-in" style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, 
+          background: 'var(--panel-bg)', padding: '16px 24px',
+          borderTop: '1px solid var(--glass-border)', boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 90
+        }}>
+          <div>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{carrito.length} ítems</span>
+            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--success)' }}>
+              ${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+            </div>
           </div>
+          <button onClick={() => setIsCartModalOpen(true)} className="btn btn-primary" style={{ padding: '12px 24px', borderRadius: '24px' }}>
+            <ShoppingCart size={20} /> Ver Carrito
+          </button>
+        </div>
+      )}
 
-          <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop: 'auto' }}>
-            {/* CLIENTE INFO / BUTTON */}
-            <div style={{ marginBottom: '16px' }}>
-              {clienteAsignado ? (
-                <div style={{ padding: '12px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid #38bdf8', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <p style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '4px' }}>Cliente Asignado:</p>
-                    <p style={{ fontWeight: 600 }}>{clienteAsignado.nombre}</p>
-                  </div>
-                  <button onClick={() => setClienteAsignado(null)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Remover Cliente">
-                    <X size={20} />
-                  </button>
-                </div>
-              ) : (
-                <button 
-                  onClick={() => setIsClienteModalOpen(true)}
-                  style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px dashed var(--glass-border)', borderRadius: '8px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
-                  className="hover-scale"
-                >
-                  <UserPlus size={20} /> Asignar Cliente (Opcional)
-                </button>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Total:</span>
-              <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--success)' }}>
-                ${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
-              </span>
-            </div>
-            
-            <button
-              onClick={iniciarCobro}
-              className="btn btn-primary"
-              disabled={carrito.length === 0}
-              style={{ width: '100%', padding: '16px', fontSize: '1.2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
-            >
-              <Banknote size={24} /> Cobrar
-            </button>
+      {/* MODAL CARRITO (SOLO MOBILE) */}
+      {isMobile && isCartModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end',
+          zIndex: 100, backdropFilter: 'blur(5px)'
+        }}>
+          <div className="animate-fade-in" style={{ width: '100%', background: 'var(--bg-color)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '24px' }}>
+             <button onClick={() => setIsCartModalOpen(false)} style={{ display: 'block', margin: '0 auto 16px', background: 'var(--text-secondary)', border: 'none', width: '40px', height: '6px', borderRadius: '4px', opacity: 0.5, cursor: 'pointer' }}></button>
+             {renderCarritoUI()}
           </div>
         </div>
-      </div>
+      )}
 
       {/* MODAL 1: AGREGAR CANTIDAD AL CARRITO */}
       {selectedProduct && (
@@ -494,7 +551,7 @@ export default function Market() {
                   Cancelar
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={!cantidadToAdd || Number(cantidadToAdd) <= 0} style={{ flex: 2, padding: '16px', fontSize: '1.1rem' }}>
-                  Añadir al Carrito
+                  Añadir
                 </button>
               </div>
             </form>
@@ -545,7 +602,7 @@ export default function Market() {
             {step === 'metodos' && (
               <div className="animate-fade-in">
                 <h3 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>Seleccione medio de pago:</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
                   <button onClick={() => seleccionarMetodo('efectivo')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', color: 'var(--success)' }}>
                     <Banknote size={32} />
                     <span style={{ fontWeight: 'bold' }}>Efectivo</span>
@@ -562,7 +619,7 @@ export default function Market() {
                     <CreditCard size={32} />
                     <span style={{ fontWeight: 'bold' }}>Tarjetas</span>
                   </button>
-                  <button onClick={() => seleccionarMetodo('transferencia')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid #a855f7', color: '#a855f7', gridColumn: 'span 2' }}>
+                  <button onClick={() => seleccionarMetodo('transferencia')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid #a855f7', color: '#a855f7', gridColumn: isMobile ? 'span 1' : 'span 2' }}>
                     <Building size={32} />
                     <span style={{ fontWeight: 'bold' }}>Transferencia Bancaria</span>
                   </button>
