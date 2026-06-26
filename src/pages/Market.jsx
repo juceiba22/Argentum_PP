@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2 } from 'lucide-react';
+import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2, Megaphone } from 'lucide-react';
 import { getInventario, updateMercaderia } from '../services/inventarioApi';
+import { getPromocionesActivas } from '../services/promocionesApi';
 import { registrarVentaDirecta } from '../services/pedidosApi';
+import { createCliente } from '../services/clientesApi';
+import { UserPlus } from 'lucide-react';
 
 export default function Market() {
   const [productos, setProductos] = useState([]);
+  const [promociones, setPromociones] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Estado del Carrito
@@ -22,25 +26,51 @@ export default function Market() {
   const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
 
-  const cargarProductos = async () => {
+  // Estados de Cliente
+  const [clienteAsignado, setClienteAsignado] = useState(null);
+  const [isClienteModalOpen, setIsClienteModalOpen] = useState(false);
+  const [clienteForm, setClienteForm] = useState({ nombre: '', apellido: '', telefono: '' });
+  const [creandoCliente, setCreandoCliente] = useState(false);
+
+  const cargarDatos = async () => {
     setLoading(true);
     try {
-      const data = await getInventario();
-      setProductos(data || []);
+      const [invData, promoData] = await Promise.all([
+        getInventario(),
+        getPromocionesActivas()
+      ]);
+      setProductos(invData || []);
+      setPromociones(promoData || []);
     } catch (error) {
-      console.error('Error al cargar productos:', error);
+      console.error('Error al cargar datos:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    cargarProductos();
+    cargarDatos();
   }, []);
 
-  const handleProductClick = (producto) => {
-    setSelectedProduct(producto);
-    setCantidadToAdd('');
+  const handleItemClick = (item, esPromocion = false) => {
+    const itemNormalizado = esPromocion ? {
+      ...item,
+      es_promocion: true,
+      id_original: item.producto_id,
+      nombre_mostrar: `PROMO: ${item.cantidad_kg}Kg ${item.nombre_producto}`,
+      unidad_medida: 'Kg',
+      precio_unitario_calculado: Number(item.precio_promocional) / Number(item.cantidad_kg)
+    } : {
+      ...item,
+      es_promocion: false,
+      id_original: item.id,
+      nombre_mostrar: item.nombre,
+      unidad_medida: item.unidad_medida,
+      precio_unitario_calculado: Number(item.precio_unitario)
+    };
+
+    setSelectedProduct(itemNormalizado);
+    setCantidadToAdd(esPromocion ? String(item.cantidad_kg) : '');
     setMensaje(null);
   };
 
@@ -54,17 +84,21 @@ export default function Market() {
     if (!cantidadToAdd || isNaN(cantidadToAdd) || Number(cantidadToAdd) <= 0) return;
     
     const cantidad = Number(cantidadToAdd);
-    const precio = Number(selectedProduct.precio_unitario);
+    const precio = selectedProduct.precio_unitario_calculado;
     const subtotal = cantidad * precio;
     
-    const existingIndex = carrito.findIndex(item => item.producto.id === selectedProduct.id);
+    const existingIndex = carrito.findIndex(item => 
+      item.itemNormalizado.id === selectedProduct.id && 
+      item.itemNormalizado.es_promocion === selectedProduct.es_promocion
+    );
+
     if (existingIndex >= 0) {
       const newCarrito = [...carrito];
       newCarrito[existingIndex].cantidad += cantidad;
       newCarrito[existingIndex].subtotal += subtotal;
       setCarrito(newCarrito);
     } else {
-      setCarrito([...carrito, { producto: selectedProduct, cantidad, subtotal }]);
+      setCarrito([...carrito, { itemNormalizado: selectedProduct, cantidad, subtotal }]);
     }
     
     handleCloseProductModal();
@@ -96,25 +130,57 @@ export default function Market() {
     setStep('confirmacion');
   };
 
+  const handleGuardarCliente = async (e) => {
+    e.preventDefault();
+    if (!clienteForm.nombre) return;
+    setCreandoCliente(true);
+    try {
+      const nuevoCliente = await createCliente({
+        nombre: `${clienteForm.nombre} ${clienteForm.apellido}`.trim(),
+        telefono: clienteForm.telefono,
+        email: ''
+      });
+      setClienteAsignado(nuevoCliente);
+      setIsClienteModalOpen(false);
+      setClienteForm({ nombre: '', apellido: '', telefono: '' });
+      if (carrito.length > 0) {
+        iniciarCobro();
+      }
+    } catch (error) {
+      console.error('Error al guardar cliente:', error);
+      alert('Error al registrar cliente');
+    } finally {
+      setCreandoCliente(false);
+    }
+  };
+
   const confirmarVenta = async () => {
     if (carrito.length === 0 || !metodoPago) return;
 
     setProcesando(true);
     try {
-      // 1. Actualizar el inventario restando la cantidad vendida de CADA producto
-      for (const item of carrito) {
-        // Find current stock to subtract correctly
-        const prodDb = productos.find(p => p.id === item.producto.id);
-        const stockActual = prodDb ? Number(prodDb.cantidad) : Number(item.producto.cantidad);
-        const nuevaCantidad = stockActual - item.cantidad;
-        
-        await updateMercaderia(item.producto.id, {
-          cantidad: nuevaCantidad
-        });
+      // 1. Actualizar el inventario restando la cantidad vendida
+      for (const cartItem of carrito) {
+        const prodDb = productos.find(p => p.id === cartItem.itemNormalizado.id_original);
+        if (prodDb) {
+          const stockActual = Number(prodDb.cantidad);
+          const nuevaCantidad = stockActual - cartItem.cantidad;
+          await updateMercaderia(prodDb.id, { cantidad: nuevaCantidad });
+        }
       }
 
-      // 2. Registrar la venta en auditoría con todos los items
-      await registrarVentaDirecta(totalCarrito, metodoPago, carrito);
+      // 2. Registrar la venta
+      const itemsParaVenta = carrito.map(c => ({
+        producto: { 
+           id: c.itemNormalizado.id_original, 
+           nombre: c.itemNormalizado.nombre_mostrar,
+           precio_unitario: c.itemNormalizado.precio_unitario_calculado
+        },
+        cantidad: c.cantidad,
+        subtotal: c.subtotal
+      }));
+
+      await registrarVentaDirecta(totalCarrito, metodoPago, itemsParaVenta, clienteAsignado ? clienteAsignado.id : null);
 
       const metodosLegibles = {
         'efectivo': 'Efectivo',
@@ -129,10 +195,10 @@ export default function Market() {
         text: `Venta cobrada con éxito por un total de $${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})} a través de ${metodosLegibles[metodoPago]}.` 
       });
       
-      // Limpiar carrito y cerrar modal
       setCarrito([]);
+      setClienteAsignado(null);
       handleCloseCheckout();
-      cargarProductos();
+      cargarDatos();
     } catch (error) {
       console.error('Error al confirmar venta:', error);
       setMensaje({ type: 'error', text: 'Ocurrió un error al procesar la venta.' });
@@ -144,11 +210,11 @@ export default function Market() {
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
       
-      {/* COLUMNA IZQUIERDA: PRODUCTOS */}
+      {/* COLUMNA IZQUIERDA: PRODUCTOS Y PROMOCIONES */}
       <div style={{ flex: '1 1 60%' }}>
         <header style={{ marginBottom: '32px' }}>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Punto de Venta</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Seleccione productos para agregarlos al carrito</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Seleccione promociones o productos para agregarlos al carrito</p>
         </header>
 
         {mensaje && (
@@ -170,60 +236,109 @@ export default function Market() {
 
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
-            Cargando productos...
+            Cargando catálogo...
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
-            {productos.map((producto) => (
-              <div
-                key={producto.id}
-                className="glass-panel hover-scale"
-                style={{
-                  padding: '20px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center',
-                  border: '1px solid var(--glass-border)',
-                  transition: 'all 0.2s ease-in-out'
-                }}
-                onClick={() => handleProductClick(producto)}
-              >
-                {producto.imagen_url ? (
-                  <img 
-                    src={producto.imagen_url} 
-                    alt={producto.nombre} 
-                    style={{
-                      width: '80px',
-                      height: '80px',
-                      objectFit: 'cover',
-                      borderRadius: '50%',
-                      marginBottom: '16px',
-                      border: '3px solid rgba(255,255,255,0.05)'
-                    }} 
-                  />
-                ) : (
-                  <div style={{
-                    background: 'rgba(255,255,255,0.05)',
-                    padding: '20px',
-                    borderRadius: '50%',
-                    marginBottom: '16px'
-                  }}>
-                    <Tag size={40} color="var(--accent-primary)" />
-                  </div>
-                )}
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '4px' }}>{producto.nombre}</h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px' }}>
-                  Stock: {Number(producto.cantidad).toLocaleString()} {producto.unidad_medida}
-                </p>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontWeight: 'bold', fontSize: '1.05rem' }}>
-                  <DollarSign size={16} />
-                  {Number(producto.precio_unitario).toLocaleString()} / {producto.unidad_medida}
+          <>
+            {/* SECCIÓN PROMOCIONES */}
+            {promociones.length > 0 && (
+              <div style={{ marginBottom: '40px' }}>
+                <h2 style={{ fontSize: '1.4rem', marginBottom: '16px', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '8px' }}>
+                  <Megaphone size={24} /> Promociones Destacadas
+                </h2>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' }}>
+                  {promociones.map((promo) => (
+                    <div
+                      key={promo.id}
+                      className="glass-panel hover-scale"
+                      style={{
+                        padding: '20px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        textAlign: 'center',
+                        border: '2px solid var(--accent-primary)',
+                        transition: 'all 0.2s ease-in-out',
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                      onClick={() => handleItemClick(promo, true)}
+                    >
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, background: 'var(--accent-primary)', color: 'white', padding: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                        ¡PROMO ESPECIAL!
+                      </div>
+                      
+                      {promo.imagen_url ? (
+                        <img 
+                          src={promo.imagen_url} 
+                          alt={promo.nombre_producto} 
+                          style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '50%', marginBottom: '16px', marginTop: '24px', border: '3px solid rgba(255,255,255,0.1)' }} 
+                        />
+                      ) : (
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '24px', borderRadius: '50%', marginBottom: '16px', marginTop: '24px' }}>
+                          <Tag size={40} color="var(--accent-primary)" />
+                        </div>
+                      )}
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '4px' }}>{promo.nombre_producto}</h3>
+                      <p style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '12px', fontWeight: 600, marginBottom: '8px' }}>
+                        {promo.cantidad_kg} Kg x ${Number(promo.precio_promocional).toLocaleString()}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontSize: '0.9rem' }}>
+                        Precio base: ${(Number(promo.precio_promocional) / Number(promo.cantidad_kg)).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} / Kg
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+
+            {/* SECCIÓN PRODUCTOS INDIVIDUALES */}
+            <div>
+              <h2 style={{ fontSize: '1.4rem', marginBottom: '16px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '8px' }}>
+                <Tag size={24} /> Productos Individuales
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
+                {productos.map((producto) => (
+                  <div
+                    key={producto.id}
+                    className="glass-panel hover-scale"
+                    style={{
+                      padding: '20px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      textAlign: 'center',
+                      border: '1px solid var(--glass-border)',
+                      transition: 'all 0.2s ease-in-out'
+                    }}
+                    onClick={() => handleItemClick(producto, false)}
+                  >
+                    {producto.imagen_url ? (
+                      <img 
+                        src={producto.imagen_url} 
+                        alt={producto.nombre} 
+                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '50%', marginBottom: '16px', border: '3px solid rgba(255,255,255,0.05)' }} 
+                      />
+                    ) : (
+                      <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '50%', marginBottom: '16px' }}>
+                        <Tag size={40} color="var(--text-secondary)" />
+                      </div>
+                    )}
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '4px' }}>{producto.nombre}</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px' }}>
+                      Stock: {Number(producto.cantidad).toLocaleString()} {producto.unidad_medida}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontWeight: 'bold', fontSize: '1.05rem' }}>
+                      <DollarSign size={16} />
+                      {Number(producto.precio_unitario).toLocaleString()} / {producto.unidad_medida}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
         )}
       </div>
 
@@ -247,19 +362,21 @@ export default function Market() {
                     display: 'flex', 
                     alignItems: 'center', 
                     justifyContent: 'space-between', 
-                    background: 'rgba(255,255,255,0.02)', 
+                    background: item.itemNormalizado.es_promocion ? 'rgba(236, 72, 153, 0.1)' : 'rgba(255,255,255,0.02)', 
                     padding: '12px', 
                     borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.05)'
+                    border: item.itemNormalizado.es_promocion ? '1px solid rgba(236, 72, 153, 0.3)' : '1px solid rgba(255,255,255,0.05)'
                   }}>
                     <div style={{ flex: 1 }}>
-                      <p style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px' }}>{item.producto.nombre}</p>
+                      <p style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px', color: item.itemNormalizado.es_promocion ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
+                        {item.itemNormalizado.nombre_mostrar}
+                      </p>
                       <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                        {item.cantidad} {item.producto.unidad_medida} x ${Number(item.producto.precio_unitario).toLocaleString()}
+                        {item.cantidad} {item.itemNormalizado.unidad_medida} x ${(item.itemNormalizado.precio_unitario_calculado).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
                       </p>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontWeight: 800, color: 'var(--accent-primary)' }}>
+                      <span style={{ fontWeight: 800, color: 'var(--success)' }}>
                         ${item.subtotal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
                       </span>
                       <button 
@@ -276,6 +393,29 @@ export default function Market() {
           </div>
 
           <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop: 'auto' }}>
+            {/* CLIENTE INFO / BUTTON */}
+            <div style={{ marginBottom: '16px' }}>
+              {clienteAsignado ? (
+                <div style={{ padding: '12px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid #38bdf8', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '4px' }}>Cliente Asignado:</p>
+                    <p style={{ fontWeight: 600 }}>{clienteAsignado.nombre}</p>
+                  </div>
+                  <button onClick={() => setClienteAsignado(null)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Remover Cliente">
+                    <X size={20} />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => setIsClienteModalOpen(true)}
+                  style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px dashed var(--glass-border)', borderRadius: '8px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+                  className="hover-scale"
+                >
+                  <UserPlus size={20} /> Asignar Cliente (Opcional)
+                </button>
+              )}
+            </div>
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
               <span style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Total:</span>
               <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--success)' }}>
@@ -316,29 +456,36 @@ export default function Market() {
             </button>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-              <ShoppingCart size={28} color="var(--accent-primary)" />
-              <h2 style={{ fontSize: '1.5rem' }}>{selectedProduct.nombre}</h2>
+              {selectedProduct.es_promocion ? <Megaphone size={28} color="var(--accent-primary)" /> : <ShoppingCart size={28} color="var(--accent-primary)" />}
+              <h2 style={{ fontSize: '1.4rem' }}>{selectedProduct.nombre_mostrar}</h2>
             </div>
 
             <form onSubmit={handleAddToCart}>
               <div className="input-group" style={{ marginBottom: '24px' }}>
-                <label className="input-label">Cantidad ({selectedProduct.unidad_medida})</label>
+                <label className="input-label">
+                  Peso real en balanza ({selectedProduct.unidad_medida})
+                </label>
                 <input
                   type="number"
-                  step="0.01"
-                  min="0.01"
+                  step="0.001"
+                  min="0.001"
                   className="input-field"
                   value={cantidadToAdd}
                   onChange={(e) => setCantidadToAdd(e.target.value)}
-                  placeholder="Ej: 2.5"
+                  placeholder="Ej: 3.150"
                   style={{ fontSize: '1.2rem', padding: '12px' }}
                   autoFocus
                 />
+                {selectedProduct.es_promocion && (
+                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '8px' }}>
+                     Precio promocional: ${(selectedProduct.precio_unitario_calculado).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} por {selectedProduct.unidad_medida}
+                   </p>
+                )}
               </div>
               <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Subtotal:</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Subtotal calculado:</span>
                 <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--success)' }}>
-                  ${(Number(cantidadToAdd || 0) * Number(selectedProduct.precio_unitario)).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+                  ${(Number(cantidadToAdd || 0) * selectedProduct.precio_unitario_calculado).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
                 </span>
               </div>
 
@@ -477,6 +624,76 @@ export default function Market() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: REGISTRAR CLIENTE */}
+      {isClienteModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          backdropFilter: 'blur(5px)'
+        }}>
+          <div className="glass-panel animate-fade-in" style={{ width: '90%', maxWidth: '400px', padding: '32px', position: 'relative' }}>
+            <button
+              onClick={() => setIsClienteModalOpen(false)}
+              style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+            >
+              <X size={24} />
+            </button>
+            
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <UserPlus size={28} color="var(--accent-primary)" />
+              <h2 style={{ fontSize: '1.5rem' }}>Registrar Cliente</h2>
+            </div>
+
+            <form onSubmit={handleGuardarCliente}>
+              <div className="input-group" style={{ marginBottom: '16px' }}>
+                <label className="input-label">Nombre</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={clienteForm.nombre}
+                  onChange={(e) => setClienteForm({...clienteForm, nombre: e.target.value})}
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="input-group" style={{ marginBottom: '16px' }}>
+                <label className="input-label">Apellido (Opcional)</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={clienteForm.apellido}
+                  onChange={(e) => setClienteForm({...clienteForm, apellido: e.target.value})}
+                />
+              </div>
+              <div className="input-group" style={{ marginBottom: '24px' }}>
+                <label className="input-label">WhatsApp / Teléfono (Opcional)</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={clienteForm.telefono}
+                  onChange={(e) => setClienteForm({...clienteForm, telefono: e.target.value})}
+                  placeholder="Ej: +54 9 11 1234-5678"
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <button type="button" onClick={() => setIsClienteModalOpen(false)} className="btn" style={{ flex: 1, padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={creandoCliente || !clienteForm.nombre} style={{ flex: 2, padding: '16px', fontSize: '1.1rem' }}>
+                  {creandoCliente ? 'Guardando...' : 'Guardar y Cobrar'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
