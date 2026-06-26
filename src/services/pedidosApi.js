@@ -95,7 +95,7 @@ export const updateCobroPedido = async (pedidoId, paymentData) => {
 };
 
 // 6. Registrar venta directa desde Market
-export const registrarVentaDirecta = async (total, medioPago) => {
+export const registrarVentaDirecta = async (total, medioPago, items = []) => {
   const { data, error } = await supabase
     .from('pedidos')
     .insert([{
@@ -108,6 +108,21 @@ export const registrarVentaDirecta = async (total, medioPago) => {
     .single();
 
   if (error) throw error;
+
+  if (items && items.length > 0) {
+    const itemsAInsertar = items.map(item => ({
+      pedido_id: data.id,
+      producto_nombre: item.producto.nombre,
+      cantidad: item.cantidad,
+      precio_unitario: item.producto.precio_unitario
+    }));
+    
+    const { error: itemsError } = await supabase
+      .from('items_pedido')
+      .insert(itemsAInsertar);
+      
+    if (itemsError) console.error("Error al guardar items del pedido:", itemsError);
+  }
 
   try {
     await registrarMovimiento({
