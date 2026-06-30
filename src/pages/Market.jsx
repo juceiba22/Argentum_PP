@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2, Megaphone, UserPlus } from 'lucide-react';
+import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2, Megaphone, UserPlus, Loader } from 'lucide-react';
 import { getInventario, updateMercaderia } from '../services/inventarioApi';
 import { getPromocionesActivas } from '../services/promocionesApi';
 import { registrarVentaDirecta } from '../services/pedidosApi';
 import { createCliente } from '../services/clientesApi';
+import { cobrarConPoint, getPaymentIntentStatus } from '../services/mercadoPagoApi';
 
 export default function Market() {
   const [productos, setProductos] = useState([]);
@@ -29,6 +30,10 @@ export default function Market() {
   const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState(null);
 
+  // MP Point Polling
+  const [mpStatus, setMpStatus] = useState(null);
+  const [pollingInterval, setPollingInterval] = useState(null);
+
   // Estados de Cliente
   const [clienteAsignado, setClienteAsignado] = useState(null);
   const [isClienteModalOpen, setIsClienteModalOpen] = useState(false);
@@ -41,6 +46,12 @@ export default function Market() {
     window.addEventListener('resize', checkResponsive);
     return () => window.removeEventListener('resize', checkResponsive);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) clearInterval(pollingInterval);
+    };
+  }, [pollingInterval]);
 
   const cargarDatos = async () => {
     setLoading(true);
@@ -125,16 +136,18 @@ export default function Market() {
 
   const iniciarCobro = () => {
     if (carrito.length === 0) return;
-    setIsCartModalOpen(false); // Cierra modal de carrito en mobile si está abierto
+    setIsCartModalOpen(false);
     setStep('metodos');
     setMetodoPago(null);
     setIsCheckoutOpen(true);
   };
 
   const handleCloseCheckout = () => {
+    if (pollingInterval) clearInterval(pollingInterval);
     setIsCheckoutOpen(false);
     setStep('metodos');
     setMetodoPago(null);
+    setMpStatus(null);
   };
 
   const seleccionarMetodo = (metodo) => {
@@ -163,6 +176,43 @@ export default function Market() {
       alert('Error al registrar cliente');
     } finally {
       setCreandoCliente(false);
+    }
+  };
+
+  const handleCobroMercadoPago = async () => {
+    setProcesando(true);
+    setMpStatus('waiting');
+    setMensaje(null);
+    try {
+      const pedidoIdTemp = `VTA-${Date.now()}`;
+      const intent = await cobrarConPoint(totalCarrito, pedidoIdTemp, '0');
+      
+      const pId = intent.id;
+
+      const interval = setInterval(async () => {
+        try {
+          const statusData = await getPaymentIntentStatus(pId);
+          const state = statusData.state;
+          if (state === 'FINISHED') {
+             clearInterval(interval);
+             setMpStatus('approved');
+             await confirmarVenta(); // Completa la venta real en Supabase
+          } else if (state === 'CANCELED' || state === 'ERROR') {
+             clearInterval(interval);
+             setProcesando(false);
+             setMpStatus(null);
+             setMensaje({ type: 'error', text: 'El cobro fue cancelado o rechazado en la terminal.' });
+          }
+        } catch (e) {
+          console.error("Error consultando estado:", e);
+        }
+      }, 3000);
+
+      setPollingInterval(interval);
+    } catch (error) {
+      setProcesando(false);
+      setMpStatus(null);
+      setMensaje({ type: 'error', text: 'Error al iniciar el cobro en el terminal físico. Revisa tus credenciales.' });
     }
   };
 
@@ -584,6 +634,7 @@ export default function Market() {
                 <button 
                   onClick={() => setStep('metodos')}
                   style={{ background: 'transparent', border: 'none', color: 'var(--accent-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                  disabled={mpStatus === 'waiting'} // Bloquear retroceso si está pagando
                 >
                   <ArrowLeft size={24} />
                 </button>
@@ -641,23 +692,28 @@ export default function Market() {
                   <div style={{ padding: '20px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
                     <Smartphone size={48} color="#38bdf8" style={{ margin: '0 auto 16px' }} />
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Mercado Pago Point</h3>
-                    <p style={{ color: 'var(--text-secondary)' }}>Haz clic para enviar el cobro de <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> al dispositivo físico.</p>
+                    {mpStatus === 'waiting' ? (
+                       <div style={{ padding: '16px 0' }}>
+                          <Loader className="spin" size={32} color="#38bdf8" style={{ margin: '0 auto 16px', animation: 'spin 2s linear infinite' }} />
+                          <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Esperando que el cliente pase la tarjeta o pague con QR en el dispositivo físico...</p>
+                       </div>
+                    ) : (
+                       <p style={{ color: 'var(--text-secondary)' }}>Haz clic para enviar el cobro de <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> al dispositivo físico.</p>
+                    )}
                   </div>
                 )}
                 {metodoPago === 'cuenta_dni' && (
                   <div style={{ padding: '20px', background: 'rgba(34, 197, 94, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
-                    <div style={{ width: '150px', height: '150px', background: 'white', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}>
-                      <QrCode size={120} color="#000" />
-                    </div>
-                    <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Código QR Cuenta DNI</h3>
-                    <p style={{ color: 'var(--text-secondary)' }}>Pide al cliente que escanee este código por <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong>.</p>
+                    <QrCode size={48} color="#22c55e" style={{ margin: '0 auto 16px' }} />
+                    <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Cuenta DNI</h3>
+                    <p style={{ color: 'var(--text-secondary)' }}>Pide al cliente que escanee el cartón físico en tu mostrador por <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> y luego presiona confirmar.</p>
                   </div>
                 )}
                 {metodoPago === 'tarjeta' && (
                   <div style={{ padding: '20px', background: 'rgba(249, 115, 22, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
                     <CreditCard size={48} color="#f97316" style={{ margin: '0 auto 16px' }} />
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Posnet Pawway</h3>
-                    <p style={{ color: 'var(--text-secondary)' }}>Haz clic para iniciar el cobro con tarjeta en el dispositivo Pawway.</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>Digita manualmente <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> en el dispositivo Pawway. Al aprobarse, presiona confirmar.</p>
                   </div>
                 )}
                 {metodoPago === 'transferencia' && (
@@ -665,20 +721,31 @@ export default function Market() {
                     <Building size={48} color="#a855f7" style={{ margin: '0 auto 16px' }} />
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Transferencia</h3>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '4px', fontFamily: 'monospace', margin: '16px 0', fontSize: '1.1rem' }}>
-                      Alias: CARNICERIA.ARGENTUM<br/>CBU: 0140000000000000000000
+                      CBU: Configurar oportunamente
                     </div>
-                    <p style={{ color: 'var(--text-secondary)' }}>Verifica la acreditación antes de confirmar.</p>
+                    <p style={{ color: 'var(--text-secondary)' }}>Verifica la acreditación en tu cuenta antes de confirmar.</p>
                   </div>
                 )}
 
-                <button
-                  onClick={confirmarVenta}
-                  className="btn btn-primary"
-                  disabled={procesando}
-                  style={{ width: '100%', padding: '16px', fontSize: '1.2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
-                >
-                  {procesando ? 'Procesando Venta...' : 'Confirmar Cobro'}
-                </button>
+                {metodoPago === 'mercado_pago' ? (
+                   <button
+                     onClick={handleCobroMercadoPago}
+                     className="btn btn-primary"
+                     disabled={procesando || mpStatus === 'waiting'}
+                     style={{ width: '100%', padding: '16px', fontSize: '1.2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+                   >
+                     {mpStatus === 'waiting' ? 'Esperando Aprobación...' : 'Enviar a Posnet'}
+                   </button>
+                ) : (
+                   <button
+                     onClick={confirmarVenta}
+                     className="btn btn-primary"
+                     disabled={procesando}
+                     style={{ width: '100%', padding: '16px', fontSize: '1.2rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+                   >
+                     {procesando ? 'Procesando Venta...' : 'Confirmar Cobro'}
+                   </button>
+                )}
               </div>
             )}
           </div>
@@ -754,6 +821,12 @@ export default function Market() {
           </div>
         </div>
       )}
+      
+      {/* Estilos para animación de carga de MP */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spin { animation: spin 2s linear infinite; }
+      `}} />
     </div>
   );
 }
