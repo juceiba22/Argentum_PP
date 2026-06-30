@@ -26,7 +26,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.includes(role)) {
-    return <Navigate to="/" replace />;
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', marginTop: '100px' }}>
+        <h2>Acceso Denegado</h2>
+        <p>No tienes los permisos necesarios para ver esta pantalla.</p>
+      </div>
+    );
   }
 
   return children;
@@ -34,10 +39,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 // Componente para manejar la redirección post-login
 const LoginRedirect = () => {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   
   if (user) {
-    return <Navigate to="/erp/dashboard-liquidez" replace />; // Admin por defecto
+    return <Navigate to="/market" replace />; // POS por defecto en vez de ERP
   }
   
   return <Login />;
