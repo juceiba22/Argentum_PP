@@ -27,3 +27,19 @@ export const cobrarConPoint = async (total, pedidoId, mesa) => {
     throw error;
   }
 };
+
+export const getPaymentIntentStatus = async (paymentIntentId) => {
+  try {
+    const response = await fetch(`/api/mercadopago/get-payment-intent?payment_intent_id=${paymentIntentId}`);
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'Fallo al consultar el estado del pago');
+    }
+
+    return data.intent;
+  } catch (error) {
+    console.error("Error al consultar status del pago en MP:", error);
+    throw error;
+  }
+};
