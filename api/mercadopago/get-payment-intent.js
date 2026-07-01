@@ -1,4 +1,4 @@
-import { MercadoPagoConfig, PaymentIntent } from 'mercadopago';
+import { MercadoPagoConfig, Order } from 'mercadopago';
 
 // Vercel Serverless Function para consultar el estado del Payment Intent
 export default async function handler(req, res) {
@@ -26,8 +26,8 @@ export default async function handler(req, res) {
   });
 
   try {
-    const paymentIntent = new PaymentIntent(client);
-    const intent = await paymentIntent.get({ payment_intent_id });
+    const order = new Order(client);
+    const intent = await order.get({ id: payment_intent_id });
 
     return res.status(200).json({
       success: true,

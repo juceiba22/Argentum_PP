@@ -1,4 +1,5 @@
-import { MercadoPagoConfig, PaymentIntent } from 'mercadopago';
+import { MercadoPagoConfig, Order } from 'mercadopago';
+import crypto from 'crypto';
 
 // Vercel Serverless Function
 export default async function handler(req, res) {
@@ -28,33 +29,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 2. Crear una instancia de PaymentIntent para Point
-    const paymentIntent = new PaymentIntent(client);
+    // 2. Crear una instancia de Order
+    const order = new Order(client);
 
     // 3. Obtener el ID del dispositivo (Point)
     // En un entorno real, puedes pasarlo desde el frontend o tenerlo fijo aquí.
     const DEVICE_ID = process.env.MP_POINT_DEVICE_ID || 'TU_DEVICE_ID';
 
-    // 4. Crear la intención de pago
-    // Nota: El SDK de MP para PaymentIntent en Point espera un payload específico
+    // 4. Crear la Orden
     const requestOptions = {
-      device_id: DEVICE_ID,
-      body: {
-        amount: Number(total),
-        description: `Venta de Carnicería - Pedido ${pedidoId}`,
-        payment: {
-          installments: 1,
-          type: "default", // Permite débito, crédito, QR y billetera
-        },
-        additional_info: {
-          external_reference: pedidoId,
-          print_on_terminal: true // Muestra comprobante
+      idempotencyKey: crypto.randomUUID()
+    };
+    
+    const body = {
+      type: "point",
+      external_reference: pedidoId,
+      transactions: {
+        payments: [{ amount: String(Number(total).toFixed(2)) }]
+      },
+      config: {
+        point: {
+          terminal_id: DEVICE_ID,
+          print_on_terminal: "no_ticket"
         }
-      }
+      },
+      description: `Venta de Carnicería - Pedido ${pedidoId}`
     };
 
     // Lanzar el intento al posnet
-    const response = await paymentIntent.create(requestOptions);
+    const response = await order.create({ body, requestOptions });
 
     // Retornamos el objeto al frontend
     return res.status(200).json({
@@ -63,7 +66,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error("Error al crear Payment Intent en MP Point:", error);
+    console.error("Error al crear Orden en MP Point:", error);
     return res.status(500).json({
       success: false,
       error: error.message || 'Error interno al comunicarse con Mercado Pago'

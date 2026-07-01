@@ -192,12 +192,12 @@ export default function Market() {
       const interval = setInterval(async () => {
         try {
           const statusData = await getPaymentIntentStatus(pId);
-          const state = statusData.state;
-          if (state === 'FINISHED') {
+          const status = statusData.status;
+          if (status === 'processed') {
              clearInterval(interval);
              setMpStatus('approved');
              await confirmarVenta(); // Completa la venta real en Supabase
-          } else if (state === 'CANCELED' || state === 'ERROR') {
+          } else if (status === 'canceled' || status === 'failed' || status === 'expired') {
              clearInterval(interval);
              setProcesando(false);
              setMpStatus(null);
