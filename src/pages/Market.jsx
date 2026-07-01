@@ -4,7 +4,7 @@ import { getInventario, updateMercaderia } from '../services/inventarioApi';
 import { getPromocionesActivas } from '../services/promocionesApi';
 import { registrarVentaDirecta } from '../services/pedidosApi';
 import { createCliente } from '../services/clientesApi';
-import { cobrarConPoint, getPaymentIntentStatus } from '../services/mercadoPagoApi';
+import { cobrarConPoint, getPaymentIntentStatus, cancelarPointPayment } from '../services/mercadoPagoApi';
 
 export default function Market() {
   const [productos, setProductos] = useState([]);
@@ -33,6 +33,7 @@ export default function Market() {
   // MP Point Polling
   const [mpStatus, setMpStatus] = useState(null);
   const [pollingInterval, setPollingInterval] = useState(null);
+  const [currentMpOrderId, setCurrentMpOrderId] = useState(null);
 
   // Estados de Cliente
   const [clienteAsignado, setClienteAsignado] = useState(null);
@@ -188,6 +189,7 @@ export default function Market() {
       const intent = await cobrarConPoint(totalCarrito, pedidoIdTemp, '0');
       
       const pId = intent.id;
+      setCurrentMpOrderId(pId);
 
       const interval = setInterval(async () => {
         try {
@@ -214,6 +216,21 @@ export default function Market() {
       setMpStatus(null);
       setMensaje({ type: 'error', text: 'Error al iniciar el cobro en el terminal físico. Revisa tus credenciales.' });
     }
+  };
+
+  const handleCancelarMercadoPago = async () => {
+    if (pollingInterval) clearInterval(pollingInterval);
+    setPollingInterval(null);
+    setMpStatus(null);
+    setProcesando(false);
+    
+    if (currentMpOrderId) {
+      // Intentamos cancelarlo en el posnet en segundo plano
+      cancelarPointPayment(currentMpOrderId).catch(console.error);
+      setCurrentMpOrderId(null);
+    }
+    
+    setMensaje({ type: 'success', text: 'Cobro en terminal cancelado.' });
   };
 
   const confirmarVenta = async () => {
@@ -695,7 +712,10 @@ export default function Market() {
                     {mpStatus === 'waiting' ? (
                        <div style={{ padding: '16px 0' }}>
                           <Loader className="spin" size={32} color="#38bdf8" style={{ margin: '0 auto 16px', animation: 'spin 2s linear infinite' }} />
-                          <p style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>Esperando que el cliente pase la tarjeta o pague con QR en el dispositivo físico...</p>
+                          <p style={{ color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '16px' }}>Esperando que el cliente pase la tarjeta o pague con QR en el dispositivo físico...</p>
+                          <button onClick={handleCancelarMercadoPago} className="btn" style={{ padding: '10px 20px', border: '1px solid var(--danger)', color: 'var(--danger)', background: 'transparent' }}>
+                            Cancelar Orden de Pago
+                          </button>
                        </div>
                     ) : (
                        <p style={{ color: 'var(--text-secondary)' }}>Haz clic para enviar el cobro de <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> al dispositivo físico.</p>

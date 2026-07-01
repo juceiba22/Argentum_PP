@@ -43,3 +43,20 @@ export const getPaymentIntentStatus = async (paymentIntentId) => {
     throw error;
   }
 };
+
+export const cancelarPointPayment = async (paymentIntentId) => {
+  try {
+    const response = await fetch('/api/mercadopago/cancel-point-payment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ payment_intent_id: paymentIntentId })
+    });
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error al cancelar en servicio mercadoPagoApi:", error);
+    throw error;
+  }
+};
