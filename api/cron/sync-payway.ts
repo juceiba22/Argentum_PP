@@ -1,4 +1,4 @@
-import { PaywaySftpService } from '../services/PaywaySftpService';
+import { PaywaySftpService } from '../services/PaywaySftpService.js';
 
 export default async function handler(req: any, res: any) {
   // Aseguramos que solo sea GET
