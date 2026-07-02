@@ -1,0 +1,6 @@
+ID,Fecha,Monto,Medio,Estado,Terminal
+PAYWAY-001,2026-07-02T10:00:00Z,"$ 1.234,56",Visa Credito,Aprobado,TERM01
+PAYWAY-002,2026-07-02T11:30:00Z,"1500,00",Mastercard Debito,Aprobado,TERM01
+PAYWAY-003,2026-07-02T12:15:00Z,"$ 10.000",Amex,Aprobado,TERM02
+PAYWAY-004,2026-07-02T13:45:00Z,"2,345.67",Visa Credito,Aprobado,TERM01
+PAYWAY-005,2026-07-02T14:20:00Z,"$ 500,50",Mastercard Credito,Rechazado,TERM02
