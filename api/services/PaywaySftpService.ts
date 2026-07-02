@@ -64,6 +64,8 @@ export class PaywaySftpService {
         port: parseInt(process.env.PAYWAY_SFTP_PORT || '22', 10),
         username: process.env.PAYWAY_SFTP_USER,
         password: process.env.PAYWAY_SFTP_PASS,
+        debug: (msg: string) => console.log('[SFTP DEBUG]', msg),
+        readyTimeout: 20000,
       };
 
       const remotePath = process.env.PAYWAY_SFTP_REMOTE_PATH;
