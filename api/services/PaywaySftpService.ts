@@ -66,7 +66,10 @@ export class PaywaySftpService {
         password: process.env.PAYWAY_SFTP_PASS,
       };
 
-      const remotePath = process.env.PAYWAY_SFTP_REMOTE_PATH || '/inbox/movimientos';
+      const remotePath = process.env.PAYWAY_SFTP_REMOTE_PATH;
+      if (!remotePath) {
+        throw new Error('PAYWAY_SFTP_REMOTE_PATH no está configurado en el entorno.');
+      }
 
       console.log('Conectando al SFTP de Payway...');
       await this.sftp.connect(config);
@@ -99,6 +102,10 @@ export class PaywaySftpService {
         delimiter: [',', ';'], // Soporta coma o punto y coma
         trim: true
       });
+
+      if (records.length > 0) {
+        console.log('AUDITORÍA - Cabeceras encontradas en el CSV de Payway:', Object.keys(records[0]));
+      }
 
       console.log(`Se encontraron ${records.length} registros en el CSV. Iniciando guardado...`);
 
