@@ -42,7 +42,7 @@ export default function Market() {
   const [creandoCliente, setCreandoCliente] = useState(false);
 
   useEffect(() => {
-    const checkResponsive = () => setIsMobile(window.innerWidth < 1024);
+    const checkResponsive = () => setIsMobile(window.innerWidth < 768);
     checkResponsive();
     window.addEventListener('resize', checkResponsive);
     return () => window.removeEventListener('resize', checkResponsive);
