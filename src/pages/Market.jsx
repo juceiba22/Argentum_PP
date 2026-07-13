@@ -42,7 +42,7 @@ export default function Market() {
   const [creandoCliente, setCreandoCliente] = useState(false);
 
   useEffect(() => {
-    const checkResponsive = () => setIsMobile(window.innerWidth < 768);
+    const checkResponsive = () => setIsMobile(window.innerWidth < 1024);
     checkResponsive();
     window.addEventListener('resize', checkResponsive);
     return () => window.removeEventListener('resize', checkResponsive);
@@ -525,22 +525,32 @@ export default function Market() {
         </div>
       )}
 
-      {/* FLOATING BOTTOM BAR (SOLO MOBILE) */}
+      {/* FLOATING CART WIDGET (MINIMIZED WINDOW) SOLO MOBILE/TABLET */}
       {isMobile && carrito.length > 0 && !isCartModalOpen && !isCheckoutOpen && !selectedProduct && !isClienteModalOpen && (
         <div className="animate-fade-in" style={{
-          position: 'fixed', bottom: 0, left: 0, right: 0, 
-          background: 'var(--panel-bg)', padding: '16px 24px',
-          borderTop: '1px solid var(--glass-border)', boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 90
+          position: 'fixed', bottom: '24px', right: '50%', transform: 'translateX(50%)',
+          background: 'rgba(30, 41, 59, 0.95)', padding: '12px 24px',
+          borderRadius: '32px', border: '1px solid var(--accent-primary)', 
+          boxShadow: '0 8px 32px rgba(236, 72, 153, 0.4)',
+          display: 'flex', gap: '24px', alignItems: 'center', zIndex: 90,
+          backdropFilter: 'blur(10px)',
+          width: '90%', maxWidth: '400px', justifyContent: 'space-between'
         }}>
-          <div>
-            <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{carrito.length} ítems</span>
-            <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--success)' }}>
-              ${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ background: 'var(--accent-primary)', color: 'white', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShoppingCart size={22} />
+            </div>
+            <div>
+              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'block', lineHeight: 1.2 }}>
+                Pedido en curso ({carrito.length})
+              </span>
+              <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--success)', lineHeight: 1.2 }}>
+                ${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}
+              </div>
             </div>
           </div>
-          <button onClick={() => setIsCartModalOpen(true)} className="btn btn-primary" style={{ padding: '12px 24px', borderRadius: '24px' }}>
-            <ShoppingCart size={20} /> Ver Carrito
+          <button onClick={() => setIsCartModalOpen(true)} className="btn btn-primary" style={{ padding: '10px 20px', borderRadius: '24px', fontSize: '1rem', whiteSpace: 'nowrap' }}>
+            Abrir
           </button>
         </div>
       )}
