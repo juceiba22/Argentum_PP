@@ -90,7 +90,7 @@ export default function PromocionesPublicas() {
       
     } catch (error) {
       console.error("Error al registrar pedido:", error);
-      alert("Hubo un error al procesar tu pedido. Por favor intentá de nuevo.");
+      alert("Hubo un error al procesar tu pedido: " + (error.message || JSON.stringify(error)));
     } finally {
       setProcesando(false);
     }
