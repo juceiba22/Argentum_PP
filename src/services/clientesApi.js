@@ -44,3 +44,14 @@ export const getPedidosByClienteId = async (clienteId) => {
   if (error) throw error;
   return data;
 };
+
+// Obtener todos los clientes
+export const getAllClientes = async () => {
+  const { data, error } = await supabase
+    .from('clientes')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+  return data;
+};
