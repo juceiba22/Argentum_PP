@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Search, ChevronDown, ChevronUp, Package, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { createCliente, getClienteById, getPedidosByClienteId } from '../services/clientesApi';
+import { Plus, Search, ChevronDown, ChevronUp, Package, AlertCircle, CheckCircle2, Users } from 'lucide-react';
+import { createCliente, getClienteById, getPedidosByClienteId, getAllClientes } from '../services/clientesApi';
 import { useActivity } from '../context/ActivityContext';
+import { useEffect } from 'react';
 
 export default function Clientes() {
   const { logCliente } = useActivity();
@@ -19,6 +20,26 @@ export default function Clientes() {
   const [errorBuscar, setErrorBuscar] = useState('');
   const [expandedRowId, setExpandedRowId] = useState(null);
 
+  // Listado de Todos los Clientes
+  const [listaClientes, setListaClientes] = useState([]);
+  const [cargandoLista, setCargandoLista] = useState(true);
+
+  const cargarTodos = async () => {
+    setCargandoLista(true);
+    try {
+      const data = await getAllClientes();
+      setListaClientes(data || []);
+    } catch (err) {
+      console.error("Error al cargar lista de clientes", err);
+    } finally {
+      setCargandoLista(false);
+    }
+  };
+
+  useEffect(() => {
+    cargarTodos();
+  }, []);
+
   // --- Handlers para Crear Cliente ---
   const handleCrearCliente = async (e) => {
     e.preventDefault();
@@ -31,6 +52,7 @@ export default function Clientes() {
       setClienteCreadoId(data.id);
       logCliente({ id: data.id, nombre: nuevoCliente.nombre, email: nuevoCliente.email });
       setNuevoCliente({ nombre: '', email: '', telefono: '' }); // Limpiar
+      cargarTodos(); // Refrescar lista
     } catch (err) {
       console.error(err);
       setErrorCrear(err.message || 'Error al crear el cliente.');
@@ -246,6 +268,61 @@ export default function Clientes() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* LISTADO COMPLETO DE CLIENTES */}
+      <div className="glass-panel" style={{ padding: '24px', marginTop: '24px' }}>
+        <h2 style={{ fontSize: '1.25rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Users size={20} color="var(--accent-primary)" /> Directorio de Clientes
+        </h2>
+        
+        {cargandoLista ? (
+          <p style={{ color: 'var(--text-secondary)' }}>Cargando directorio...</p>
+        ) : listaClientes.length === 0 ? (
+          <p style={{ color: 'var(--text-secondary)' }}>No hay clientes registrados en la base de datos.</p>
+        ) : (
+          <div className="table-responsive">
+            <table style={{ width: '100%', fontSize: '0.9rem', textAlign: 'left', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '16px', fontWeight: 600 }}>Nombre</th>
+                  <th style={{ padding: '16px', fontWeight: 600 }}>Email</th>
+                  <th style={{ padding: '16px', fontWeight: 600 }}>Teléfono</th>
+                  <th style={{ padding: '16px', fontWeight: 600 }}>UUID</th>
+                  <th style={{ padding: '16px', fontWeight: 600 }}>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {listaClientes.map(cliente => (
+                  <tr key={cliente.id} style={{ borderTop: '1px solid var(--glass-border)' }}>
+                    <td style={{ padding: '16px', fontWeight: 500 }}>{cliente.nombre}</td>
+                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{cliente.email}</td>
+                    <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{cliente.telefono || '-'}</td>
+                    <td style={{ padding: '16px' }}>
+                      <code className="code-dark" style={{ fontSize: '0.8rem', padding: '2px 6px', borderRadius: '4px' }}>
+                        {cliente.id.substring(0,8)}...
+                      </code>
+                    </td>
+                    <td style={{ padding: '16px' }}>
+                      <button 
+                        onClick={() => {
+                          setSearchId(cliente.id);
+                          // Simulamos el submit del form de busqueda
+                          handleBuscarCliente({ preventDefault: () => {} });
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }} 
+                        className="btn btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '0.8rem' }}
+                      >
+                        Ver Detalles
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
