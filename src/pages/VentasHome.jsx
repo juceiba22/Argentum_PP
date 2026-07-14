@@ -11,6 +11,9 @@ export default function VentasHome() {
   const [caja, setCaja] = useState(null);
   const [loading, setLoading] = useState(true);
   const [procesando, setProcesando] = useState(false);
+  
+  const [confirmAbrirCaja, setConfirmAbrirCaja] = useState(false);
+  const [confirmCerrarCaja, setConfirmCerrarCaja] = useState(false);
 
   const cargarCaja = async () => {
     if (!user) return;
@@ -30,11 +33,11 @@ export default function VentasHome() {
   }, [user]);
 
   const handleAbrirCaja = async () => {
-    if (!window.confirm('¿Deseas abrir la caja para iniciar la jornada de ventas?')) return;
     setProcesando(true);
     try {
       const nuevaCaja = await abrirCaja(user.email, 0);
       setCaja(nuevaCaja);
+      setConfirmAbrirCaja(false);
     } catch (error) {
       alert('Error al abrir la caja: ' + error.message);
     } finally {
@@ -43,11 +46,11 @@ export default function VentasHome() {
   };
 
   const handleCerrarCaja = async () => {
-    if (!window.confirm('¿Estás seguro que deseas CERRAR la caja? No podrás registrar más ventas hasta abrirla de nuevo.')) return;
     setProcesando(true);
     try {
       await cerrarCaja(caja.id);
       setCaja(null);
+      setConfirmCerrarCaja(false);
     } catch (error) {
       alert('Error al cerrar la caja: ' + error.message);
     } finally {
@@ -105,27 +108,75 @@ export default function VentasHome() {
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
           {!caja ? (
             <button 
-              onClick={handleAbrirCaja}
-              disabled={procesando}
+              onClick={() => setConfirmAbrirCaja(true)}
               className="btn hover-scale"
               style={{ background: 'rgba(16, 185, 129, 0.1)', border: '2px solid var(--success)', color: 'var(--success)', padding: '20px 40px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 'bold' }}
             >
               <LockOpen size={24} />
-              {procesando ? 'Procesando...' : 'ABRIR CAJA'}
+              ABRIR CAJA
             </button>
           ) : (
             <button 
-              onClick={handleCerrarCaja}
-              disabled={procesando}
+              onClick={() => setConfirmCerrarCaja(true)}
               className="btn hover-scale"
               style={{ background: 'rgba(239, 68, 68, 0.1)', border: '2px solid var(--danger)', color: 'var(--danger)', padding: '20px 40px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 'bold' }}
             >
               <Lock size={24} />
-              {procesando ? 'Procesando...' : 'CERRAR CAJA'}
+              CERRAR CAJA
             </button>
           )}
         </div>
       </div>
+
+      {/* MODAL CONFIRMAR ABRIR CAJA */}
+      {confirmAbrirCaja && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)'
+        }}>
+          <div className="glass-panel animate-fade-in" style={{ width: '90%', maxWidth: '400px', padding: '32px', textAlign: 'center' }}>
+            <LockOpen size={48} color="var(--success)" style={{ margin: '0 auto 16px' }} />
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>Abrir Caja</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+              ¿Deseas abrir la caja para iniciar la jornada de ventas?
+            </p>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <button onClick={() => setConfirmAbrirCaja(false)} className="btn" style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+                Cancelar
+              </button>
+              <button onClick={handleAbrirCaja} disabled={procesando} className="btn" style={{ flex: 1, padding: '12px', background: 'var(--success)', color: 'white', border: 'none' }}>
+                {procesando ? 'Abriendo...' : 'Sí, Abrir Caja'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMAR CERRAR CAJA */}
+      {confirmCerrarCaja && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)'
+        }}>
+          <div className="glass-panel animate-fade-in" style={{ width: '90%', maxWidth: '400px', padding: '32px', textAlign: 'center' }}>
+            <Lock size={48} color="var(--danger)" style={{ margin: '0 auto 16px' }} />
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>Cerrar Caja</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+              ¿Estás seguro que deseas CERRAR la caja? No podrás registrar más ventas hasta abrirla de nuevo.
+            </p>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <button onClick={() => setConfirmCerrarCaja(false)} className="btn" style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+                Cancelar
+              </button>
+              <button onClick={handleCerrarCaja} disabled={procesando} className="btn" style={{ flex: 1, padding: '12px', background: 'var(--danger)', color: 'white', border: 'none' }}>
+                {procesando ? 'Cerrando...' : 'Sí, Cerrar Caja'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
