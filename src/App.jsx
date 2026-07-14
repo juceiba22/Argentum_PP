@@ -13,6 +13,7 @@ import Gastos from './pages/Gastos';
 import CalculadoraCostos from './pages/CalculadoraCostos';
 import DashboardProveedores from './pages/DashboardProveedores';
 import DashboardLiquidez from './pages/DashboardLiquidez';
+import VentasHome from './pages/VentasHome';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -39,10 +40,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 // Componente para manejar la redirección post-login
 const LoginRedirect = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   
   if (user) {
-    return <Navigate to="/market" replace />; // POS por defecto en vez de ERP
+    if (role === 'ventas') {
+      return <Navigate to="/ventas-home" replace />;
+    }
+    return <Navigate to="/market" replace />; // POS por defecto para admin
   }
   
   return <Login />;
@@ -64,7 +68,8 @@ function App() {
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
-              <Route path="/market" element={<ProtectedRoute allowedRoles={['admin']}><Market /></ProtectedRoute>} />
+              <Route path="/market" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><Market /></ProtectedRoute>} />
+              <Route path="/ventas-home" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><VentasHome /></ProtectedRoute>} />
               <Route path="/gestion-promociones" element={<ProtectedRoute allowedRoles={['admin']}><GestionPromociones /></ProtectedRoute>} />
               {/* ERP Rutas */}
               <Route path="/erp/proveedores" element={<ProtectedRoute allowedRoles={['admin']}><Proveedores /></ProtectedRoute>} />

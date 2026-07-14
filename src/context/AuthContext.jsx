@@ -9,17 +9,23 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const resolveRole = (sessionUser) => {
+      if (!sessionUser) return null;
+      if (sessionUser.email === 'ventas@argentum.com') return 'ventas';
+      return sessionUser.user_metadata?.role || 'admin';
+    };
+
     // Inicializar sesión
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user || null);
-      setRole(session?.user?.user_metadata?.role || 'admin'); // Default admin si no hay rol
+      setRole(resolveRole(session?.user));
       setLoading(false);
     });
 
     // Escuchar cambios de estado
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
-      setRole(session?.user?.user_metadata?.role || 'admin');
+      setRole(resolveRole(session?.user));
     });
 
     return () => subscription.unsubscribe();

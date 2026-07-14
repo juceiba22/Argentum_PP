@@ -20,6 +20,7 @@ export default function Layout() {
   const { role } = useAuth();
 
   const navItems = [
+    { path: '/ventas-home', label: 'Inicio de Ventas', icon: <Store size={20} />, allowed: ['ventas'] },
     { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
     { path: '/market', label: 'Mercado', icon: <Store size={20} />, allowed: ['admin'] },
     { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
