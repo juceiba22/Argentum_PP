@@ -140,3 +140,36 @@ export const registrarVentaDirecta = async (total, medioPago, items = [], client
 
   return data;
 };
+
+// 7. Registrar pedido web público
+export const registrarPedidoWeb = async (total, items, datosEntrega) => {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .insert([{
+      estado: 'Pendiente',
+      total: total,
+      medio_pago: 'A convenir',
+      notas: `WEB - ${datosEntrega.metodo} ${datosEntrega.direccion ? '- ' + datosEntrega.direccion : ''}`,
+    }])
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  if (items && items.length > 0) {
+    const itemsAInsertar = items.map(item => ({
+      pedido_id: data.id,
+      producto_nombre: item.nombre_producto,
+      cantidad: item.cantidad_carrito,
+      precio_unitario: item.precio_promocional
+    }));
+    
+    const { error: itemsError } = await supabase
+      .from('items_pedido')
+      .insert(itemsAInsertar);
+      
+    if (itemsError) console.error("Error al guardar items del pedido web:", itemsError);
+  }
+
+  return data;
+};
