@@ -102,7 +102,7 @@ export default function PromocionesPublicas() {
         
         <header style={{ textAlign: 'center', marginBottom: '48px' }}>
           <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '16px', background: 'linear-gradient(to right, #f87171, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Carnicería Argentum
+            Lo de Cacho Carnes
           </h1>
           <p style={{ fontSize: '1.2rem', color: '#94a3b8' }}>Las mejores ofertas en cortes seleccionados para vos.</p>
         </header>
