@@ -146,6 +146,7 @@ export const registrarPedidoWeb = async (total, items, datosEntrega) => {
   const { data, error } = await supabase
     .from('pedidos')
     .insert([{
+      mesa: 0, // 0 = Pedido Web
       estado: 'Pendiente',
       total: total,
       medio_pago: 'A convenir',
@@ -154,7 +155,10 @@ export const registrarPedidoWeb = async (total, items, datosEntrega) => {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error al insertar pedido web:", error);
+    throw error;
+  }
 
   if (items && items.length > 0) {
     const itemsAInsertar = items.map(item => ({
