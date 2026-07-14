@@ -14,7 +14,7 @@ export default function PromocionesPublicas() {
   const [datosEntrega, setDatosEntrega] = useState({ metodo: 'retiro', direccion: '' });
   const [procesando, setProcesando] = useState(false);
 
-  const WHATSAPP_NUMBER = "5491167977335";
+  const WHATSAPP_NUMBER = "5491125675158";
 
   useEffect(() => {
     const fetchPromos = async () => {
