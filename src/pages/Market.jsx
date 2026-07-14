@@ -5,6 +5,9 @@ import { getPromocionesActivas } from '../services/promocionesApi';
 import { registrarVentaDirecta } from '../services/pedidosApi';
 import { createCliente } from '../services/clientesApi';
 import { cobrarConPoint, getPaymentIntentStatus, cancelarPointPayment } from '../services/mercadoPagoApi';
+import { getCajaAbierta, abrirCaja } from '../services/cajasApi';
+import { useAuth } from '../context/AuthContext';
+import { useLocation } from 'react-router-dom';
 
 export default function Market() {
   const [productos, setProductos] = useState([]);
@@ -41,6 +44,17 @@ export default function Market() {
   const [clienteForm, setClienteForm] = useState({ nombre: '', apellido: '', telefono: '' });
   const [creandoCliente, setCreandoCliente] = useState(false);
 
+  // Estados de Caja y Ruteo
+  const { user } = useAuth();
+  const location = useLocation();
+  const [cajaAbierta, setCajaAbierta] = useState(true); // Asumimos abierta hasta chequear para evitar bloqueos falsos
+  const [isAbrirCajaModalOpen, setIsAbrirCajaModalOpen] = useState(false);
+  const [abriendoCaja, setAbriendoCaja] = useState(false);
+
+  // Refs para Scroll
+  const promocionesRef = React.useRef(null);
+  const productosRef = React.useRef(null);
+
   useEffect(() => {
     const checkResponsive = () => setIsMobile(window.innerWidth < 1024);
     checkResponsive();
@@ -63,6 +77,11 @@ export default function Market() {
       ]);
       setProductos(invData || []);
       setPromociones(promoData || []);
+      
+      if (user) {
+        const caja = await getCajaAbierta(user.email);
+        setCajaAbierta(!!caja);
+      }
     } catch (error) {
       console.error('Error al cargar datos:', error);
     } finally {
@@ -72,7 +91,32 @@ export default function Market() {
 
   useEffect(() => {
     cargarDatos();
-  }, []);
+  }, [user]);
+
+  useEffect(() => {
+    if (!loading) {
+      const params = new URLSearchParams(location.search);
+      const view = params.get('view');
+      if (view === 'promociones' && promocionesRef.current) {
+        promocionesRef.current.scrollIntoView({ behavior: 'smooth' });
+      } else if (view === 'productos' && productosRef.current) {
+        productosRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [loading, location.search]);
+
+  const handleQuickAbrirCaja = async () => {
+    setAbriendoCaja(true);
+    try {
+      await abrirCaja(user.email, 0);
+      setCajaAbierta(true);
+      setIsAbrirCajaModalOpen(false);
+    } catch (error) {
+      alert('Error al abrir la caja: ' + error.message);
+    } finally {
+      setAbriendoCaja(false);
+    }
+  };
 
   const handleItemClick = (item, esPromocion = false) => {
     const itemNormalizado = esPromocion ? {
@@ -137,6 +181,10 @@ export default function Market() {
 
   const iniciarCobro = () => {
     if (carrito.length === 0) return;
+    if (!cajaAbierta) {
+      setIsAbrirCajaModalOpen(true);
+      return;
+    }
     setIsCartModalOpen(false);
     setStep('metodos');
     setMetodoPago(null);
@@ -418,7 +466,7 @@ export default function Market() {
           <>
             {/* SECCIÓN PROMOCIONES */}
             {promociones.length > 0 && (
-              <div style={{ marginBottom: '40px' }}>
+              <div style={{ marginBottom: '40px' }} ref={promocionesRef}>
                 <h2 style={{ fontSize: '1.4rem', marginBottom: '16px', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '8px' }}>
                   <Megaphone size={24} /> Promociones Destacadas
                 </h2>
@@ -470,7 +518,7 @@ export default function Market() {
             )}
 
             {/* SECCIÓN PRODUCTOS INDIVIDUALES */}
-            <div>
+            <div ref={productosRef}>
               <h2 style={{ fontSize: '1.4rem', marginBottom: '16px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '8px' }}>
                 <Tag size={24} /> Productos Individuales
               </h2>
@@ -848,6 +896,34 @@ export default function Market() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      
+      {/* MODAL 4: ABRIR CAJA RAPIDO */}
+      {isAbrirCajaModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)'
+        }}>
+          <div className="glass-panel animate-fade-in" style={{ width: '90%', maxWidth: '400px', padding: '32px', textAlign: 'center', position: 'relative' }}>
+            <button onClick={() => setIsAbrirCajaModalOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <X size={24} />
+            </button>
+            <Activity size={48} color="var(--danger)" style={{ margin: '0 auto 16px' }} />
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '16px' }}>Caja Cerrada</h2>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>
+              No puedes procesar pagos porque no has abierto tu caja de ventas. ¿Deseas abrirla ahora?
+            </p>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              <button onClick={() => setIsAbrirCajaModalOpen(false)} className="btn" style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+                Cancelar
+              </button>
+              <button onClick={handleQuickAbrirCaja} disabled={abriendoCaja} className="btn btn-primary" style={{ flex: 1, padding: '12px' }}>
+                {abriendoCaja ? 'Abriendo...' : 'Abrir Caja'}
+              </button>
+            </div>
           </div>
         </div>
       )}
