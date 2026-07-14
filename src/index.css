@@ -99,7 +99,33 @@ h1, h2, h3, h4, h5, h6, .brand-title {
   border-right: 1px solid var(--glass-border);
   box-shadow: 2px 0 15px rgba(0,0,0,0.02);
   display: flex; flex-direction: column; padding: 32px 0; z-index: 100;
-  transition: transform 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
+  position: relative;
+}
+
+.sidebar.collapsed { width: 70px; padding: 16px 0; }
+.sidebar.collapsed .brand-title { display: none; }
+.sidebar.collapsed .brand-subtitle { display: none; }
+.sidebar.collapsed .sidebar-header { padding: 0; margin-bottom: 24px; }
+.sidebar.collapsed .sidebar-link { justify-content: center; padding: 14px 0; }
+.sidebar.collapsed .sidebar-link span:not(.link-icon) { display: none; }
+.sidebar.collapsed .sidebar-link .link-icon { margin-right: 0 !important; }
+.sidebar.collapsed .sidebar-footer { padding: 0 8px; }
+
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 32px;
+  right: -14px;
+  width: 28px;
+  height: 28px;
+  background: var(--panel-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  z-index: 101;
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .brand-title {
