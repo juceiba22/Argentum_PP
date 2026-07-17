@@ -33,8 +33,8 @@ export default function Facturacion() {
 
   // Estados del modal de emisión
   const [selectedPedido, setSelectedPedido] = useState(null);
-  const [tipoFactura, setTipoFactura] = useState('B'); // A o B
-  const [alicuota, setAlicuota] = useState(21); // 21 o 10.5
+  const [tipoFactura, setTipoFactura] = useState('C');
+  const [alicuota, setAlicuota] = useState(0);
   const [fechaCbte, setFechaCbte] = useState(new Date().toISOString().split('T')[0]);
   const [selectedCliente, setSelectedCliente] = useState(null);
   const [showNuevoCliente, setShowNuevoCliente] = useState(false);
@@ -94,8 +94,8 @@ export default function Facturacion() {
 
   const handleOpenEmision = (pedido) => {
     setSelectedPedido(pedido);
-    setTipoFactura(pedido.clientes?.condicion_iva === 'RI' ? 'A' : 'B');
-    setAlicuota(21);
+    setTipoFactura('C');
+    setAlicuota(0);
     setFechaCbte(new Date().toISOString().split('T')[0]);
     setSelectedCliente(pedido.clientes || null);
     setErrorEmision('');
@@ -156,15 +156,15 @@ export default function Facturacion() {
 
     const payload = {
       pedidoId: selectedPedido.id,
-      tipoCbte: tipoFactura === 'A' ? 1 : 6,
+      tipoCbte: 11,
       condicionIVAReceptor,
       docTipo,
       docNro,
       importeTotal: selectedPedido.total,
       concepto: 1, // Productos
-      descripcion: `Venta Mostrador - Pedido #${selectedPedido.id.substring(0, 8)}`,
+      descripcion: `Venta POS - Factura C - Pedido #${selectedPedido.id.substring(0, 8)}`,
       fechaCbte,
-      alicuotaIVA: alicuota === 21 ? 5 : 4 // 5 = 21%, 4 = 10.5% en AFIP
+      alicuotaIVA: 3 // IVA_0
     };
 
     try {
@@ -192,18 +192,8 @@ export default function Facturacion() {
     }
   };
 
-  const getDesglose = (total, tipo, ali) => {
-    if (tipo === 'B') {
-      const factor = 1 + ali / 100;
-      const neto = +(total / factor).toFixed(2);
-      const iva = +(total - neto).toFixed(2);
-      return { neto, iva, total };
-    } else {
-      const neto = total;
-      const iva = +(total * (ali / 100)).toFixed(2);
-      const finalTotal = +(neto + iva).toFixed(2);
-      return { neto, iva, total: finalTotal };
-    }
+  const getDesglose = (total) => {
+    return { neto: total, iva: 0, total: total };
   };
 
   // Filtrado de pedidos
@@ -443,7 +433,7 @@ export default function Facturacion() {
                           onClick={() => {
                             // Mapear campos de pedido a la estructura del PDF
                             const facturaData = {
-                              tipo_cbte: pedido.voucher_type === 'FA' ? 1 : 6,
+                              tipo_cbte: 11,
                               nro_cbte: parseInt(pedido.voucher_number.split('-')[1], 10),
                               punto_venta: parseInt(pedido.voucher_number.split('-')[0], 10),
                               fecha_cbte: (pedido.fecha_cobro || pedido.created_at).split('T')[0],
@@ -510,31 +500,9 @@ export default function Facturacion() {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label">Tipo Factura</label>
-                <select 
-                  className="input-field" 
-                  value={tipoFactura}
-                  onChange={e => setTipoFactura(e.target.value)}
-                  disabled={selectedCliente?.condicion_iva === 'RI'} // Fuerza Factura A si es RI
-                >
-                  <option value="B">Factura B</option>
-                  <option value="A">Factura A</option>
-                </select>
-              </div>
-
-              <div className="input-group" style={{ marginBottom: 0 }}>
-                <label className="input-label">Alícuota IVA</label>
-                <select 
-                  className="input-field"
-                  value={alicuota}
-                  onChange={e => setAlicuota(Number(e.target.value))}
-                >
-                  <option value={21}>21%</option>
-                  <option value={10.5}>10.5%</option>
-                </select>
-              </div>
+            <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(74, 124, 89, 0.1)', borderRadius: '4px', border: '1px solid rgba(74, 124, 89, 0.3)' }}>
+              <strong style={{ color: 'var(--success)' }}>Régimen Simplificado (Monotributo)</strong>
+              <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem' }}>Se emitirá una <b>Factura C</b> sin discriminación de IVA.</p>
             </div>
 
             <div className="input-group" style={{ marginBottom: '16px' }}>
@@ -688,7 +656,7 @@ export default function Facturacion() {
 
             {/* Desglose de Importes */}
             {(() => {
-              const { neto, iva, total } = getDesglose(selectedPedido.total, tipoFactura, alicuota);
+              const { neto, iva, total } = getDesglose(selectedPedido.total);
               return (
                 <div style={{
                   backgroundColor: 'rgba(197, 160, 89, 0.05)', border: '1px solid var(--accent-primary)',
@@ -717,14 +685,14 @@ export default function Facturacion() {
               <button 
                 className="btn btn-primary" 
                 style={{ flex: 2 }}
-                disabled={procesandoEmision || (tipoFactura === 'A' && (!selectedCliente || selectedCliente.condicion_iva !== 'RI'))}
+                disabled={procesandoEmision}
                 onClick={emitirFacturaARCA}
               >
                 {procesandoEmision ? (
                   <>
                     <Loader2 className="animate-spin" size={16} /> Emitiendo...
                   </>
-                ) : 'Emitir Factura Electrónica'}
+                ) : 'Emitir Factura C'}
               </button>
               <button 
                 className="btn btn-secondary" 
@@ -735,12 +703,6 @@ export default function Facturacion() {
                 Cancelar
               </button>
             </div>
-            
-            {tipoFactura === 'A' && (!selectedCliente || selectedCliente.condicion_iva !== 'RI') && (
-              <p style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: '8px', textAlign: 'center' }}>
-                * Factura A requiere seleccionar un cliente Responsable Inscripto con CUIT.
-              </p>
-            )}
           </div>
         </div>
       )}

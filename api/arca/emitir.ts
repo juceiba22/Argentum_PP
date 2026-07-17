@@ -23,16 +23,18 @@ export default async function handler(req: any, res: any) {
   const payload: EmitirFacturaPayload = req.body;
   const {
     pedidoId,
-    tipoCbte,
-    condicionIVAReceptor,
     docTipo,
     docNro,
     importeTotal,
     concepto = 1,
-    descripcion,
     fechaCbte,
-    alicuotaIVA = ALICUOTA_IVA.IVA_21
   } = payload;
+
+  // Forzar tipo de comprobante a Factura C (Código AFIP 11)
+  const tipoCbte = 11;
+  const condicionIVAReceptor = payload.condicionIVAReceptor || 5; // Por defecto Consumidor Final (Código 5)
+  const descripcion = payload.descripcion || "Venta POS - Factura C";
+  const alicuotaIVA = 3; // IVA_0
 
   if (!pedidoId) {
     return res.status(400).json({ success: false, error: 'El campo pedidoId es obligatorio.' });
@@ -48,8 +50,9 @@ export default async function handler(req: any, res: any) {
       const fechaStr = fechaCbte ?? new Date().toISOString().split('T')[0];
       const fechaARCA = parseInt(fechaStr.replace(/-/g, ''), 10);
 
-      // Calcular desglose IVA
-      const { impNeto, impIVA } = calcularDesgloseIVA(importeTotal, tipoCbte, alicuotaIVA);
+      // La Factura C no tiene IVA, el neto es exactamente el total
+      const impNeto = importeTotal;
+      const impIVA = 0;
 
       const afip = getAfipClient();
 
@@ -70,19 +73,8 @@ export default async function handler(req: any, res: any) {
             }
           : {};
 
-      // Array de alícuotas IVA (requerido para Factura A y B si hay IVA)
-      const ivaArray =
-        (tipoCbte === TIPO_COMPROBANTE.FACTURA_A || tipoCbte === TIPO_COMPROBANTE.FACTURA_B) && impIVA > 0
-          ? {
-              Iva: [
-                {
-                  Id: alicuotaIVA,
-                  BaseImp: impNeto,
-                  Importe: impIVA,
-                },
-              ],
-            }
-          : {};
+      // La Factura C no discrimina IVA y no debe enviar el desglose de alícuotas
+      const ivaArray = {};
 
       const voucherData = {
         CantReg: 1,
@@ -155,8 +147,8 @@ export default async function handler(req: any, res: any) {
       const pvStr = PTO_VTA.toString().padStart(4, '0');
       const nroStr = (result.nroCbte ?? 0).toString().padStart(8, '0');
       const formattedVoucherNumber = `${pvStr}-${nroStr}`;
-      const voucherTypeString = result.tipoCbte === TIPO_COMPROBANTE.FACTURA_A ? 'FA' : 'FB';
-      const alicuotaVal = ALICUOTA_PORCENTAJE[alicuotaIVA];
+      const voucherTypeString = 'FC';
+      const alicuotaVal = 0;
 
       const { data, error } = await supabase
         .from('pedidos')
