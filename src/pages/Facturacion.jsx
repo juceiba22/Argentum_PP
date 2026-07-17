@@ -25,6 +25,7 @@ export default function Facturacion() {
   const [pedidos, setPedidos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorCarga, setErrorCarga] = useState(null); // Nuevo estado de error
   const [search, setSearch] = useState('');
   const [filterFiscal, setFilterFiscal] = useState('ALL'); // ALL, PENDING, FISCAL
   const [dateFrom, setDateFrom] = useState('');
@@ -74,12 +75,14 @@ export default function Facturacion() {
       if (errorPedidos) throw errorPedidos;
 
       setPedidos(pedidosData || []);
+      setErrorCarga(null);
 
       // Obtener clientes
       const cls = await getAllClientes();
       setClientes(cls || []);
     } catch (err) {
       console.error("Error al cargar datos de facturación:", err);
+      setErrorCarga(err.message || JSON.stringify(err));
     } finally {
       setLoading(false);
     }
@@ -245,6 +248,19 @@ export default function Facturacion() {
           <p style={{ color: 'var(--text-secondary)' }}>Administra las ventas realizadas en Market y emite facturas A y B con validez fiscal.</p>
         </div>
       </div>
+
+      {errorCarga && (
+        <div style={{
+          backgroundColor: 'rgba(183, 65, 52, 0.1)', border: '1px solid var(--danger)', color: 'var(--danger)',
+          padding: '16px', borderRadius: '8px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px'
+        }}>
+          <AlertCircle size={24} />
+          <div>
+            <h3 style={{ fontSize: '1.1rem', margin: '0 0 4px 0', fontWeight: 'bold' }}>Error de Base de Datos</h3>
+            <p style={{ margin: 0, fontSize: '0.9rem' }}>{errorCarga}</p>
+          </div>
+        </div>
+      )}
 
       {/* Tarjetas de Estadísticas */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
