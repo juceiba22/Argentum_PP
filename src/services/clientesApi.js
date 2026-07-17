@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 
-// Crear un nuevo cliente
+// Crear un nuevo cliente con datos fiscales
 export const createCliente = async (clienteData) => {
   const { data, error } = await supabase
     .from('clientes')
@@ -8,9 +8,34 @@ export const createCliente = async (clienteData) => {
       { 
         nombre: clienteData.nombre, 
         email: clienteData.email, 
-        telefono: clienteData.telefono || null 
+        telefono: clienteData.telefono || null,
+        cuit: clienteData.cuit || null,
+        doc_tipo: clienteData.doc_tipo ?? 99,
+        doc_nro: clienteData.doc_nro ?? '0',
+        condicion_iva: clienteData.condicion_iva ?? 'CF'
       }
     ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Actualizar un cliente existente
+export const updateClienteFiscal = async (clienteId, clienteData) => {
+  const { data, error } = await supabase
+    .from('clientes')
+    .update({
+      nombre: clienteData.nombre,
+      email: clienteData.email,
+      telefono: clienteData.telefono || null,
+      cuit: clienteData.cuit || null,
+      doc_tipo: clienteData.doc_tipo ?? 99,
+      doc_nro: clienteData.doc_nro ?? '0',
+      condicion_iva: clienteData.condicion_iva ?? 'CF'
+    })
+    .eq('id', clienteId)
     .select()
     .single();
 
