@@ -14,9 +14,11 @@ import CalculadoraCostos from './pages/CalculadoraCostos';
 import DashboardProveedores from './pages/DashboardProveedores';
 import DashboardLiquidez from './pages/DashboardLiquidez';
 import VentasHome from './pages/VentasHome';
+import Facturacion from './pages/Facturacion';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
+
 
 // Componente para proteger y redirigir rutas
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -67,6 +69,7 @@ function App() {
             {/* Rutas Protegidas (Requieren Sesión) */}
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
+              <Route path="/facturacion" element={<ProtectedRoute allowedRoles={['admin']}><Facturacion /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
               <Route path="/market" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><Market /></ProtectedRoute>} />
               <Route path="/ventas-home" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><VentasHome /></ProtectedRoute>} />
