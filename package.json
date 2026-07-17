@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@afipsdk/afip.js": "^1.2.3",
+    "@react-pdf/renderer": "^4.5.1",
     "@supabase/supabase-js": "^2.106.2",
     "csv-parse": "^7.0.1",
     "lucide-react": "^1.17.0",
