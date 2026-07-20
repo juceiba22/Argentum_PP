@@ -173,13 +173,11 @@ const CONDICION_IVA_LABELS = {
 };
 
 const EMISOR_DEFAULT = {
-  nombre: 'ARGENTUM CARNES',
+  nombre: 'Lo de Cacho Carnes',
   eslogan: 'CALIDAD PREMIUM',
-  domicilio: 'Av. General Paz 1234, CABA',
-  cuit: '30-71112223-9',
-  condicionIVA: 'Responsable Inscripto',
-  inicioActividades: '01/10/2022',
-  ingBrutos: '30-71112223-9',
+  domicilio: 'Tabare 6799',
+  cuit: '20325361892',
+  condicionIVA: 'Monotributo',
   telefono: '11 4567-8901',
 };
 
@@ -244,14 +242,6 @@ export const FacturaPDF = ({
             <View style={styles.row}>
               <Text style={styles.label}>CUIT:</Text>
               <Text>{emisor.cuit}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Ing. Brutos:</Text>
-              <Text>{emisor.ingBrutos ?? 'Exento'}</Text>
-            </View>
-            <View style={styles.row}>
-              <Text style={styles.label}>Inicio Act.:</Text>
-              <Text>{emisor.inicioActividades}</Text>
             </View>
           </View>
         </View>
