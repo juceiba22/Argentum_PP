@@ -1,13 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { UploadCloud, FileText, CheckCircle, AlertCircle, Clock, Loader2 } from 'lucide-react';
+import { UploadCloud, FileText, CheckCircle, AlertCircle, Clock, Loader2, Download, Trash2, Eye } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { getImportaciones, uploadImportacionFile, createImportacionRecord } from '../services/importacionesApi';
+import { ImportService } from '../services/ImportService';
 
 export default function Importaciones() {
   const { user } = useAuth();
   const [importaciones, setImportaciones] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Estados de subida
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [origen, setOrigen] = useState('BANCO');
+  
+  // Mensajes (Toasts simulados en la UI)
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fileInputRef = useRef(null);
@@ -15,10 +21,11 @@ export default function Importaciones() {
   const fetchImportaciones = async () => {
     if (!user) return;
     try {
-      const data = await getImportaciones(user.id);
-      setImportaciones(data || []);
+      const data = await ImportService.getImportaciones(user.id);
+      setImportaciones(data);
     } catch (err) {
-      console.error('Error fetching importaciones:', err);
+      console.error(err);
+      setError('No se pudo cargar el historial de importaciones.');
     }
   };
 
@@ -26,13 +33,15 @@ export default function Importaciones() {
     fetchImportaciones();
   }, [user]);
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
+  const showSuccess = (msg) => {
+    setSuccess(msg);
+    setError('');
+    setTimeout(() => setSuccess(''), 5000);
   };
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
+  const showError = (msg) => {
+    setError(msg);
+    setSuccess('');
   };
 
   const validateAndProcessFile = async (file) => {
@@ -41,41 +50,57 @@ export default function Importaciones() {
     
     if (!file) return;
 
-    const allowedExtensions = ['csv', 'xlsx', 'xls', 'pdf'];
-    const fileExt = file.name.split('.').pop().toLowerCase();
-    
-    if (!allowedExtensions.includes(fileExt)) {
-      setError(`Tipo de archivo no permitido. Solo se aceptan: ${allowedExtensions.join(', ')}`);
-      return;
-    }
-
     setUploading(true);
-    try {
-      const ruta_storage = await uploadImportacionFile(file, user.id);
-      
-      const nuevaImportacion = {
-        usuario_id: user.id,
-        nombre_archivo: file.name,
-        tipo_archivo: fileExt.toUpperCase(),
-        ruta_storage,
-        tamano: file.size,
-        estado: 'Pendiente'
-      };
+    setProgress(0);
+    
+    // Simulación de progreso
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
 
-      await createImportacionRecord(nuevaImportacion);
-      setSuccess('Archivo subido exitosamente. Estado: Pendiente.');
-      fetchImportaciones();
+    try {
+      const result = await ImportService.uploadFile(
+        { file, origen },
+        user.id,
+        (p) => setProgress(p > 90 ? p : progress)
+      );
+
+      clearInterval(progressInterval);
+      setProgress(100);
+
+      if (result.success) {
+        showSuccess('Archivo subido correctamente');
+        fetchImportaciones(); // Actualizar historial automáticamente
+      } else {
+        showError(result.error || 'No fue posible subir el archivo');
+      }
     } catch (err) {
-      console.error('Error al subir archivo:', err);
-      setError('Ocurrió un error al subir el archivo.');
+      clearInterval(progressInterval);
+      showError('No fue posible subir el archivo');
     } finally {
-      setUploading(false);
+      setTimeout(() => {
+        setUploading(false);
+        setProgress(0);
+      }, 500);
     }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!uploading) setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
+    if (uploading) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       validateAndProcessFile(e.dataTransfer.files[0]);
     }
@@ -88,7 +113,27 @@ export default function Importaciones() {
   };
 
   const triggerSelect = () => {
-    fileInputRef.current?.click();
+    if (!uploading) fileInputRef.current?.click();
+  };
+
+  const handleDelete = async (importacion) => {
+    if (!window.confirm('¿Está seguro de que desea eliminar este archivo? Esta acción no se puede deshacer.')) return;
+    try {
+      await ImportService.deleteImportacion(importacion);
+      showSuccess('Importación eliminada correctamente.');
+      fetchImportaciones();
+    } catch (err) {
+      showError(err.message || 'Error al eliminar importación');
+    }
+  };
+
+  const handleDownload = async (importacion) => {
+    try {
+      const url = await ImportService.getSignedUrl(importacion.ruta_storage);
+      window.open(url, '_blank');
+    } catch (err) {
+      showError(err.message || 'Error al descargar archivo');
+    }
   };
 
   const getStatusIcon = (estado) => {
@@ -112,7 +157,7 @@ export default function Importaciones() {
   };
 
   const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
+    if (!bytes || bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -124,7 +169,7 @@ export default function Importaciones() {
       <div style={{ marginBottom: '32px' }}>
         <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>Importaciones Bancarias</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem' }}>
-          Suba extractos bancarios para ser procesados posteriormente.
+          Suba extractos y comprobantes para su posterior procesamiento.
         </p>
       </div>
 
@@ -152,44 +197,77 @@ export default function Importaciones() {
         </div>
       )}
 
-      <div 
-        className="glass-panel"
-        style={{
-          padding: '48px 32px', 
-          textAlign: 'center', 
-          transition: 'all 0.3s ease',
-          border: isDragging ? '2px dashed var(--accent-primary)' : '2px dashed var(--glass-border)',
-          backgroundColor: isDragging ? 'rgba(197, 160, 89, 0.03)' : 'var(--panel-bg)',
-          marginBottom: '48px',
-          cursor: 'pointer'
-        }}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={triggerSelect}
-      >
-        <UploadCloud size={64} style={{ color: isDragging ? 'var(--accent-primary)' : 'var(--text-secondary)', margin: '0 auto 16px auto', transition: 'color 0.3s' }} />
-        <h3 style={{ fontSize: '1.25rem', marginBottom: '8px', color: 'var(--text-primary)' }}>Arrastre y suelte su archivo aquí</h3>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>o haga clic para seleccionarlo desde su computadora</p>
+      <div className="glass-panel" style={{ padding: '24px', marginBottom: '48px' }}>
         
-        <button 
-          onClick={(e) => { e.stopPropagation(); triggerSelect(); }}
-          disabled={uploading}
-          className="btn btn-primary"
+        <div className="input-group" style={{ maxWidth: '300px', marginBottom: '24px' }}>
+          <label className="input-label">Origen de Datos</label>
+          <select 
+            className="input-field" 
+            value={origen}
+            onChange={(e) => setOrigen(e.target.value)}
+            disabled={uploading}
+          >
+            <option value="BANCO">Extracto Bancario</option>
+            <option value="ARCA">Comprobantes ARCA</option>
+            <option value="PAYWAY">Liquidación PayWay</option>
+            <option value="MERCADOPAGO">Movimientos Mercado Pago</option>
+            <option value="OTRO">Otro Origen</option>
+          </select>
+        </div>
+
+        <div 
+          style={{
+            padding: '48px 32px', 
+            textAlign: 'center', 
+            transition: 'all 0.3s ease',
+            border: isDragging ? '2px dashed var(--accent-primary)' : '2px dashed var(--glass-border)',
+            backgroundColor: isDragging ? 'rgba(197, 160, 89, 0.03)' : 'var(--bg-color)',
+            cursor: uploading ? 'default' : 'pointer',
+            borderRadius: '8px'
+          }}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={triggerSelect}
         >
-          {uploading ? 'Subiendo...' : 'Seleccionar Archivo'}
-        </button>
-        
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          onChange={handleFileChange} 
-          style={{ display: 'none' }} 
-          accept=".csv,.xlsx,.xls,.pdf"
-        />
-        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '20px', letterSpacing: '0.5px' }}>
-          TIPOS PERMITIDOS: CSV, XLSX, XLS, PDF
-        </p>
+          {uploading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <Loader2 size={48} className="animate-spin" style={{ color: 'var(--accent-primary)', marginBottom: '16px' }} />
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '12px', color: 'var(--text-primary)' }}>
+                Subiendo archivo...
+              </h3>
+              <div style={{ width: '100%', maxWidth: '300px', backgroundColor: '#e5e7eb', borderRadius: '9999px', height: '8px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', backgroundColor: 'var(--accent-primary)', width: `${progress}%`, transition: 'width 0.2s ease' }}></div>
+              </div>
+              <p style={{ marginTop: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>{Math.round(progress)}%</p>
+            </div>
+          ) : (
+            <>
+              <UploadCloud size={64} style={{ color: isDragging ? 'var(--accent-primary)' : 'var(--text-secondary)', margin: '0 auto 16px auto', transition: 'color 0.3s' }} />
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '8px', color: 'var(--text-primary)' }}>Arrastre y suelte su archivo aquí</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>o haga clic para seleccionarlo desde su computadora</p>
+              
+              <button 
+                onClick={(e) => { e.stopPropagation(); triggerSelect(); }}
+                disabled={uploading}
+                className="btn btn-primary"
+              >
+                Seleccionar Archivo
+              </button>
+              
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                style={{ display: 'none' }} 
+                accept=".csv,.xlsx,.xls,.pdf"
+              />
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '20px', letterSpacing: '0.5px' }}>
+                TIPOS PERMITIDOS: CSV, XLSX, XLS, PDF (MÁX. 20MB)
+              </p>
+            </>
+          )}
+        </div>
       </div>
 
       <div>
@@ -207,9 +285,11 @@ export default function Importaciones() {
               <thead>
                 <tr>
                   <th>Archivo</th>
+                  <th style={{ textAlign: 'center' }}>Origen</th>
                   <th style={{ textAlign: 'center' }}>Tamaño</th>
                   <th style={{ textAlign: 'center' }}>Fecha</th>
                   <th style={{ textAlign: 'center' }}>Estado</th>
+                  <th style={{ textAlign: 'right' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -219,12 +299,17 @@ export default function Importaciones() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <FileText size={20} style={{ color: 'var(--text-secondary)' }} />
                         <div>
-                          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{imp.nombre_archivo}</div>
+                          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }} title={imp.nombre_archivo}>
+                            {imp.nombre_archivo.length > 30 ? imp.nombre_archivo.substring(0, 30) + '...' : imp.nombre_archivo}
+                          </div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '2px' }}>
                             {imp.tipo_archivo}
                           </div>
                         </div>
                       </div>
+                    </td>
+                    <td style={{ textAlign: 'center', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600 }}>
+                      {imp.origen}
                     </td>
                     <td style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                       {formatBytes(imp.tamano)}
@@ -238,6 +323,34 @@ export default function Importaciones() {
                         <span className={`badge ${getBadgeClass(imp.estado)}`}>
                           {imp.estado}
                         </span>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button 
+                          className="btn btn-secondary" 
+                          style={{ padding: '6px', fontSize: '0.8rem' }}
+                          title="Ver Información"
+                          onClick={() => alert(`Información de ${imp.nombre_archivo}\nEstado: ${imp.estado}\nOrigen: ${imp.origen}`)}
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button 
+                          className="btn btn-secondary" 
+                          style={{ padding: '6px', fontSize: '0.8rem' }}
+                          title="Descargar"
+                          onClick={() => handleDownload(imp)}
+                        >
+                          <Download size={16} />
+                        </button>
+                        <button 
+                          className="btn btn-secondary" 
+                          style={{ padding: '6px', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(183,65,52,0.3)' }}
+                          title="Eliminar"
+                          onClick={() => handleDelete(imp)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
