@@ -54,11 +54,12 @@ serve(async (req) => {
 
       const arrayBuffer = await fileData.arrayBuffer();
 
-      // 4. Procesar el archivo a formato intermedio JSON
+      // 4. Procesar el archivo a formato intermedio JSON y enviarlo a Gemini
       const resultadoJSON = await ImportProcessor.processFile(
         arrayBuffer, 
         record.nombre_archivo, 
-        record.tipo_archivo
+        record.tipo_archivo,
+        record.origen
       );
 
       // 5. Actualizar registro final con éxito
@@ -67,7 +68,7 @@ serve(async (req) => {
         .update({ 
           estado: 'Procesado',
           resultado_procesamiento: resultadoJSON,
-          cantidad_registros: resultadoJSON.estadisticas.filas,
+          cantidad_registros: resultadoJSON.movimientos?.length || 0,
           error: null
         })
         .eq('id', id_importacion);
