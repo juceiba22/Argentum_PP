@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud } from 'lucide-react';
+import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -21,33 +21,57 @@ export default function Layout() {
   const { role } = useAuth();
 
   const navItems = [
-    { path: '/ventas-home', label: 'Inicio de Ventas', icon: <Store size={20} />, allowed: ['ventas'] },
-    { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
-    { path: '/facturacion', label: 'Facturación ARCA', icon: <Receipt size={20} />, allowed: ['admin'] },
-    { path: '/market', label: 'Mercado', icon: <Store size={20} />, allowed: ['admin'] },
-    { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
+    // Suelta fuera de grupos
+    { path: '/ventas-home', label: 'Inicio de Ventas', icon: <Store size={20} />, allowed: ['ventas', 'admin'] },
+    
+    // Grupo 1: Mercado
     { 
-      label: 'Compras e Inventario', 
+      label: 'Mercado', 
+      icon: <Store size={20} />, 
+      allowed: ['admin'],
+      subItems: [
+        { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
+        { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
+        { path: '/market', label: 'POS / Terminal', icon: <Store size={20} />, allowed: ['admin'] }
+      ]
+    },
+
+    // Grupo 2: Contabilidad
+    { 
+      label: 'Contabilidad', 
+      icon: <Wallet size={20} />, 
+      allowed: ['admin'],
+      subItems: [
+        { path: '/erp/dashboard-liquidez', label: 'Ingresos/Egresos', icon: <Activity size={20} />, allowed: ['admin'] },
+        { path: '/facturacion', label: 'Ventas (ARCA)', icon: <Receipt size={20} />, allowed: ['admin'] },
+        { path: '/erp/compras', label: 'Compras', icon: <ShoppingCart size={20} />, allowed: ['admin'] },
+        { path: '/erp/gastos', label: 'Gastos', icon: <Receipt size={20} />, allowed: ['admin'] },
+        { path: '/erp/caja', label: 'Caja', icon: <List size={20} />, allowed: ['admin'] }
+      ]
+    },
+
+    // Grupo 3: Stock e Inventario
+    { 
+      label: 'Stock e Inventario', 
       icon: <Package size={20} />, 
       allowed: ['admin'],
       subItems: [
-        { path: '/erp/compras', label: 'Compras', icon: <ShoppingCart size={20} />, allowed: ['admin'] },
         { path: '/erp/proveedores', label: 'Alta Proveedores', icon: <Truck size={20} />, allowed: ['admin'] },
         { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] }
       ]
     },
-    { path: '/erp/dashboard-liquidez', label: 'Cash Flow (ERP)', icon: <Activity size={20} />, allowed: ['admin'] },
+
+    // Grupo 4: Estadísticas
     { 
-      label: 'Costos (ERP)', 
-      icon: <Receipt size={20} />, 
+      label: 'Estadísticas', 
+      icon: <PieChart size={20} />, 
       allowed: ['admin'],
       subItems: [
-        { path: '/erp/gastos', label: 'Registro de Gastos', icon: <Receipt size={20} />, allowed: ['admin'] },
-        { path: '/erp/calculadora-costos', label: 'Calculadora', icon: <BarChart2 size={20} />, allowed: ['admin'] }
+        { path: '/erp/dashboard-proveedores', label: 'Analítica Prov.', icon: <BarChart2 size={20} />, allowed: ['admin'] },
+        { path: '/erp/calculadora-costos', label: 'Calculadora Costos', icon: <BarChart2 size={20} />, allowed: ['admin'] },
+        { path: '/importaciones', label: 'Importaciones', icon: <UploadCloud size={20} />, allowed: ['admin'] }
       ]
-    },
-    { path: '/erp/dashboard-proveedores', label: 'Analítica Prov. (ERP)', icon: <BarChart2 size={20} />, allowed: ['admin'] },
-    { path: '/importaciones', label: 'Importaciones', icon: <UploadCloud size={20} />, allowed: ['admin'] },
+    }
   ];
 
   const visibleNavItems = navItems.filter(item => item.allowed.includes(role || 'admin'));

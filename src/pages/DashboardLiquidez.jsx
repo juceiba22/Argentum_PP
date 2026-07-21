@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { DollarSign, ArrowUpRight, ArrowDownRight, Activity, Calendar, List } from 'lucide-react';
 import { getIngresosY_Egresos, getMovimientos } from '../services/erpApi';
-import RegistrosCaja from './RegistrosCaja';
 
 export default function DashboardLiquidez() {
-  const [showCaja, setShowCaja] = useState(false);
   const [liquidez, setLiquidez] = useState({ ingresos: 0, egresos: 0, liquidez: 0 });
   const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,16 +40,7 @@ export default function DashboardLiquidez() {
           <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Dashboard de Liquidez (Cash Flow)</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Módulo ERP: Análisis centralizado de flujos de dinero.</p>
         </div>
-        <button onClick={() => setShowCaja(!showCaja)} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <List size={18} /> {showCaja ? 'Ocultar Detalle de Caja' : 'Ver Detalle de Caja'}
-        </button>
       </header>
-
-      {showCaja && (
-        <div style={{ marginBottom: '40px', padding: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', borderRadius: '12px' }}>
-          <RegistrosCaja />
-        </div>
-      )}
 
       {/* MÉTRICAS DE LIQUIDEZ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
