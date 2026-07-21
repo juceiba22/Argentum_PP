@@ -13,6 +13,7 @@ import Gastos from './pages/Gastos';
 import CalculadoraCostos from './pages/CalculadoraCostos';
 import DashboardProveedores from './pages/DashboardProveedores';
 import DashboardLiquidez from './pages/DashboardLiquidez';
+import Caja from './pages/Caja';
 import VentasHome from './pages/VentasHome';
 import Facturacion from './pages/Facturacion';
 import Importaciones from './pages/Importaciones';
@@ -83,6 +84,7 @@ function App() {
               <Route path="/erp/calculadora-costos" element={<ProtectedRoute allowedRoles={['admin']}><CalculadoraCostos /></ProtectedRoute>} />
               <Route path="/erp/dashboard-proveedores" element={<ProtectedRoute allowedRoles={['admin']}><DashboardProveedores /></ProtectedRoute>} />
               <Route path="/erp/dashboard-liquidez" element={<ProtectedRoute allowedRoles={['admin']}><DashboardLiquidez /></ProtectedRoute>} />
+              <Route path="/erp/caja" element={<ProtectedRoute allowedRoles={['admin']}><Caja /></ProtectedRoute>} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" replace />} />
