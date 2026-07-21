@@ -68,10 +68,12 @@ export default function Layout() {
       allowed: ['admin'],
       subItems: [
         { path: '/erp/dashboard-proveedores', label: 'Analítica Prov.', icon: <BarChart2 size={20} />, allowed: ['admin'] },
-        { path: '/erp/calculadora-costos', label: 'Calculadora Costos', icon: <BarChart2 size={20} />, allowed: ['admin'] },
-        { path: '/importaciones', label: 'Importaciones', icon: <UploadCloud size={20} />, allowed: ['admin'] }
+        { path: '/erp/calculadora-costos', label: 'Calculadora Costos', icon: <BarChart2 size={20} />, allowed: ['admin'] }
       ]
-    }
+    },
+    
+    // Suelta fuera de grupos
+    { path: '/importaciones', label: 'Importaciones', icon: <UploadCloud size={20} />, allowed: ['admin'] }
   ];
 
   const visibleNavItems = navItems.filter(item => item.allowed.includes(role || 'admin'));
