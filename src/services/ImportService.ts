@@ -184,4 +184,21 @@ export class ImportService {
     
     return data.signedUrl;
   }
+  /**
+   * Dispara el procesamiento de la importación en el backend
+   */
+  static async triggerProcessImportacion(id_importacion: string): Promise<void> {
+    try {
+      const { error } = await supabase.functions.invoke('procesar-importacion', {
+        body: { id_importacion }
+      });
+      if (error) {
+        console.error('Error invoking function:', error.message);
+        throw new Error('No se pudo iniciar el procesamiento de la importación.');
+      }
+    } catch (err: any) {
+      console.error('triggerProcessImportacion failed:', err);
+      throw err;
+    }
+  }
 }

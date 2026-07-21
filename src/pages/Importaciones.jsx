@@ -72,8 +72,12 @@ export default function Importaciones() {
       setProgress(100);
 
       if (result.success) {
-        showSuccess('Archivo subido correctamente');
+        showSuccess('Archivo subido correctamente. Procesando...');
         fetchImportaciones(); // Actualizar historial automáticamente
+        // Disparar procesamiento asincrono
+        ImportService.triggerProcessImportacion(result.data.id).then(() => {
+          fetchImportaciones();
+        }).catch(e => console.error(e));
       } else {
         showError(result.error || 'No fue posible subir el archivo');
       }
