@@ -76,13 +76,15 @@ export default function Importaciones() {
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    validateAndProcessFile(file);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      validateAndProcessFile(e.dataTransfer.files[0]);
+    }
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    validateAndProcessFile(file);
+    if (e.target.files && e.target.files.length > 0) {
+      validateAndProcessFile(e.target.files[0]);
+    }
   };
 
   const triggerSelect = () => {
@@ -91,11 +93,21 @@ export default function Importaciones() {
 
   const getStatusIcon = (estado) => {
     switch(estado) {
-      case 'Pendiente': return <Clock className="w-5 h-5 text-yellow-500" />;
-      case 'Procesando': return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
-      case 'Procesado': return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'Error': return <AlertCircle className="w-5 h-5 text-red-500" />;
-      default: return <Clock className="w-5 h-5 text-gray-400" />;
+      case 'Pendiente': return <Clock size={20} style={{ color: 'var(--warning)' }} />;
+      case 'Procesando': return <Loader2 size={20} className="animate-spin" style={{ color: '#3b82f6' }} />;
+      case 'Procesado': return <CheckCircle size={20} style={{ color: 'var(--success)' }} />;
+      case 'Error': return <AlertCircle size={20} style={{ color: 'var(--danger)' }} />;
+      default: return <Clock size={20} style={{ color: 'var(--text-secondary)' }} />;
+    }
+  };
+
+  const getBadgeClass = (estado) => {
+    switch(estado) {
+      case 'Pendiente': return 'badge-pendiente';
+      case 'Procesando': return 'badge-enviado';
+      case 'Procesado': return 'badge-pagado';
+      case 'Error': return 'badge-cancelado';
+      default: return 'badge-pendiente';
     }
   };
 
@@ -108,87 +120,130 @@ export default function Importaciones() {
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-2">Importaciones Bancarias</h1>
-      <p className="text-gray-600 mb-8">Suba extractos bancarios para ser procesados posteriormente.</p>
+    <div className="animate-fade-in" style={{ paddingBottom: '40px', maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>Importaciones Bancarias</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem' }}>
+          Suba extractos bancarios para ser procesados posteriormente.
+        </p>
+      </div>
 
       {error && (
-        <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center gap-2">
-          <AlertCircle className="w-5 h-5" />
+        <div style={{
+          backgroundColor: 'rgba(183, 65, 52, 0.1)', color: 'var(--danger)',
+          padding: '16px', borderRadius: '4px', marginBottom: '24px',
+          display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.95rem',
+          border: '1px solid rgba(183, 65, 52, 0.2)'
+        }}>
+          <AlertCircle size={20} />
           <span>{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center gap-2">
-          <CheckCircle className="w-5 h-5" />
+        <div style={{
+          backgroundColor: 'rgba(74, 124, 89, 0.1)', color: 'var(--success)',
+          padding: '16px', borderRadius: '4px', marginBottom: '24px',
+          display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.95rem',
+          border: '1px solid rgba(74, 124, 89, 0.2)'
+        }}>
+          <CheckCircle size={20} />
           <span>{success}</span>
         </div>
       )}
 
       <div 
-        className={`border-2 border-dashed rounded-xl p-10 text-center transition-colors
-          ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'}`}
+        className="glass-panel"
+        style={{
+          padding: '48px 32px', 
+          textAlign: 'center', 
+          transition: 'all 0.3s ease',
+          border: isDragging ? '2px dashed var(--accent-primary)' : '2px dashed var(--glass-border)',
+          backgroundColor: isDragging ? 'rgba(197, 160, 89, 0.03)' : 'var(--panel-bg)',
+          marginBottom: '48px',
+          cursor: 'pointer'
+        }}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onClick={triggerSelect}
       >
-        <UploadCloud className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium mb-2">Arrastre y suelte su archivo aquí</h3>
-        <p className="text-gray-500 mb-6">o si lo prefiere...</p>
+        <UploadCloud size={64} style={{ color: isDragging ? 'var(--accent-primary)' : 'var(--text-secondary)', margin: '0 auto 16px auto', transition: 'color 0.3s' }} />
+        <h3 style={{ fontSize: '1.25rem', marginBottom: '8px', color: 'var(--text-primary)' }}>Arrastre y suelte su archivo aquí</h3>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>o haga clic para seleccionarlo desde su computadora</p>
+        
         <button 
-          onClick={triggerSelect}
+          onClick={(e) => { e.stopPropagation(); triggerSelect(); }}
           disabled={uploading}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50"
+          className="btn btn-primary"
         >
           {uploading ? 'Subiendo...' : 'Seleccionar Archivo'}
         </button>
+        
         <input 
           type="file" 
           ref={fileInputRef} 
           onChange={handleFileChange} 
-          className="hidden" 
+          style={{ display: 'none' }} 
           accept=".csv,.xlsx,.xls,.pdf"
         />
-        <p className="text-sm text-gray-400 mt-4">Tipos permitidos: CSV, XLSX, XLS, PDF</p>
+        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '20px', letterSpacing: '0.5px' }}>
+          TIPOS PERMITIDOS: CSV, XLSX, XLS, PDF
+        </p>
       </div>
 
-      <div className="mt-12">
-        <h2 className="text-xl font-semibold mb-4">Historial de Importaciones</h2>
+      <div>
+        <h3 style={{ fontSize: '1.5rem', marginBottom: '20px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+          Historial de Importaciones
+        </h3>
         
         {importaciones.length === 0 ? (
-          <p className="text-gray-500 italic">No hay importaciones registradas.</p>
+          <p style={{ color: 'var(--text-secondary)', fontStyle: 'italic', padding: '20px 0' }}>
+            No hay importaciones registradas.
+          </p>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {importaciones.map((imp) => (
-              <div key={imp.id} className="bg-white border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <FileText className="w-8 h-8 text-blue-500 flex-shrink-0" />
-                    <div className="truncate">
-                      <h4 className="font-medium text-gray-900 truncate" title={imp.nombre_archivo}>
-                        {imp.nombre_archivo}
-                      </h4>
-                      <p className="text-xs text-gray-500 uppercase">{imp.tipo_archivo} • {formatBytes(imp.tamano)}</p>
-                    </div>
-                  </div>
-                  {getStatusIcon(imp.estado)}
-                </div>
-                
-                <div className="pt-3 border-t flex justify-between items-center mt-2">
-                  <div className="text-xs text-gray-500">
-                    {new Date(imp.created_at).toLocaleDateString()} {new Date(imp.created_at).toLocaleTimeString()}
-                  </div>
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-full 
-                    ${imp.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : 
-                      imp.estado === 'Procesando' ? 'bg-blue-100 text-blue-800' : 
-                      imp.estado === 'Procesado' ? 'bg-green-100 text-green-800' : 
-                      'bg-red-100 text-red-800'}`}>
-                    {imp.estado}
-                  </span>
-                </div>
-              </div>
-            ))}
+          <div className="table-responsive glass-panel">
+            <table style={{ width: '100%' }}>
+              <thead>
+                <tr>
+                  <th>Archivo</th>
+                  <th style={{ textAlign: 'center' }}>Tamaño</th>
+                  <th style={{ textAlign: 'center' }}>Fecha</th>
+                  <th style={{ textAlign: 'center' }}>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {importaciones.map((imp) => (
+                  <tr key={imp.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <FileText size={20} style={{ color: 'var(--text-secondary)' }} />
+                        <div>
+                          <div style={{ fontWeight: '600', color: 'var(--text-primary)' }}>{imp.nombre_archivo}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: '2px' }}>
+                            {imp.tipo_archivo}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      {formatBytes(imp.tamano)}
+                    </td>
+                    <td style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                      {new Date(imp.created_at).toLocaleDateString()}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        {getStatusIcon(imp.estado)}
+                        <span className={`badge ${getBadgeClass(imp.estado)}`}>
+                          {imp.estado}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
