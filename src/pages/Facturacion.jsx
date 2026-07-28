@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { createCliente, getAllClientes } from '../services/clientesApi';
+import { useAuth } from '../context/AuthContext';
 import FacturaPDF from '../components/FacturaPDF';
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { 
@@ -22,6 +23,7 @@ const DOC_TIPO_OPTIONS = [
 ];
 
 export default function Facturacion() {
+  const { tenantId } = useAuth();
   const [pedidos, setPedidos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +58,12 @@ export default function Facturacion() {
   const [pdfFacturaActiva, setPdfFacturaActiva] = useState(null);
 
   const cargarDatos = useCallback(async () => {
+    if (!tenantId) {
+      setPedidos([]);
+      setClientes([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       // Obtener todos los pedidos pagados
@@ -68,6 +76,7 @@ export default function Facturacion() {
           ),
           items_pedido (*)
         `)
+        .eq('tenant_id', tenantId)
         .eq('estado', 'Pagado')
         .order('fecha_cobro', { ascending: false });
 
@@ -78,7 +87,7 @@ export default function Facturacion() {
       setErrorCarga(null);
 
       // Obtener clientes
-      const cls = await getAllClientes();
+      const cls = await getAllClientes(tenantId);
       setClientes(cls || []);
     } catch (err) {
       console.error("Error al cargar datos de facturación:", err);
@@ -86,7 +95,7 @@ export default function Facturacion() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tenantId]);
 
   useEffect(() => {
     cargarDatos();
@@ -109,14 +118,14 @@ export default function Facturacion() {
 
   const handleCrearCliente = async (e) => {
     e.preventDefault();
-    if (!nuevoCliente.nombre.trim()) return;
+    if (!nuevoCliente.nombre.trim() || !tenantId) return;
 
     try {
       setProcesandoEmision(true);
-      const res = await createCliente(nuevoCliente);
+      const res = await createCliente(nuevoCliente, tenantId);
       setSelectedCliente(res);
       // Actualizar listado de clientes
-      const cls = await getAllClientes();
+      const cls = await getAllClientes(tenantId);
       setClientes(cls || []);
       setShowNuevoCliente(false);
       // Limpiar form

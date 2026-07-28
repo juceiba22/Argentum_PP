@@ -3,11 +3,13 @@ import { supabase } from './supabaseClient';
 /**
  * Obtiene la sesión de caja abierta para un usuario determinado
  */
-export const getCajaAbierta = async (usuarioEmail) => {
+export const getCajaAbierta = async (usuarioEmail, tenantId) => {
+  if (!tenantId) return null;
   const { data, error } = await supabase
     .from('sesiones_caja')
     .select('*')
     .eq('usuario_email', usuarioEmail)
+    .eq('tenant_id', tenantId)
     .eq('estado', 'abierta')
     .order('fecha_apertura', { ascending: false })
     .limit(1)
@@ -24,9 +26,10 @@ export const getCajaAbierta = async (usuarioEmail) => {
 /**
  * Abre una nueva sesión de caja
  */
-export const abrirCaja = async (usuarioEmail, saldoInicial = 0) => {
+export const abrirCaja = async (usuarioEmail, saldoInicial = 0, tenantId) => {
+  if (!tenantId) throw new Error('Se requiere tenantId para abrir caja.');
   // Verificar si ya hay una abierta
-  const cajaExistente = await getCajaAbierta(usuarioEmail);
+  const cajaExistente = await getCajaAbierta(usuarioEmail, tenantId);
   if (cajaExistente) {
     throw new Error('Ya existe una caja abierta para este usuario.');
   }
@@ -37,7 +40,8 @@ export const abrirCaja = async (usuarioEmail, saldoInicial = 0) => {
       { 
         usuario_email: usuarioEmail, 
         estado: 'abierta', 
-        saldo_inicial: saldoInicial 
+        saldo_inicial: saldoInicial,
+        tenant_id: tenantId
       }
     ])
     .select()

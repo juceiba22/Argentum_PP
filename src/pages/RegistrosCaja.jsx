@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Wallet, CreditCard, DollarSign, RefreshCw, FileText, Calendar } from 'lucide-react';
 import { getCobrosRealizados } from '../services/pedidosApi';
+import { useAuth } from '../context/AuthContext';
 
 export default function RegistrosCaja() {
+  const { tenantId } = useAuth();
   const [cobros, setCobros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resumen, setResumen] = useState({
@@ -13,9 +15,20 @@ export default function RegistrosCaja() {
   });
 
   const cargarCobros = async () => {
+    if (!tenantId) {
+      setCobros([]);
+      setResumen({
+        totalRecaudado: 0,
+        totalMercadoPago: 0,
+        totalOtroMedio: 0,
+        cantidadTransacciones: 0
+      });
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const data = await getCobrosRealizados();
+      const data = await getCobrosRealizados(tenantId);
       setCobros(data || []);
       
       // Calcular métricas
@@ -52,7 +65,7 @@ export default function RegistrosCaja() {
 
   useEffect(() => {
     cargarCobros();
-  }, []);
+  }, [tenantId]);
 
   const formatearFecha = (isoString) => {
     if (!isoString) return 'S/D';

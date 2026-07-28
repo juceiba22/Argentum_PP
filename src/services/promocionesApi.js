@@ -1,9 +1,11 @@
 import { supabase } from './supabaseClient';
 
-export const getPromocionesActivas = async () => {
+export const getPromocionesActivas = async (tenantId) => {
+  if (!tenantId) return [];
   const { data, error } = await supabase
     .from('promociones')
     .select('*')
+    .eq('tenant_id', tenantId)
     .eq('activa', true)
     .order('created_at', { ascending: false });
 
@@ -11,20 +13,23 @@ export const getPromocionesActivas = async () => {
   return data;
 };
 
-export const getAllPromociones = async () => {
+export const getAllPromociones = async (tenantId) => {
+  if (!tenantId) return [];
   const { data, error } = await supabase
     .from('promociones')
     .select('*')
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   return data;
 };
 
-export const createPromocion = async (promoData) => {
+export const createPromocion = async (promoData, tenantId) => {
+  if (!tenantId) throw new Error('Se requiere tenantId para registrar una promoción.');
   const { data, error } = await supabase
     .from('promociones')
-    .insert([promoData])
+    .insert([{ ...promoData, tenant_id: tenantId }])
     .select()
     .single();
 

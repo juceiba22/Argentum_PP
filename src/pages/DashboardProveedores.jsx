@@ -1,17 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { Truck, ShoppingBag, DollarSign, Calendar } from 'lucide-react';
 import { getProveedores, getCompras } from '../services/erpApi';
+import { useAuth } from '../context/AuthContext';
 
 export default function DashboardProveedores() {
+  const { tenantId } = useAuth();
   const [stats, setStats] = useState({ totalProveedores: 0, totalCompras: 0, importeComprado: 0 });
   const [compras, setCompras] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDatos = async () => {
+      if (!tenantId) {
+        setStats({ totalProveedores: 0, totalCompras: 0, importeComprado: 0 });
+        setCompras([]);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
-        const [provData, comprasData] = await Promise.all([getProveedores(), getCompras()]);
+        const [provData, comprasData] = await Promise.all([getProveedores(tenantId), getCompras(tenantId)]);
         
         const importeComprado = comprasData ? comprasData.reduce((acc, c) => acc + Number(c.importe), 0) : 0;
         
@@ -29,7 +37,7 @@ export default function DashboardProveedores() {
       }
     };
     fetchDatos();
-  }, []);
+  }, [tenantId]);
 
   const formatearFecha = (isoString) => {
     if (!isoString) return 'S/D';
