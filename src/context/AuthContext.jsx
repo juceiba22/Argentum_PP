@@ -16,31 +16,60 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
+    const isVentas = sessionUser.email?.toLowerCase().includes('ventas');
+    const defaultRole = isVentas ? 'ventas' : (sessionUser.user_metadata?.role || 'admin');
+
     try {
-      const { data, error } = await supabase
+      // 1. Consultar la tabla puente 'tenant_users'
+      const { data } = await supabase
         .from('tenant_users')
         .select('tenant_id, role')
         .eq('user_id', sessionUser.id)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error al obtener tenant y rol del usuario:', error.message);
-        setTenantId(sessionUser.user_metadata?.tenant_id || null);
-        setRole(sessionUser.user_metadata?.role || 'admin');
+      if (data && data.tenant_id) {
+        setTenantId(data.tenant_id);
+        setRole(data.role || defaultRole);
         return;
       }
 
-      if (data) {
-        setTenantId(data.tenant_id);
-        setRole(data.role || sessionUser.user_metadata?.role || 'admin');
+      // 2. Si no tiene registro en tenant_users, buscar el tenant id disponible en la base de datos
+      let fallbackTenantId = sessionUser.user_metadata?.tenant_id || null;
+
+      if (!fallbackTenantId) {
+        // Intentar obtener el tenant_id de la tabla 'tenants'
+        const { data: tenantData } = await supabase.from('tenants').select('id').limit(1).maybeSingle();
+        if (tenantData?.id) {
+          fallbackTenantId = tenantData.id;
+        } else {
+          // Intentar obtener cualquier tenant_id existente en tenant_users
+          const { data: anyTenantUser } = await supabase.from('tenant_users').select('tenant_id').limit(1).maybeSingle();
+          if (anyTenantUser?.tenant_id) {
+            fallbackTenantId = anyTenantUser.tenant_id;
+          }
+        }
+      }
+
+      if (fallbackTenantId) {
+        setTenantId(fallbackTenantId);
+        setRole(defaultRole);
+
+        // Auto-asociar en tenant_users para evitar problemas futuros
+        try {
+          await supabase.from('tenant_users').insert([{
+            tenant_id: fallbackTenantId,
+            user_id: sessionUser.id,
+            role: defaultRole
+          }]);
+        } catch (insertErr) {
+          console.warn('No se pudo auto-insertar tenant_user:', insertErr);
+        }
       } else {
-        setTenantId(sessionUser.user_metadata?.tenant_id || null);
-        setRole(sessionUser.user_metadata?.role || 'admin');
+        setRole(defaultRole);
       }
     } catch (err) {
       console.error('Excepción al resolver el tenant:', err);
-      setTenantId(sessionUser.user_metadata?.tenant_id || null);
-      setRole(sessionUser.user_metadata?.role || 'admin');
+      setRole(defaultRole);
     }
   };
 
@@ -60,8 +89,9 @@ export const AuthProvider = ({ children }) => {
         setUser(currentUser);
 
         if (currentUser) {
-          // Asignación síncrona inmediata para evitar estado de rol nulo durante la recarga F5
-          setRole(currentUser.user_metadata?.role || 'admin');
+          const isVentas = currentUser.email?.toLowerCase().includes('ventas');
+          const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
+          setRole(defaultRole);
           setTenantId(currentUser.user_metadata?.tenant_id || null);
           await fetchTenantAndRole(currentUser);
         } else {
@@ -90,7 +120,9 @@ export const AuthProvider = ({ children }) => {
         setUser(currentUser);
 
         if (currentUser) {
-          setRole(currentUser.user_metadata?.role || 'admin');
+          const isVentas = currentUser.email?.toLowerCase().includes('ventas');
+          const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
+          setRole(defaultRole);
           setTenantId(currentUser.user_metadata?.tenant_id || null);
           await fetchTenantAndRole(currentUser);
         } else {

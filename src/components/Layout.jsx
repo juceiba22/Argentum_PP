@@ -28,11 +28,11 @@ export default function Layout() {
     { 
       label: 'Mercado', 
       icon: <Store size={20} />, 
-      allowed: ['admin'],
+      allowed: ['admin', 'ventas'],
       subItems: [
         { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
         { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
-        { path: '/market', label: 'POS / Terminal', icon: <Store size={20} />, allowed: ['admin'] }
+        { path: '/market', label: 'POS / Terminal', icon: <Store size={20} />, allowed: ['admin', 'ventas'] }
       ]
     },
 
@@ -76,7 +76,19 @@ export default function Layout() {
     { path: '/importaciones', label: 'Importaciones', icon: <UploadCloud size={20} />, allowed: ['admin'] }
   ];
 
-  const visibleNavItems = navItems.filter(item => item.allowed.includes(role || 'admin'));
+  const currentRole = role || 'admin';
+  const visibleNavItems = navItems
+    .filter(item => item.allowed.includes(currentRole))
+    .map(item => {
+      if (item.subItems) {
+        return {
+          ...item,
+          subItems: item.subItems.filter(sub => sub.allowed.includes(currentRole))
+        };
+      }
+      return item;
+    })
+    .filter(item => !item.subItems || item.subItems.length > 0);
 
   const handleLogout = async (e) => {
     e.preventDefault();
