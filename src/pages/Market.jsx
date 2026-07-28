@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2, Megaphone, UserPlus, Loader } from 'lucide-react';
+import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2, Megaphone, UserPlus, Loader, Activity } from 'lucide-react';
 import { getInventario, updateMercaderia } from '../services/inventarioApi';
 import { getPromocionesActivas } from '../services/promocionesApi';
 import { registrarVentaDirecta } from '../services/pedidosApi';
@@ -8,6 +8,8 @@ import { cobrarConPoint, getPaymentIntentStatus, cancelarPointPayment } from '..
 import { getCajaAbierta, abrirCaja } from '../services/cajasApi';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from 'react-router-dom';
+
+
 
 export default function Market() {
   const [productos, setProductos] = useState([]);
