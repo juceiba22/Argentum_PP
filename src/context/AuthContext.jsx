@@ -41,35 +41,81 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // 1. Obtener la sesión inicial
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const currentUser = session?.user || null;
-      setUser(currentUser);
-      if (currentUser) {
-        await fetchTenantAndRole(currentUser);
+    let isMounted = true;
+
+    const initSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+
+        const currentUser = session?.user || null;
+        if (isMounted) setUser(currentUser);
+        
+        if (currentUser) {
+          await fetchTenantAndRole(currentUser);
+        } else {
+          if (isMounted) {
+            setTenantId(null);
+            setRole(null);
+          }
+        }
+      } catch (err) {
+        console.error('Error al obtener la sesión inicial:', err);
+        if (isMounted) {
+          setUser(null);
+          setTenantId(null);
+          setRole(null);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    initSession();
 
     // 2. Escuchar cambios de estado (login/logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      const currentUser = session?.user || null;
-      setUser(currentUser);
-      if (currentUser) {
-        await fetchTenantAndRole(currentUser);
-      } else {
-        setTenantId(null);
-        setRole(null);
+      try {
+        const currentUser = session?.user || null;
+        if (isMounted) setUser(currentUser);
+        
+        if (currentUser) {
+          await fetchTenantAndRole(currentUser);
+        } else {
+          if (isMounted) {
+            setTenantId(null);
+            setRole(null);
+          }
+        }
+      } catch (err) {
+        console.error('Error en onAuthStateChange:', err);
+        if (isMounted) {
+          setUser(null);
+          setTenantId(null);
+          setRole(null);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: 'var(--bg-primary, #1a1a1a)', color: 'var(--text-primary, #ffffff)' }}>
+        <p style={{ fontSize: '1.2rem' }}>Cargando sesión...</p>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, tenantId, role, loading }}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
