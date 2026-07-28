@@ -29,6 +29,13 @@ export default function PromocionesPublicas() {
   const WHATSAPP_NUMBER = "5491125675158";
 
   useEffect(() => {
+    let isMounted = true;
+
+    // Timer de seguridad para garantizar que la pantalla no se quede en "Cargando..."
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) setLoading(false);
+    }, 2000);
+
     const fetchCatalogData = async () => {
       try {
         let activeTenantId = null;
@@ -58,24 +65,37 @@ export default function PromocionesPublicas() {
           }
         }
 
-        setResolvedTenantId(activeTenantId);
+        if (isMounted) setResolvedTenantId(activeTenantId);
 
-        // Cargar promociones e inventario simultáneamente
-        const [promosData, invData] = await Promise.all([
+        // Cargar promociones e inventario de forma segura
+        const [promosResult, invResult] = await Promise.allSettled([
           getPromocionesActivas(activeTenantId),
           getInventario(activeTenantId)
         ]);
 
-        setPromociones(promosData || []);
-        setInventario(invData || []);
+        if (isMounted) {
+          if (promosResult.status === 'fulfilled') {
+            setPromociones(promosResult.value || []);
+          }
+          if (invResult.status === 'fulfilled') {
+            setInventario(invResult.value || []);
+          }
+        }
 
       } catch (error) {
         console.error("Error al cargar catálogo:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
+        clearTimeout(safetyTimer);
       }
     };
+
     fetchCatalogData();
+
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimer);
+    };
   }, [tenantParam]);
 
   // Clasificador de productos individuales por categoría
