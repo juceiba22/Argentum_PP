@@ -60,6 +60,9 @@ export const AuthProvider = ({ children }) => {
         setUser(currentUser);
 
         if (currentUser) {
+          // Asignación síncrona inmediata para evitar estado de rol nulo durante la recarga F5
+          setRole(currentUser.user_metadata?.role || 'admin');
+          setTenantId(currentUser.user_metadata?.tenant_id || null);
           await fetchTenantAndRole(currentUser);
         } else {
           setTenantId(null);
@@ -87,6 +90,8 @@ export const AuthProvider = ({ children }) => {
         setUser(currentUser);
 
         if (currentUser) {
+          setRole(currentUser.user_metadata?.role || 'admin');
+          setTenantId(currentUser.user_metadata?.tenant_id || null);
           await fetchTenantAndRole(currentUser);
         } else {
           setTenantId(null);

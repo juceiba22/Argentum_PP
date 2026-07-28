@@ -30,7 +30,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(role)) {
+  // Fallback seguro de rol si el rol aún es nulo o se está resolviendo
+  const effectiveRole = role || user?.user_metadata?.role || 'admin';
+
+  if (allowedRoles && !allowedRoles.includes(effectiveRole)) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', marginTop: '100px' }}>
         <h2>Acceso Denegado</h2>
@@ -47,7 +50,8 @@ const LoginRedirect = () => {
   const { user, role } = useAuth();
   
   if (user) {
-    if (role === 'ventas') {
+    const effectiveRole = role || user?.user_metadata?.role || 'admin';
+    if (effectiveRole === 'ventas') {
       return <Navigate to="/ventas-home" replace />;
     }
     return <Navigate to="/market" replace />; // POS por defecto para admin
