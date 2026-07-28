@@ -17,7 +17,6 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      // Consultar la tabla puente 'tenant_users' usando maybeSingle() para evitar excepciones si no hay registros
       const { data, error } = await supabase
         .from('tenant_users')
         .select('tenant_id, role')
@@ -35,7 +34,6 @@ export const AuthProvider = ({ children }) => {
         setTenantId(data.tenant_id);
         setRole(data.role || sessionUser.user_metadata?.role || 'admin');
       } else {
-        // Fallback si el usuario no tiene fila en tenant_users aún
         setTenantId(sessionUser.user_metadata?.tenant_id || null);
         setRole(sessionUser.user_metadata?.role || 'admin');
       }
@@ -47,6 +45,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Temporizador de seguridad: si Supabase o la red tardan más de 1.2s en F5, forzar salida del loading
+    const safetyTimer = setTimeout(() => {
+      setLoading(false);
+    }, 1200);
+
     // 1. Inicializar sesión al montar
     const initSession = async () => {
       try {
@@ -68,6 +71,7 @@ export const AuthProvider = ({ children }) => {
         setTenantId(null);
         setRole(null);
       } finally {
+        clearTimeout(safetyTimer);
         setLoading(false);
       }
     };
@@ -76,7 +80,7 @@ export const AuthProvider = ({ children }) => {
 
     // 2. Escuchar cambios de autenticación (login / logout / token refresh)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'INITIAL_SESSION') return; // Ya lo maneja initSession
+      if (event === 'INITIAL_SESSION') return;
 
       try {
         const currentUser = session?.user || null;
@@ -91,11 +95,13 @@ export const AuthProvider = ({ children }) => {
       } catch (err) {
         console.error('Error en el listener de auth:', err);
       } finally {
+        clearTimeout(safetyTimer);
         setLoading(false);
       }
     });
 
     return () => {
+      clearTimeout(safetyTimer);
       subscription?.unsubscribe();
     };
   }, []);
