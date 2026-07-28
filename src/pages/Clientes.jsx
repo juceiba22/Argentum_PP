@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Plus, Search, ChevronDown, ChevronUp, Package, AlertCircle, CheckCircle2, Users } from 'lucide-react';
 import { createCliente, getClienteById, getPedidosByClienteId, getAllClientes } from '../services/clientesApi';
 import { useActivity } from '../context/ActivityContext';
+import { useAuth } from '../context/AuthContext';
 import { useEffect } from 'react';
 
 export default function Clientes() {
+  const { tenantId } = useAuth();
   const { logCliente } = useActivity();
   // Crear Cliente State
   const [nuevoCliente, setNuevoCliente] = useState({ nombre: '', email: '', telefono: '' });
@@ -25,9 +27,14 @@ export default function Clientes() {
   const [cargandoLista, setCargandoLista] = useState(true);
 
   const cargarTodos = async () => {
+    if (!tenantId) {
+      setListaClientes([]);
+      setCargandoLista(false);
+      return;
+    }
     setCargandoLista(true);
     try {
-      const data = await getAllClientes();
+      const data = await getAllClientes(tenantId);
       setListaClientes(data || []);
     } catch (err) {
       console.error("Error al cargar lista de clientes", err);
@@ -38,7 +45,7 @@ export default function Clientes() {
 
   useEffect(() => {
     cargarTodos();
-  }, []);
+  }, [tenantId]);
 
   // --- Handlers para Crear Cliente ---
   const handleCrearCliente = async (e) => {
@@ -48,7 +55,7 @@ export default function Clientes() {
     setClienteCreadoId(null);
 
     try {
-      const data = await createCliente(nuevoCliente);
+      const data = await createCliente(nuevoCliente, tenantId);
       setClienteCreadoId(data.id);
       logCliente({ id: data.id, nombre: nuevoCliente.nombre, email: nuevoCliente.email });
       setNuevoCliente({ nombre: '', email: '', telefono: '' }); // Limpiar
@@ -73,11 +80,11 @@ export default function Clientes() {
     setExpandedRowId(null);
 
     try {
-      const cliente = await getClienteById(searchId);
+      const cliente = await getClienteById(searchId, tenantId);
       if (!cliente) throw new Error("Cliente no encontrado");
       
       setClienteEncontrado(cliente);
-      const pedidos = await getPedidosByClienteId(searchId);
+      const pedidos = await getPedidosByClienteId(searchId, tenantId);
       setPedidosCliente(pedidos || []);
     } catch (err) {
       console.error(err);

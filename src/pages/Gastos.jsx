@@ -22,7 +22,7 @@ const CATEGORIAS_Y_RUBROS = {
 };
 
 export default function Gastos() {
-  const { user } = useAuth();
+  const { user, tenantId } = useAuth();
   const [gastos, setGastos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [procesando, setProcesando] = useState(false);
@@ -44,9 +44,14 @@ export default function Gastos() {
   const [vidaUtil, setVidaUtil] = useState('');
 
   const fetchData = async () => {
+    if (!tenantId) {
+      setGastos([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const data = await getGastos();
+      const data = await getGastos(tenantId);
       setGastos(data || []);
     } catch (e) {
       console.error(e);
@@ -57,7 +62,7 @@ export default function Gastos() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [tenantId]);
 
   // Update rubro if categoria changes
   useEffect(() => {
@@ -89,7 +94,8 @@ export default function Gastos() {
           importe: Number(importe),
           descripcion: finalDescripcion
         },
-        user?.email || 'Sistema'
+        user?.email || 'Sistema',
+        tenantId
       );
       
       setMensaje({ type: 'success', text: 'Gasto registrado y debitado correctamente de la liquidez.' });

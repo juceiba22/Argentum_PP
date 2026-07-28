@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Truck, Plus, Trash2, Edit2, Mail, Phone, MapPin } from 'lucide-react';
 import { getProveedores, createProveedor, deleteProveedor, updateProveedor } from '../services/erpApi';
+import { useAuth } from '../context/AuthContext';
 
 export default function Proveedores() {
+  const { tenantId } = useAuth();
   const [proveedores, setProveedores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [procesando, setProcesando] = useState(false);
@@ -10,9 +12,14 @@ export default function Proveedores() {
   const [formData, setFormData] = useState({ nombre: '', cuit: '', telefono: '', email: '', direccion: '' });
   
   const fetchProveedores = async () => {
+    if (!tenantId) {
+      setProveedores([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const data = await getProveedores();
+      const data = await getProveedores(tenantId);
       setProveedores(data || []);
     } catch (e) {
       console.error(e);
@@ -23,7 +30,7 @@ export default function Proveedores() {
 
   useEffect(() => {
     fetchProveedores();
-  }, []);
+  }, [tenantId]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -34,7 +41,7 @@ export default function Proveedores() {
     if (!formData.nombre) return;
     setProcesando(true);
     try {
-      await createProveedor({ ...formData, activo: true });
+      await createProveedor({ ...formData, activo: true }, tenantId);
       setFormData({ nombre: '', cuit: '', telefono: '', email: '', direccion: '' });
       fetchProveedores();
     } catch (e) {

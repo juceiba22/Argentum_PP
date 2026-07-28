@@ -69,7 +69,13 @@ export default function Market() {
   }, [pollingInterval]);
 
   const cargarDatos = async () => {
-    if (!tenantId) return;
+    if (!tenantId) {
+      setProductos([]);
+      setPromociones([]);
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const [invData, promoData] = await Promise.all([

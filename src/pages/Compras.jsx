@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { PackagePlus, Trash2, Check, ShoppingCart, Truck, Plus } from 'lucide-react';
 import { getProveedores, registrarCompraCompleta } from '../services/erpApi';
 import { getInventario } from '../services/inventarioApi';
+import { useAuth } from '../context/AuthContext';
 
 export default function Compras() {
+  const { user, tenantId } = useAuth();
   const [proveedores, setProveedores] = useState([]);
   const [inventario, setInventario] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,9 +25,15 @@ export default function Compras() {
   const [tempPrecio, setTempPrecio] = useState('');
 
   const fetchData = async () => {
+    if (!tenantId) {
+      setProveedores([]);
+      setInventario([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const [provs, inv] = await Promise.all([getProveedores(), getInventario()]);
+      const [provs, inv] = await Promise.all([getProveedores(tenantId), getInventario(tenantId)]);
       setProveedores(provs || []);
       setInventario(inv || []);
     } catch (error) {
@@ -37,7 +45,7 @@ export default function Compras() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [tenantId]);
 
   const handleAddItem = (e) => {
     e.preventDefault();
@@ -77,7 +85,8 @@ export default function Compras() {
       await registrarCompraCompleta(
         { proveedor_id: proveedorId, importe: totalCompra, observaciones },
         items,
-        'Admin' // Sistema de autenticación
+        user?.email || 'Admin', // Sistema de autenticación
+        tenantId
       );
       
       setMensaje({ type: 'success', text: 'Compra registrada con éxito y stock repuesto.' });

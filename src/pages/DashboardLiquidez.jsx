@@ -1,18 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { DollarSign, ArrowUpRight, ArrowDownRight, Activity, Calendar, List } from 'lucide-react';
 import { getIngresosY_Egresos, getMovimientos } from '../services/erpApi';
+import { useAuth } from '../context/AuthContext';
 
 export default function DashboardLiquidez() {
+  const { tenantId } = useAuth();
   const [liquidez, setLiquidez] = useState({ ingresos: 0, egresos: 0, liquidez: 0 });
   const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchDatos = async () => {
+      if (!tenantId) {
+        setLiquidez({ ingresos: 0, egresos: 0, liquidez: 0 });
+        setMovimientos([]);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
-        const liqData = await getIngresosY_Egresos();
-        const movData = await getMovimientos();
+        const liqData = await getIngresosY_Egresos(tenantId);
+        const movData = await getMovimientos(tenantId);
         
         setLiquidez(liqData);
         setMovimientos(movData || []);
@@ -23,7 +31,7 @@ export default function DashboardLiquidez() {
       }
     };
     fetchDatos();
-  }, []);
+  }, [tenantId]);
 
   const formatearFecha = (isoString) => {
     if (!isoString) return 'S/D';

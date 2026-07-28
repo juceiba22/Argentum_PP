@@ -2,8 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Megaphone, Plus, Trash2, Check, X, Tag, Power, PowerOff } from 'lucide-react';
 import { getInventario, uploadImage } from '../services/inventarioApi';
 import { getAllPromociones, createPromocion, deletePromocion, updatePromocion } from '../services/promocionesApi';
+import { useAuth } from '../context/AuthContext';
 
 export default function GestionPromociones() {
+  const { tenantId } = useAuth();
   const [promociones, setPromociones] = useState([]);
   const [inventario, setInventario] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,11 +19,17 @@ export default function GestionPromociones() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const cargarDatos = async () => {
+    if (!tenantId) {
+      setInventario([]);
+      setPromociones([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const [invData, promoData] = await Promise.all([
-        getInventario(),
-        getAllPromociones()
+        getInventario(tenantId),
+        getAllPromociones(tenantId)
       ]);
       setInventario(invData || []);
       setPromociones(promoData || []);
@@ -34,7 +42,7 @@ export default function GestionPromociones() {
 
   useEffect(() => {
     cargarDatos();
-  }, []);
+  }, [tenantId]);
 
   const handleAgregar = async (e) => {
     e.preventDefault();
@@ -63,7 +71,7 @@ export default function GestionPromociones() {
         precio_promocional: Number(precio),
         imagen_url: imagenUrl,
         activa: true
-      });
+      }, tenantId);
 
       setProductoId('');
       setCantidad('');
