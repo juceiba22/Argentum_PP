@@ -1,4 +1,9 @@
 import { MercadoPagoConfig, Order } from 'mercadopago';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Vercel Serverless Function para consultar el estado del Payment Intent
 export default async function handler(req, res) {
@@ -15,14 +20,32 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method Not Allowed' });
   }
 
-  const { payment_intent_id } = req.query;
+  const { payment_intent_id, tenantId } = req.query;
 
   if (!payment_intent_id) {
     return res.status(400).json({ success: false, error: 'Falta payment_intent_id' });
   }
 
+  let accessToken = process.env.MP_ACCESS_TOKEN;
+
+  if (tenantId) {
+    try {
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('mp_access_token')
+        .eq('id', tenantId)
+        .single();
+        
+      if (tenant && tenant.mp_access_token) {
+        accessToken = tenant.mp_access_token;
+      }
+    } catch (err) {
+      console.warn("Error consultando tenant para mercado pago:", err);
+    }
+  }
+
   const client = new MercadoPagoConfig({ 
-    accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-TU_ACCESS_TOKEN_AQUI' 
+    accessToken: accessToken || 'APP_USR-TU_ACCESS_TOKEN_AQUI' 
   });
 
   try {

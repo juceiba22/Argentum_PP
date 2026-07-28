@@ -1,6 +1,6 @@
 // Servicio para comunicarse con el endpoint serverless de Vercel (Mercado Pago Point)
 
-export const cobrarConPoint = async (total, pedidoId, mesa) => {
+export const cobrarConPoint = async (total, pedidoId, mesa, tenantId) => {
   try {
     // Apuntamos a la ruta local/relativa que Vercel expone para la carpeta /api
     const response = await fetch('/api/mercadopago/create-point-payment', {
@@ -11,7 +11,8 @@ export const cobrarConPoint = async (total, pedidoId, mesa) => {
       body: JSON.stringify({
         total,
         pedidoId,
-        mesa
+        mesa,
+        tenantId
       })
     });
 
@@ -28,9 +29,9 @@ export const cobrarConPoint = async (total, pedidoId, mesa) => {
   }
 };
 
-export const getPaymentIntentStatus = async (paymentIntentId) => {
+export const getPaymentIntentStatus = async (paymentIntentId, tenantId) => {
   try {
-    const response = await fetch(`/api/mercadopago/get-payment-intent?payment_intent_id=${paymentIntentId}`);
+    const response = await fetch(`/api/mercadopago/get-payment-intent?payment_intent_id=${paymentIntentId}&tenantId=${tenantId || ''}`);
     const data = await response.json();
 
     if (!response.ok || !data.success) {
@@ -44,14 +45,14 @@ export const getPaymentIntentStatus = async (paymentIntentId) => {
   }
 };
 
-export const cancelarPointPayment = async (paymentIntentId) => {
+export const cancelarPointPayment = async (paymentIntentId, tenantId) => {
   try {
     const response = await fetch('/api/mercadopago/cancel-point-payment', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ payment_intent_id: paymentIntentId })
+      body: JSON.stringify({ payment_intent_id: paymentIntentId, tenantId })
     });
     const data = await response.json();
     return data;

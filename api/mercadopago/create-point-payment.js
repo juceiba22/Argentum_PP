@@ -1,5 +1,10 @@
 import { MercadoPagoConfig, Order } from 'mercadopago';
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Vercel Serverless Function
 export default async function handler(req, res) {
@@ -16,25 +21,43 @@ export default async function handler(req, res) {
     return res.status(405).json({ success: false, error: 'Method Not Allowed' });
   }
 
-  // 1. Inicializar SDK de Mercado Pago
-  // Vercel utilizará process.env.MP_ACCESS_TOKEN de las variables de entorno de producción
-  const client = new MercadoPagoConfig({ 
-    accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-TU_ACCESS_TOKEN_AQUI' 
-  });
-
-  const { total, pedidoId } = req.body;
+  const { total, pedidoId, tenantId } = req.body;
 
   if (!total || !pedidoId) {
     return res.status(400).json({ success: false, error: 'Faltan parámetros: total y/o pedidoId' });
   }
+
+  let accessToken = process.env.MP_ACCESS_TOKEN;
+  let deviceId = process.env.MP_POINT_DEVICE_ID;
+
+  if (tenantId) {
+    try {
+      const { data: tenant } = await supabase
+        .from('tenants')
+        .select('mp_access_token, mp_point_device_id')
+        .eq('id', tenantId)
+        .single();
+        
+      if (tenant) {
+        if (tenant.mp_access_token) accessToken = tenant.mp_access_token;
+        if (tenant.mp_point_device_id) deviceId = tenant.mp_point_device_id;
+      }
+    } catch (err) {
+      console.warn("Error consultando tenant para mercado pago:", err);
+    }
+  }
+
+  // 1. Inicializar SDK de Mercado Pago
+  const client = new MercadoPagoConfig({ 
+    accessToken: accessToken || 'APP_USR-TU_ACCESS_TOKEN_AQUI' 
+  });
 
   try {
     // 2. Crear una instancia de Order
     const order = new Order(client);
 
     // 3. Obtener el ID del dispositivo (Point)
-    // En un entorno real, puedes pasarlo desde el frontend o tenerlo fijo aquí.
-    const DEVICE_ID = process.env.MP_POINT_DEVICE_ID || 'TU_DEVICE_ID';
+    const DEVICE_ID = deviceId || 'TU_DEVICE_ID';
 
     // 4. Crear la Orden
     const requestOptions = {
