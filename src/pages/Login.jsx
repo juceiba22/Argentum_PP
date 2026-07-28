@@ -31,6 +31,7 @@ export default function Login() {
         
         // 1. Inyección de roles duros según el correo
         if (normalizedEmail === 'admin@argentum.com' || normalizedEmail === 'juceiba22@gmail.com') newRole = 'admin';
+        else if (normalizedEmail.includes('ventas')) newRole = 'ventas';
         else if (!newRole) newRole = 'admin';
 
         // 2. Guardar en Supabase permanentemente si es diferente al actual
@@ -44,7 +45,11 @@ export default function Login() {
         }
 
         // 3. Redirección basada en el nuevo rol asignado
-        navigate('/erp/dashboard-liquidez');
+        if (newRole === 'ventas') {
+          navigate('/market');
+        } else {
+          navigate('/market');
+        }
       }
     } catch (error) {
       console.error(error);
