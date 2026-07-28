@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { getPromocionesActivas } from '../services/promocionesApi';
+import { getInventario } from '../services/inventarioApi';
 import { registrarPedidoWeb } from '../services/pedidosApi';
 import { supabase } from '../services/supabaseClient';
-import { Tag, ShoppingCart, Plus, Minus, X, CheckCircle, Info } from 'lucide-react';
+import { Tag, ShoppingCart, Plus, Minus, X, CheckCircle, Info, Package } from 'lucide-react';
 
 export default function PromocionesPublicas() {
   const [searchParams] = useSearchParams();
   const tenantParam = searchParams.get('local') || searchParams.get('tenant');
 
   const [promociones, setPromociones] = useState([]);
+  const [inventario, setInventario] = useState([]);
   const [nombreComercio, setNombreComercio] = useState('Lo De Cacho Carnes');
   const [resolvedTenantId, setResolvedTenantId] = useState(null);
   const [loading, setLoading] = useState(true);
   
+  // Categoría seleccionada por defecto: 'promociones'
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('promociones');
+
   // Estados del carrito y checkout
   const [carrito, setCarrito] = useState([]);
   const [isCartModalOpen, setIsCartModalOpen] = useState(false);
@@ -24,7 +29,7 @@ export default function PromocionesPublicas() {
   const WHATSAPP_NUMBER = "5491125675158";
 
   useEffect(() => {
-    const fetchPromos = async () => {
+    const fetchCatalogData = async () => {
       try {
         let activeTenantId = null;
 
@@ -45,7 +50,6 @@ export default function PromocionesPublicas() {
           }
         }
 
-        // Si no se encontró por parámetro o no vino en la URL, buscar el tenant por defecto
         if (!activeTenantId) {
           const { data: t } = await supabase.from('tenants').select('id, nombre_comercio').limit(1).maybeSingle();
           if (t) {
@@ -55,26 +59,64 @@ export default function PromocionesPublicas() {
         }
 
         setResolvedTenantId(activeTenantId);
-        const data = await getPromocionesActivas(activeTenantId);
-        setPromociones(data || []);
+
+        // Cargar promociones e inventario simultáneamente
+        const [promosData, invData] = await Promise.all([
+          getPromocionesActivas(activeTenantId),
+          getInventario(activeTenantId)
+        ]);
+
+        setPromociones(promosData || []);
+        setInventario(invData || []);
+
       } catch (error) {
-        console.error("Error al cargar promociones:", error);
+        console.error("Error al cargar catálogo:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchPromos();
+    fetchCatalogData();
   }, [tenantParam]);
 
-  const totalCarrito = carrito.reduce((sum, item) => sum + (item.precio_promocional * item.cantidad_carrito), 0);
+  // Clasificador de productos individuales por categoría
+  const clasificarProducto = (item) => {
+    const nombre = (item.nombre || '').toLowerCase();
+    const cat = (item.categoria || '').toLowerCase();
+    
+    if (cat.includes('pollo') || cat.includes('granja') || nombre.includes('pollo') || nombre.includes('pata') || nombre.includes('muslo') || nombre.includes('suprema') || nombre.includes('pechuga') || nombre.includes('ala')) {
+      return 'pollos';
+    }
+    if (cat.includes('embutido') || cat.includes('achura') || cat.includes('chacinado') || nombre.includes('chorizo') || nombre.includes('morcilla') || nombre.includes('salchicha') || nombre.includes('salame') || nombre.includes('jamon') || nombre.includes('achura') || nombre.includes('chinchul') || nombre.includes('molleja')) {
+      return 'embutidos';
+    }
+    return 'carnes';
+  };
 
-  const agregarAlCarrito = (promo) => {
+  const productosFiltrados = () => {
+    if (categoriaSeleccionada === 'promociones') return promociones;
+    if (categoriaSeleccionada === 'todos') return [...promociones, ...inventario];
+    return inventario.filter(item => clasificarProducto(item) === categoriaSeleccionada);
+  };
+
+  const totalCarrito = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad_carrito), 0);
+
+  const agregarAlCarrito = (producto) => {
+    const itemNorm = {
+      id: producto.id,
+      nombre: producto.nombre_producto || producto.nombre,
+      precio: Number(producto.precio_promocional || producto.precio_unitario || 0),
+      es_promocion: !!producto.precio_promocional,
+      cantidad_kg: producto.cantidad_kg || null,
+      unidad_medida: producto.unidad_medida || 'kg',
+      imagen_url: producto.imagen_url
+    };
+
     setCarrito(prev => {
-      const existe = prev.find(i => i.id === promo.id);
+      const existe = prev.find(i => i.id === itemNorm.id);
       if (existe) {
-        return prev.map(i => i.id === promo.id ? { ...i, cantidad_carrito: i.cantidad_carrito + 1 } : i);
+        return prev.map(i => i.id === itemNorm.id ? { ...i, cantidad_carrito: i.cantidad_carrito + 1 } : i);
       }
-      return [...prev, { ...promo, cantidad_carrito: 1 }];
+      return [...prev, { ...itemNorm, cantidad_carrito: 1 }];
     });
   };
 
@@ -100,13 +142,20 @@ export default function PromocionesPublicas() {
 
     setProcesando(true);
     try {
-      // 1. Guardar en Base de Datos asignando el tenant_id resuelto
-      await registrarPedidoWeb(totalCarrito, carrito, datosEntrega, resolvedTenantId);
+      // 1. Guardar en Base de Datos
+      const itemsAInsertar = carrito.map(item => ({
+        nombre_producto: item.nombre,
+        cantidad_carrito: item.cantidad_carrito,
+        precio_promocional: item.precio
+      }));
+
+      await registrarPedidoWeb(totalCarrito, itemsAInsertar, datosEntrega, resolvedTenantId);
       
       // 2. Armar mensaje de WhatsApp
       let mensaje = `¡Hola! Quiero confirmar mi pedido web:\n\n`;
       carrito.forEach(item => {
-        mensaje += `• ${item.cantidad_carrito}x ${item.nombre_producto} ($${Number(item.precio_promocional * item.cantidad_carrito).toLocaleString()})\n`;
+        const detalleCant = item.cantidad_kg ? ` (Llevá ${item.cantidad_kg} Kg)` : ` (${item.unidad_medida})`;
+        mensaje += `• ${item.cantidad_carrito}x ${item.nombre}${detalleCant} - $${Number(item.precio * item.cantidad_carrito).toLocaleString()}\n`;
       });
       mensaje += `\n*Total a pagar: $${totalCarrito.toLocaleString()}*\n`;
       mensaje += `*Método de entrega:* ${datosEntrega.metodo === 'retiro' ? 'Retiro en el local' : 'A domicilio'}\n`;
@@ -132,34 +181,82 @@ export default function PromocionesPublicas() {
     }
   };
 
+  const listaActual = productosFiltrados();
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', padding: '40px 20px 120px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
-        <header style={{ textAlign: 'center', marginBottom: '48px' }}>
-          <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '16px', background: 'linear-gradient(to right, #f87171, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        {/* ENCABEZADO */}
+        <header style={{ textAlign: 'center', marginBottom: '36px' }}>
+          <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '12px', background: 'linear-gradient(to right, #f87171, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             {nombreComercio}
           </h1>
-          <p style={{ fontSize: '1.2rem', color: '#94a3b8' }}>Las mejores ofertas en cortes seleccionados para vos.</p>
+          <p style={{ fontSize: '1.1rem', color: '#94a3b8' }}>Catálogo online de ofertas y cortes seleccionados</p>
         </header>
 
+        {/* NAVEGACIÓN POR CATEGORÍAS (TABS) */}
+        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '16px', marginBottom: '36px', scrollbarWidth: 'none' }}>
+          {[
+            { id: 'promociones', label: '🔥 Promociones', count: promociones.length },
+            { id: 'carnes', label: '🥩 Carnes', count: inventario.filter(i => clasificarProducto(i) === 'carnes').length },
+            { id: 'pollos', label: '🍗 Pollos', count: inventario.filter(i => clasificarProducto(i) === 'pollos').length },
+            { id: 'embutidos', label: '🌭 Embutidos', count: inventario.filter(i => clasificarProducto(i) === 'embutidos').length },
+            { id: 'todos', label: '📋 Todos', count: promociones.length + inventario.length }
+          ].map(cat => {
+            const isActive = categoriaSeleccionada === cat.id;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setCategoriaSeleccionada(cat.id)}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '99px',
+                  border: isActive ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.1)',
+                  background: isActive ? 'rgba(249, 115, 22, 0.2)' : 'rgba(30, 41, 59, 0.7)',
+                  color: isActive ? '#f97316' : '#cbd5e1',
+                  fontWeight: isActive ? 800 : 600,
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  backdropFilter: 'blur(10px)',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <span>{cat.label}</span>
+                <span style={{ fontSize: '0.8rem', background: isActive ? '#f97316' : 'rgba(255,255,255,0.1)', color: 'white', padding: '2px 8px', borderRadius: '12px' }}>
+                  {cat.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* LISTADO DE PRODUCTOS */}
         {loading ? (
           <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '1.2rem', padding: '40px' }}>
-            Cargando las mejores ofertas...
+            Cargando catálogo...
           </div>
-        ) : promociones.length === 0 ? (
+        ) : listaActual.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '60px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
             <Tag size={64} color="#475569" style={{ margin: '0 auto 24px' }} />
-            <h2 style={{ fontSize: '1.5rem', color: '#e2e8f0', marginBottom: '8px' }}>No hay promociones activas en este momento.</h2>
-            <p style={{ color: '#94a3b8' }}>¡Vuelve pronto para ver nuestras ofertas!</p>
+            <h2 style={{ fontSize: '1.5rem', color: '#e2e8f0', marginBottom: '8px' }}>No hay productos en esta categoría en este momento.</h2>
+            <p style={{ color: '#94a3b8' }}>¡Probá seleccionando otra categoría arriba!</p>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '32px' }}>
-            {promociones.map(promo => {
-              const itemEnCarrito = carrito.find(i => i.id === promo.id);
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '32px' }}>
+            {listaActual.map(prod => {
+              const esPromo = !!prod.precio_promocional;
+              const nombre = prod.nombre_producto || prod.nombre;
+              const precio = Number(prod.precio_promocional || prod.precio_unitario || 0);
+              const itemEnCarrito = carrito.find(i => i.id === prod.id);
+
               return (
                 <div 
-                  key={promo.id} 
+                  key={prod.id} 
                   style={{
                     background: 'rgba(30, 41, 59, 0.7)',
                     backdropFilter: 'blur(10px)',
@@ -170,47 +267,61 @@ export default function PromocionesPublicas() {
                     transition: 'transform 0.3s ease, box-shadow 0.3s ease'
                   }}
                 >
-                  <div style={{ height: '220px', backgroundColor: '#0f172a', position: 'relative', overflow: 'hidden' }}>
-                    {promo.imagen_url ? (
+                  <div style={{ height: '200px', backgroundColor: '#0f172a', position: 'relative', overflow: 'hidden' }}>
+                    {prod.imagen_url ? (
                       <img 
-                        src={promo.imagen_url} 
-                        alt={promo.nombre_producto} 
+                        src={prod.imagen_url} 
+                        alt={nombre} 
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : (
                       <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(45deg, #1e293b, #0f172a)' }}>
-                        <Tag size={64} color="#334155" />
+                        {esPromo ? <Tag size={64} color="#334155" /> : <Package size={64} color="#334155" />}
                       </div>
                     )}
-                    <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#ef4444', color: 'white', padding: '8px 16px', borderRadius: '99px', fontWeight: 'bold', fontSize: '0.9rem', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
-                      OFERTA
-                    </div>
+                    
+                    {esPromo ? (
+                      <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#ef4444', color: 'white', padding: '6px 14px', borderRadius: '99px', fontWeight: 'bold', fontSize: '0.85rem', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+                        OFERTA
+                      </div>
+                    ) : (
+                      <div style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(15, 23, 42, 0.8)', color: '#94a3b8', padding: '6px 12px', borderRadius: '99px', fontWeight: 'bold', fontSize: '0.85rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        {prod.unidad_medida || 'kg'}
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ padding: '24px' }}>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '8px', color: '#f8fafc' }}>
-                      {promo.nombre_producto}
+                    <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px', color: '#f8fafc' }}>
+                      {nombre}
                     </h3>
-                    <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '8px', color: '#cbd5e1', fontWeight: 600, marginBottom: '16px' }}>
-                      Llevá {promo.cantidad_kg} Kg
-                    </div>
+                    
+                    {esPromo ? (
+                      <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '8px', color: '#cbd5e1', fontWeight: 600, marginBottom: '16px' }}>
+                        Llevá {prod.cantidad_kg} Kg
+                      </div>
+                    ) : (
+                      <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '8px', color: '#94a3b8', fontWeight: 500, marginBottom: '16px' }}>
+                        Precio por {prod.unidad_medida || 'kg'}
+                      </div>
+                    )}
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '8px' }}>
                       <div>
-                        <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '4px' }}>Precio Especial</p>
-                        <p style={{ fontSize: '2.5rem', fontWeight: 900, color: '#10b981', lineHeight: 1 }}>
-                          ${Number(promo.precio_promocional).toLocaleString()}
+                        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>{esPromo ? 'Precio Especial' : 'Precio'}</p>
+                        <p style={{ fontSize: '2.2rem', fontWeight: 900, color: '#10b981', lineHeight: 1 }}>
+                          ${precio.toLocaleString()}
                         </p>
                       </div>
                     </div>
 
                     {itemEnCarrito ? (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '24px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '8px' }}>
-                        <button onClick={() => modificarCantidad(promo.id, -1)} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '8px' }}>
+                        <button onClick={() => modificarCantidad(prod.id, -1)} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Minus size={20} />
                         </button>
                         <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{itemEnCarrito.cantidad_carrito}</span>
-                        <button onClick={() => modificarCantidad(promo.id, 1)} style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: 'none', width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <button onClick={() => modificarCantidad(prod.id, 1)} style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: 'none', width: '40px', height: '40px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Plus size={20} />
                         </button>
                       </div>
@@ -218,13 +329,13 @@ export default function PromocionesPublicas() {
                       <button 
                         style={{
                           width: '100%',
-                          marginTop: '24px',
+                          marginTop: '20px',
                           background: '#f97316',
                           color: 'white',
                           border: 'none',
-                          padding: '16px',
+                          padding: '14px',
                           borderRadius: '12px',
-                          fontSize: '1.1rem',
+                          fontSize: '1rem',
                           fontWeight: 'bold',
                           cursor: 'pointer',
                           display: 'flex',
@@ -235,9 +346,9 @@ export default function PromocionesPublicas() {
                         }}
                         onMouseOver={e => e.currentTarget.style.background = '#ea580c'}
                         onMouseOut={e => e.currentTarget.style.background = '#f97316'}
-                        onClick={() => agregarAlCarrito(promo)}
+                        onClick={() => agregarAlCarrito(prod)}
                       >
-                        <ShoppingCart size={20} /> Agregar al carrito
+                        <ShoppingCart size={18} /> Agregar al carrito
                       </button>
                     )}
                   </div>
@@ -248,7 +359,7 @@ export default function PromocionesPublicas() {
         )}
       </div>
 
-      {/* FLOATING CART WIDGET */}
+      {/* WIDGET FLOTANTE DEL CARRITO */}
       {carrito.length > 0 && !isCartModalOpen && !isCheckoutModalOpen && (
         <div style={{
           position: 'fixed', bottom: '24px', right: '50%', transform: 'translateX(50%)',
@@ -282,7 +393,7 @@ export default function PromocionesPublicas() {
         </div>
       )}
 
-      {/* CART MODAL */}
+      {/* MODAL DEL CARRITO */}
       {isCartModalOpen && !isCheckoutModalOpen && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -302,8 +413,8 @@ export default function PromocionesPublicas() {
               {carrito.map(item => (
                 <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <div style={{ flex: 1 }}>
-                    <h4 style={{ color: 'white', margin: 0 }}>{item.nombre_producto}</h4>
-                    <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>${Number(item.precio_promocional).toLocaleString()} c/u</span>
+                    <h4 style={{ color: 'white', margin: 0 }}>{item.nombre}</h4>
+                    <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>${item.precio.toLocaleString()} c/u</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '4px 8px', borderRadius: '8px' }}>
                     <button onClick={() => modificarCantidad(item.id, -1)} style={{ background: 'none', color: '#94a3b8', border: 'none', cursor: 'pointer' }}><Minus size={16} /></button>
@@ -329,7 +440,7 @@ export default function PromocionesPublicas() {
         </div>
       )}
 
-      {/* CHECKOUT MODAL */}
+      {/* MODAL DE CHECKOUT */}
       {isCheckoutModalOpen && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -379,10 +490,7 @@ export default function PromocionesPublicas() {
               <Info color="#3b82f6" style={{ flexShrink: 0 }} />
               <div>
                 <p style={{ color: '#e2e8f0', fontSize: '0.95rem', margin: 0, lineHeight: 1.4 }}>
-                  Recordá que las promociones exclusivas web se abonan únicamente en <strong>Efectivo</strong> o <strong>Transferencia</strong>.
-                </p>
-                <p style={{ color: '#93c5fd', fontWeight: 'bold', margin: '8px 0 0 0', fontSize: '1rem' }}>
-                  Alias: <span style={{ background: 'rgba(59,130,246,0.2)', padding: '2px 6px', borderRadius: '4px' }}>lodecacho.carnes</span>
+                  Recordá que los pedidos online se abonan en <strong>Efectivo</strong> o <strong>Transferencia</strong> al momento de la entrega/retiro.
                 </p>
               </div>
             </div>
@@ -392,7 +500,7 @@ export default function PromocionesPublicas() {
               disabled={procesando}
               style={{ width: '100%', padding: '16px', borderRadius: '12px', background: '#25D366', color: 'white', border: 'none', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: procesando ? 0.7 : 1 }}
             >
-              {procesando ? 'Procesando...' : 'Confirmar Compra'}
+              {procesando ? 'Procesando...' : 'Confirmar Compra por WhatsApp'}
             </button>
           </div>
         </div>
