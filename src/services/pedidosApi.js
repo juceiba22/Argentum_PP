@@ -1,104 +1,28 @@
 import { supabase } from './supabaseClient';
 import { registrarMovimiento } from './erpApi';
 
-// 1. Obtener todos los pedidos junto con el nombre del cliente
-export const getTodosLosPedidos = async () => {
+// Obtener todos los pedidos filtrados por carnicería
+export const getTodosLosPedidos = async (tenantId) => {
+  if (!tenantId) return [];
+
   const { data, error } = await supabase
     .from('pedidos')
     .select('*')
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   return data;
 };
 
-// 2. Crear un pedido y sus ítems de forma relacionada
-export const createPedidoCompleto = async (mesa, items) => {
-  // A. Calcular el total del pedido sumando subtotal de los items
-  const totalPedido = items.reduce((acc, item) => acc + (item.cantidad * item.precio_unitario), 0);
+// Registrar venta directa desde el POS de la carnicería
+export const registrarVentaDirecta = async (total, medioPago, items = [], clienteId = null, tenantId) => {
+  if (!tenantId) throw new Error('Se requiere tenantId para registrar la venta.');
 
-  // B. Insertar el registro principal en la tabla pedidos
-  const { data: pedidoData, error: pedidoError } = await supabase
-    .from('pedidos')
-    .insert([
-      { 
-        mesa: parseInt(mesa, 10), 
-        estado: 'Pendiente', 
-        total: totalPedido 
-      }
-    ])
-    .select()
-    .single();
-
-  if (pedidoError) throw pedidoError;
-
-  // C. Preparar los datos de los ítems con el pedido_id recién generado
-  const itemsAInsertar = items.map(item => ({
-    pedido_id: pedidoData.id,
-    producto_nombre: item.producto_nombre,
-    cantidad: item.cantidad,
-    precio_unitario: item.precio_unitario
-  }));
-
-  // D. Insertar todos los ítems en la tabla items_pedido
-  const { error: itemsError } = await supabase
-    .from('items_pedido')
-    .insert(itemsAInsertar);
-
-  if (itemsError) throw itemsError;
-
-  return pedidoData;
-};
-
-// 3. Actualizar el estado de un pedido específico
-export const updateEstadoPedido = async (pedidoId, nuevoEstado) => {
-  const { data, error } = await supabase
-    .from('pedidos')
-    .update({ estado: nuevoEstado })
-    .eq('id', pedidoId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-};
-
-// 5. Obtener cobros realizados (Auditoría de Caja)
-export const getCobrosRealizados = async () => {
-  const { data, error } = await supabase
-    .from('pedidos')
-    .select('*')
-    .eq('estado', 'Pagado')
-    .order('fecha_cobro', { ascending: false, nullsFirst: false });
-
-  if (error) throw error;
-  return data;
-};
-
-// 4. Actualizar estado y datos de cobro financiero desde Point
-export const updateCobroPedido = async (pedidoId, paymentData) => {
-  const { data, error } = await supabase
-    .from('pedidos')
-    .update({ 
-      estado: 'Pagado',
-      payment_id: paymentData.id ? String(paymentData.id) : `POINT-${Date.now()}`,
-      payment_status: paymentData.status || 'approved',
-      medio_pago: 'mercado_pago_point',
-      fecha_cobro: new Date().toISOString()
-    })
-    .eq('id', pedidoId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-};
-
-// 6. Registrar venta directa desde Market
-export const registrarVentaDirecta = async (total, medioPago, items = [], clienteId = null) => {
   const { data, error } = await supabase
     .from('pedidos')
     .insert([{
+      tenant_id: tenantId,
       estado: 'Pagado',
       total: total,
       medio_pago: medioPago,
@@ -112,6 +36,7 @@ export const registrarVentaDirecta = async (total, medioPago, items = [], client
 
   if (items && items.length > 0) {
     const itemsAInsertar = items.map(item => ({
+      tenant_id: tenantId,
       pedido_id: data.id,
       producto_nombre: item.producto.nombre,
       cantidad: item.cantidad,
@@ -127,6 +52,7 @@ export const registrarVentaDirecta = async (total, medioPago, items = [], client
 
   try {
     await registrarMovimiento({
+      tenant_id: tenantId,
       tipo: 'INGRESO',
       monto: total,
       categoria: 'Venta',
@@ -141,27 +67,56 @@ export const registrarVentaDirecta = async (total, medioPago, items = [], client
   return data;
 };
 
-// 7. Registrar pedido web público
-export const registrarPedidoWeb = async (total, items, datosEntrega) => {
+// Obtener cobros realizados filtrados por carnicería
+export const getCobrosRealizados = async (tenantId) => {
+  if (!tenantId) return [];
+
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select('*')
+    .eq('tenant_id', tenantId)
+    .eq('estado', 'Pagado')
+    .order('fecha_cobro', { ascending: false, nullsFirst: false });
+
+  if (error) throw error;
+  return data;
+};
+
+// Actualizar estado de pedido
+export const updateEstadoPedido = async (pedidoId, nuevoEstado) => {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .update({ estado: nuevoEstado })
+    .eq('id', pedidoId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+};
+
+// Registrar pedido desde la web pública (Promociones)
+export const registrarPedidoWeb = async (total, items = [], datosEntrega = {}, tenantId = null) => {
+  // Nota: como es público puede no traer tenantId, en un multitenant real se debería inferir de la URL.
+  // Aquí usamos insert normal y permitimos que el backend lo maneje o asigne nulo si es genérico.
   const { data, error } = await supabase
     .from('pedidos')
     .insert([{
-      mesa: 0, // 0 = Pedido Web
+      tenant_id: tenantId, // Puede ser null en caso de que sea global 
       estado: 'Pendiente',
       total: total,
-      medio_pago: 'A convenir',
-      notas: `WEB - ${datosEntrega.metodo} ${datosEntrega.direccion ? '- ' + datosEntrega.direccion : ''}`,
+      medio_pago: 'efectivo', // Por defecto web se pacta pago contra entrega/transferencia manual
+      fecha_cobro: null,
+      metadata: datosEntrega
     }])
     .select()
     .single();
 
-  if (error) {
-    console.error("Error al insertar pedido web:", error);
-    throw error;
-  }
+  if (error) throw error;
 
   if (items && items.length > 0) {
     const itemsAInsertar = items.map(item => ({
+      tenant_id: tenantId,
       pedido_id: data.id,
       producto_nombre: item.nombre_producto,
       cantidad: item.cantidad_carrito,

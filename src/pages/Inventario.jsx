@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { PackageSearch, Plus, Trash2, Edit2, Check, X, AlertCircle, TrendingUp } from 'lucide-react';
 import { getInventario, addMercaderia, updateMercaderia, deleteMercaderia, uploadImage } from '../services/inventarioApi';
+import { useAuth } from '../context/AuthContext';
 
 const UNIDADES_MEDIDA = ['kg', 'gramos', 'unidades', 'paquetes', 'litros'];
 
 export default function Inventario() {
+  const { tenantId } = useAuth();
   const [inventario, setInventario] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -23,9 +25,10 @@ export default function Inventario() {
   const [editImagen, setEditImagen] = useState(null);
 
   const cargarInventario = async () => {
+    if (!tenantId) return;
     setLoading(true);
     try {
-      const data = await getInventario();
+      const data = await getInventario(tenantId);
       setInventario(data || []);
     } catch (error) {
       console.error("Error al cargar inventario:", error);
@@ -36,7 +39,7 @@ export default function Inventario() {
 
   useEffect(() => {
     cargarInventario();
-  }, []);
+  }, [tenantId]);
 
   const calcularValorTotal = () => {
     return inventario.reduce((acc, item) => acc + (Number(item.cantidad) * Number(item.precio_unitario)), 0);
@@ -56,7 +59,7 @@ export default function Inventario() {
     try {
       let imagenUrl = null;
       if (nuevaImagen) {
-        imagenUrl = await uploadImage(nuevaImagen);
+        imagenUrl = await uploadImage(nuevaImagen, tenantId);
       }
 
       await addMercaderia({
@@ -65,7 +68,7 @@ export default function Inventario() {
         unidad_medida: nuevaUnidad,
         precio_unitario: Number(nuevoPrecio),
         imagen_url: imagenUrl
-      });
+      }, tenantId);
       
       setNuevoNombre('');
       setNuevaCantidad('');

@@ -1,19 +1,26 @@
 import { supabase } from './supabaseClient';
 
-export const getInventario = async () => {
+// Obtener inventario filtrado exclusivamente por la carnicería activa
+export const getInventario = async (tenantId) => {
+  if (!tenantId) return [];
+
   const { data, error } = await supabase
     .from('inventario')
     .select('*')
+    .eq('tenant_id', tenantId)
     .order('nombre', { ascending: true });
 
   if (error) throw error;
   return data;
 };
 
-export const addMercaderia = async (item) => {
+// Agregar un nuevo producto asignándole el tenant_id
+export const addMercaderia = async (item, tenantId) => {
+  if (!tenantId) throw new Error('Se requiere tenantId para registrar productos.');
+
   const { data, error } = await supabase
     .from('inventario')
-    .insert([item])
+    .insert([{ ...item, tenant_id: tenantId }])
     .select()
     .single();
 
@@ -21,6 +28,7 @@ export const addMercaderia = async (item) => {
   return data;
 };
 
+// Actualizar un producto existente
 export const updateMercaderia = async (id, itemData) => {
   const { data, error } = await supabase
     .from('inventario')
@@ -33,6 +41,7 @@ export const updateMercaderia = async (id, itemData) => {
   return data;
 };
 
+// Eliminar un producto
 export const deleteMercaderia = async (id) => {
   const { error } = await supabase
     .from('inventario')
@@ -43,11 +52,12 @@ export const deleteMercaderia = async (id) => {
   return true;
 };
 
-export const uploadImage = async (file) => {
+// Subida de imágenes organizadas por tenant_id
+export const uploadImage = async (file, tenantId) => {
   if (!file) return null;
   const fileExt = file.name.split('.').pop();
   const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-  const filePath = `${fileName}`;
+  const filePath = `${tenantId || 'general'}/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from('productos')
