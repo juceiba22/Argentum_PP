@@ -86,7 +86,7 @@ export default function Market() {
       setPromociones(promoData || []);
       
       if (user) {
-        const caja = await getCajaAbierta(user.email);
+        const caja = await getCajaAbierta(user.email, tenantId);
         setCajaAbierta(!!caja);
       }
     } catch (error) {
@@ -115,7 +115,7 @@ export default function Market() {
   const handleQuickAbrirCaja = async () => {
     setAbriendoCaja(true);
     try {
-      await abrirCaja(user.email, 0);
+      await abrirCaja(user.email, 0, tenantId);
       setCajaAbierta(true);
       setIsAbrirCajaModalOpen(false);
     } catch (error) {
@@ -241,14 +241,14 @@ export default function Market() {
     setMensaje(null);
     try {
       const pedidoIdTemp = `VTA-${Date.now()}`;
-      const intent = await cobrarConPoint(totalCarrito, pedidoIdTemp, '0');
+      const intent = await cobrarConPoint(totalCarrito, pedidoIdTemp, '0', tenantId);
       
       const pId = intent.id;
       setCurrentMpOrderId(pId);
 
       const interval = setInterval(async () => {
         try {
-          const statusData = await getPaymentIntentStatus(pId);
+          const statusData = await getPaymentIntentStatus(pId, tenantId);
           const status = statusData.status;
           if (status === 'processed') {
              clearInterval(interval);
@@ -281,7 +281,7 @@ export default function Market() {
     
     if (currentMpOrderId) {
       // Intentamos cancelarlo en el posnet en segundo plano
-      cancelarPointPayment(currentMpOrderId).catch(console.error);
+      cancelarPointPayment(currentMpOrderId, tenantId).catch(console.error);
       setCurrentMpOrderId(null);
     }
     
