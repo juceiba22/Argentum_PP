@@ -97,17 +97,28 @@ export const updateEstadoPedido = async (pedidoId, nuevoEstado) => {
 
 // Registrar pedido desde la web pública (Promociones)
 export const registrarPedidoWeb = async (total, items = [], datosEntrega = {}, tenantId = null) => {
-  // Nota: como es público puede no traer tenantId, en un multitenant real se debería inferir de la URL.
-  // Aquí usamos insert normal y permitimos que el backend lo maneje o asigne nulo si es genérico.
+  let activeTenantId = tenantId;
+
+  if (!activeTenantId) {
+    try {
+      const { data: t } = await supabase.from('tenants').select('id').limit(1).maybeSingle();
+      if (t?.id) activeTenantId = t.id;
+    } catch (e) {
+      console.warn("No se pudo inferir tenantId para pedido web:", e);
+    }
+  }
+
+  const notasDetalle = `Pedido Web (${datosEntrega.metodo === 'domicilio' ? 'Envío a Domicilio: ' + (datosEntrega.direccion || 'S/D') : 'Retiro en Local'})`;
+
   const { data, error } = await supabase
     .from('pedidos')
     .insert([{
-      tenant_id: tenantId, // Puede ser null en caso de que sea global 
+      tenant_id: activeTenantId, 
       estado: 'Pendiente',
       total: total,
-      medio_pago: 'efectivo', // Por defecto web se pacta pago contra entrega/transferencia manual
+      medio_pago: 'efectivo', 
       fecha_cobro: null,
-      metadata: datosEntrega
+      notas: notasDetalle
     }])
     .select()
     .single();
@@ -116,7 +127,7 @@ export const registrarPedidoWeb = async (total, items = [], datosEntrega = {}, t
 
   if (items && items.length > 0) {
     const itemsAInsertar = items.map(item => ({
-      tenant_id: tenantId,
+      tenant_id: activeTenantId,
       pedido_id: data.id,
       producto_nombre: item.nombre_producto,
       cantidad: item.cantidad_carrito,
