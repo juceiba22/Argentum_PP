@@ -1,10 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getPromocionesActivas } from '../services/promocionesApi';
 import { registrarPedidoWeb } from '../services/pedidosApi';
+import { supabase } from '../services/supabaseClient';
 import { Tag, ShoppingCart, Plus, Minus, X, CheckCircle, Info } from 'lucide-react';
 
 export default function PromocionesPublicas() {
+  const [searchParams] = useSearchParams();
+  const tenantParam = searchParams.get('tenant');
+
   const [promociones, setPromociones] = useState([]);
+  const [nombreComercio, setNombreComercio] = useState('Lo De Cacho Carnes');
+  const [resolvedTenantId, setResolvedTenantId] = useState(null);
   const [loading, setLoading] = useState(true);
   
   // Estados del carrito y checkout
@@ -19,7 +26,21 @@ export default function PromocionesPublicas() {
   useEffect(() => {
     const fetchPromos = async () => {
       try {
-        const data = await getPromocionesActivas();
+        let activeTenantId = tenantParam;
+
+        if (!activeTenantId) {
+          const { data: t } = await supabase.from('tenants').select('id, nombre_comercio').limit(1).maybeSingle();
+          if (t) {
+            activeTenantId = t.id;
+            if (t.nombre_comercio) setNombreComercio(t.nombre_comercio);
+          }
+        } else {
+          const { data: t } = await supabase.from('tenants').select('nombre_comercio').eq('id', activeTenantId).maybeSingle();
+          if (t?.nombre_comercio) setNombreComercio(t.nombre_comercio);
+        }
+
+        setResolvedTenantId(activeTenantId);
+        const data = await getPromocionesActivas(activeTenantId);
         setPromociones(data || []);
       } catch (error) {
         console.error("Error al cargar promociones:", error);
@@ -28,7 +49,7 @@ export default function PromocionesPublicas() {
       }
     };
     fetchPromos();
-  }, []);
+  }, [tenantParam]);
 
   const totalCarrito = carrito.reduce((sum, item) => sum + (item.precio_promocional * item.cantidad_carrito), 0);
 
@@ -64,8 +85,8 @@ export default function PromocionesPublicas() {
 
     setProcesando(true);
     try {
-      // 1. Guardar en Base de Datos
-      await registrarPedidoWeb(totalCarrito, carrito, datosEntrega);
+      // 1. Guardar en Base de Datos asignando el tenant_id resuelto
+      await registrarPedidoWeb(totalCarrito, carrito, datosEntrega, resolvedTenantId);
       
       // 2. Armar mensaje de WhatsApp
       let mensaje = `¡Hola! Quiero confirmar mi pedido web:\n\n`;
@@ -77,7 +98,7 @@ export default function PromocionesPublicas() {
       if (datosEntrega.metodo === 'domicilio') {
         mensaje += `*Dirección:* ${datosEntrega.direccion}\n`;
       }
-      mensaje += `\nEntiendo que el pago es en Efectivo o Transferencia al alias lodecacho.carnes. ¡Gracias!`;
+      mensaje += `\nEntiendo que el pago es en Efectivo o Transferencia. ¡Gracias!`;
 
       // 3. Abrir WhatsApp y limpiar carrito
       const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(mensaje)}`;
@@ -102,7 +123,7 @@ export default function PromocionesPublicas() {
         
         <header style={{ textAlign: 'center', marginBottom: '48px' }}>
           <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '16px', background: 'linear-gradient(to right, #f87171, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            Lo De Cacho Carnes
+            {nombreComercio}
           </h1>
           <p style={{ fontSize: '1.2rem', color: '#94a3b8' }}>Las mejores ofertas en cortes seleccionados para vos.</p>
         </header>
