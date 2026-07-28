@@ -45,7 +45,7 @@ export default function Market() {
   const [creandoCliente, setCreandoCliente] = useState(false);
 
   // Estados de Caja y Ruteo
-  const { user } = useAuth();
+  const { user, tenantId } = useAuth();
   const location = useLocation();
   const [cajaAbierta, setCajaAbierta] = useState(true); // Asumimos abierta hasta chequear para evitar bloqueos falsos
   const [isAbrirCajaModalOpen, setIsAbrirCajaModalOpen] = useState(false);
@@ -69,11 +69,12 @@ export default function Market() {
   }, [pollingInterval]);
 
   const cargarDatos = async () => {
+    if (!tenantId) return;
     setLoading(true);
     try {
       const [invData, promoData] = await Promise.all([
-        getInventario(),
-        getPromocionesActivas()
+        getInventario(tenantId),
+        getPromocionesActivas(tenantId)
       ]);
       setProductos(invData || []);
       setPromociones(promoData || []);
@@ -91,7 +92,7 @@ export default function Market() {
 
   useEffect(() => {
     cargarDatos();
-  }, [user]);
+  }, [user, tenantId]);
 
   useEffect(() => {
     if (!loading) {
@@ -305,7 +306,7 @@ export default function Market() {
         subtotal: c.subtotal
       }));
 
-      await registrarVentaDirecta(totalCarrito, metodoPago, itemsParaVenta, clienteAsignado ? clienteAsignado.id : null);
+      await registrarVentaDirecta(totalCarrito, metodoPago, itemsParaVenta, clienteAsignado ? clienteAsignado.id : null, tenantId);
 
       const metodosLegibles = {
         'efectivo': 'Efectivo',
