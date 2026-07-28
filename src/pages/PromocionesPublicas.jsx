@@ -7,7 +7,7 @@ import { Tag, ShoppingCart, Plus, Minus, X, CheckCircle, Info } from 'lucide-rea
 
 export default function PromocionesPublicas() {
   const [searchParams] = useSearchParams();
-  const tenantParam = searchParams.get('tenant');
+  const tenantParam = searchParams.get('local') || searchParams.get('tenant');
 
   const [promociones, setPromociones] = useState([]);
   const [nombreComercio, setNombreComercio] = useState('Lo De Cacho Carnes');
@@ -26,17 +26,32 @@ export default function PromocionesPublicas() {
   useEffect(() => {
     const fetchPromos = async () => {
       try {
-        let activeTenantId = tenantParam;
+        let activeTenantId = null;
 
+        if (tenantParam) {
+          const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(tenantParam);
+          let query = supabase.from('tenants').select('id, nombre_comercio');
+          
+          if (isUuid) {
+            query = query.eq('id', tenantParam);
+          } else {
+            query = query.eq('slug', tenantParam.toLowerCase());
+          }
+
+          const { data: t } = await query.maybeSingle();
+          if (t) {
+            activeTenantId = t.id;
+            if (t.nombre_comercio) setNombreComercio(t.nombre_comercio);
+          }
+        }
+
+        // Si no se encontró por parámetro o no vino en la URL, buscar el tenant por defecto
         if (!activeTenantId) {
           const { data: t } = await supabase.from('tenants').select('id, nombre_comercio').limit(1).maybeSingle();
           if (t) {
             activeTenantId = t.id;
             if (t.nombre_comercio) setNombreComercio(t.nombre_comercio);
           }
-        } else {
-          const { data: t } = await supabase.from('tenants').select('nombre_comercio').eq('id', activeTenantId).maybeSingle();
-          if (t?.nombre_comercio) setNombreComercio(t.nombre_comercio);
         }
 
         setResolvedTenantId(activeTenantId);
