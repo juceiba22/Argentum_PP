@@ -17,17 +17,25 @@ const resolveTenantId = async (tenantId) => {
 
 // Obtener inventario filtrado exclusivamente por la carnicería activa
 export const getInventario = async (tenantId) => {
-  const activeTenantId = await resolveTenantId(tenantId);
-  if (!activeTenantId) return [];
+  try {
+    const activeTenantId = await resolveTenantId(tenantId);
+    if (!activeTenantId) return [];
 
-  const { data, error } = await supabase
-    .from('inventario')
-    .select('*')
-    .eq('tenant_id', activeTenantId)
-    .order('nombre', { ascending: true });
+    const { data, error } = await supabase
+      .from('inventario')
+      .select('*')
+      .eq('tenant_id', activeTenantId)
+      .order('nombre', { ascending: true });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.warn("No se pudo cargar inventario para tenant:", error.message || error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.warn("Excepción al consultar inventario:", err);
+    return [];
+  }
 };
 
 // Agregar un nuevo producto asignándole el tenant_id

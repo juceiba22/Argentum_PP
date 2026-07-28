@@ -14,18 +14,26 @@ const resolveTenantId = async (tenantId) => {
 };
 
 export const getPromocionesActivas = async (tenantId) => {
-  const activeTenantId = await resolveTenantId(tenantId);
-  if (!activeTenantId) return [];
+  try {
+    const activeTenantId = await resolveTenantId(tenantId);
+    if (!activeTenantId) return [];
 
-  const { data, error } = await supabase
-    .from('promociones')
-    .select('*')
-    .eq('tenant_id', activeTenantId)
-    .eq('activa', true)
-    .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('promociones')
+      .select('*')
+      .eq('tenant_id', activeTenantId)
+      .eq('activa', true)
+      .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.warn("No se pudieron cargar promociones activas:", error.message || error);
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    console.warn("Excepción al consultar promociones activas:", err);
+    return [];
+  }
 };
 
 export const getAllPromociones = async (tenantId) => {
