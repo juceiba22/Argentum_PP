@@ -98,24 +98,130 @@ export default function PromocionesPublicas() {
     };
   }, [tenantParam]);
 
-  // Clasificador de productos individuales por categoría
+  const CATEGORIAS = [
+    { id: 'promociones', label: '🔥 Promociones' },
+    { id: 'carne_vacuna', label: '🥩 Carne Vacuna' },
+    { id: 'preparados', label: '🍱 Preparados' },
+    { id: 'pollo', label: '🍗 Pollo' },
+    { id: 'cerdo', label: '🐖 Cerdo' },
+    { id: 'achuras', label: '🍢 Achuras' },
+    { id: 'huevos', label: '🥚 Huevos' },
+    { id: 'pescado', label: '🐟 Pescado' },
+    { id: 'todos', label: '📋 Todos' }
+  ];
+
+  // Clasificador de productos individuales por categoría según listado oficial
   const clasificarProducto = (item) => {
-    const nombre = (item.nombre || '').toLowerCase();
-    const cat = (item.categoria || '').toLowerCase();
-    
-    if (cat.includes('pollo') || cat.includes('granja') || nombre.includes('pollo') || nombre.includes('pata') || nombre.includes('muslo') || nombre.includes('suprema') || nombre.includes('pechuga') || nombre.includes('ala')) {
-      return 'pollos';
+    const normalizar = (str) =>
+      (str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+    const nombre = normalizar(item.nombre_producto || item.nombre);
+    const cat = normalizar(item.categoria);
+    const text = `${nombre} ${cat}`;
+
+    // 1. PREPARADOS: Milanesas de carne, Milanesas de pollo, Hamburguesas
+    if (
+      text.includes('milanesa') ||
+      text.includes('hamburguesa') ||
+      cat.includes('preparado')
+    ) {
+      return 'preparados';
     }
-    if (cat.includes('embutido') || cat.includes('achura') || cat.includes('chacinado') || nombre.includes('chorizo') || nombre.includes('morcilla') || nombre.includes('salchicha') || nombre.includes('salame') || nombre.includes('jamon') || nombre.includes('achura') || nombre.includes('chinchul') || nombre.includes('molleja')) {
-      return 'embutidos';
+
+    // Excepción para "bife de chorizo" (va a Carne Vacuna, no a Achuras)
+    const esBifeDeChorizo = text.includes('bife de chorizo');
+
+    // 2. ACHURAS: Hígado, Riñón, Chinchulines, Molleja, Morcilla, Chorizo colorado, Chorizo de cerdo, Salchicha criolla, Salchicha viena, Lengua, Rabo, Mondongo, Corazón, Seso, Rueda
+    if (
+      !esBifeDeChorizo &&
+      (text.includes('higado') ||
+        text.includes('rinon') ||
+        text.includes('chinchulin') ||
+        text.includes('molleja') ||
+        text.includes('morcilla') ||
+        text.includes('chorizo') ||
+        text.includes('salchicha') ||
+        text.includes('lengua') ||
+        text.includes('rabo') ||
+        text.includes('mondongo') ||
+        text.includes('corazon') ||
+        text.includes('seso') ||
+        text.includes('rueda') ||
+        cat.includes('achura') ||
+        cat.includes('embutido') ||
+        cat.includes('chacinado'))
+    ) {
+      return 'achuras';
     }
-    return 'carnes';
+
+    // 3. HUEVOS: Maple de huevos, Docena de huevos
+    if (
+      text.includes('huevo') ||
+      text.includes('maple') ||
+      cat.includes('huevo')
+    ) {
+      return 'huevos';
+    }
+
+    // 4. PESCADO: Filet de merluza
+    if (
+      text.includes('merluza') ||
+      text.includes('pescado') ||
+      cat.includes('pescado') ||
+      cat.includes('marisco')
+    ) {
+      return 'pescado';
+    }
+
+    // 5. CERDO: Pechito de cerdo, Matambre de cerdo, Carré de cerdo, Solomillo, Churrasquitos, Bondiola, Panceta ahumada, Panceta salada
+    if (
+      text.includes('pechito') ||
+      text.includes('matambre de cerdo') ||
+      text.includes('carre') ||
+      text.includes('solomillo') ||
+      text.includes('churrasquito') ||
+      text.includes('bondiola') ||
+      text.includes('panceta') ||
+      text.includes('cerdo') ||
+      cat.includes('cerdo') ||
+      cat.includes('porcino')
+    ) {
+      return 'cerdo';
+    }
+
+    // 6. POLLO: Pollo, Pechuga, Pata y muslo, Alitas
+    if (
+      text.includes('pollo') ||
+      text.includes('pechuga') ||
+      text.includes('pata') ||
+      text.includes('muslo') ||
+      text.includes('alita') ||
+      text.includes('ala') ||
+      cat.includes('pollo') ||
+      cat.includes('granja') ||
+      cat.includes('ave')
+    ) {
+      return 'pollo';
+    }
+
+    // 7. CARNE VACUNA: Asado, Vacío, Matambre, Entraña, Palomita, Tortuguita, Roast beef, Bife ancho, Ojo de bife, Marucha, Paleta, Nalga, Tapa de nalga, Bola de lomo, Cuadrada, Cuadril, Peceto, Bife angosto, Bife de chorizo, Bife con lomo, Lomo, Carnaza común, Falda, Falda parrillera, Osobuco, Espinazo, Arañita, Colita de cuadril, Tapa de asado.
+    return 'carne_vacuna';
   };
 
-  const productosFiltrados = () => {
-    if (categoriaSeleccionada === 'promociones') return promociones;
-    if (categoriaSeleccionada === 'todos') return [...promociones, ...inventario];
-    return inventario.filter(item => clasificarProducto(item) === categoriaSeleccionada);
+  const getItemsPorCategoria = (catId) => {
+    if (catId === 'promociones') return promociones;
+    if (catId === 'todos') return [...promociones, ...inventario];
+    
+    const deInventario = inventario.filter(item => clasificarProducto(item) === catId);
+    const dePromociones = promociones.filter(item => clasificarProducto(item) === catId);
+    return [...dePromociones, ...deInventario];
+  };
+
+  const getCountCategoria = (catId) => {
+    return getItemsPorCategoria(catId).length;
   };
 
   const totalCarrito = carrito.reduce((sum, item) => sum + (item.precio * item.cantidad_carrito), 0);
@@ -201,7 +307,7 @@ export default function PromocionesPublicas() {
     }
   };
 
-  const listaActual = productosFiltrados();
+  const listaActual = getItemsPorCategoria(categoriaSeleccionada);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', padding: '40px 20px 120px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -215,44 +321,83 @@ export default function PromocionesPublicas() {
           <p style={{ fontSize: '1.1rem', color: '#94a3b8' }}>Catálogo online de ofertas y cortes seleccionados</p>
         </header>
 
-        {/* NAVEGACIÓN POR CATEGORÍAS (TABS) */}
-        <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '16px', marginBottom: '36px', scrollbarWidth: 'none' }}>
-          {[
-            { id: 'promociones', label: '🔥 Promociones', count: promociones.length },
-            { id: 'carnes', label: '🥩 Carnes', count: inventario.filter(i => clasificarProducto(i) === 'carnes').length },
-            { id: 'pollos', label: '🍗 Pollos', count: inventario.filter(i => clasificarProducto(i) === 'pollos').length },
-            { id: 'embutidos', label: '🌭 Embutidos', count: inventario.filter(i => clasificarProducto(i) === 'embutidos').length },
-            { id: 'todos', label: '📋 Todos', count: promociones.length + inventario.length }
-          ].map(cat => {
-            const isActive = categoriaSeleccionada === cat.id;
-            return (
-              <button
-                key={cat.id}
-                onClick={() => setCategoriaSeleccionada(cat.id)}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: '99px',
-                  border: isActive ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.1)',
-                  background: isActive ? 'rgba(249, 115, 22, 0.2)' : 'rgba(30, 41, 59, 0.7)',
-                  color: isActive ? '#f97316' : '#cbd5e1',
-                  fontWeight: isActive ? 800 : 600,
-                  fontSize: '1rem',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  backdropFilter: 'blur(10px)',
-                  transition: 'all 0.2s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <span>{cat.label}</span>
-                <span style={{ fontSize: '0.8rem', background: isActive ? '#f97316' : 'rgba(255,255,255,0.1)', color: 'white', padding: '2px 8px', borderRadius: '12px' }}>
-                  {cat.count}
-                </span>
-              </button>
-            );
-          })}
+        {/* NAVEGACIÓN POR CATEGORÍAS (TABS RESPONSIVE) */}
+        <div style={{ position: 'relative', marginBottom: '36px' }}>
+          {/* Sombra en degradé a la derecha para señalar scroll horizontal en dispositivos móviles */}
+          <div 
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: '14px',
+              width: '36px',
+              background: 'linear-gradient(to right, rgba(15, 23, 42, 0), #0f172a)',
+              pointerEvents: 'none',
+              zIndex: 10,
+              borderRadius: '0 12px 12px 0'
+            }}
+          />
+
+          <div
+            className="category-tabs-wrapper"
+            style={{
+              display: 'flex',
+              gap: '10px',
+              overflowX: 'auto',
+              paddingBottom: '14px',
+              paddingTop: '4px',
+              paddingLeft: '4px',
+              paddingRight: '36px',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#f97316 rgba(30, 41, 59, 0.5)'
+            }}
+          >
+            {CATEGORIAS.map(cat => {
+              const isActive = categoriaSeleccionada === cat.id;
+              const count = getCountCategoria(cat.id);
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategoriaSeleccionada(cat.id)}
+                  style={{
+                    flexShrink: 0,
+                    padding: '10px 20px',
+                    borderRadius: '999px',
+                    border: isActive ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.12)',
+                    background: isActive 
+                      ? 'linear-gradient(135deg, rgba(249, 115, 22, 0.35), rgba(234, 88, 12, 0.25))' 
+                      : 'rgba(30, 41, 59, 0.75)',
+                    color: isActive ? '#f97316' : '#cbd5e1',
+                    fontWeight: isActive ? 800 : 600,
+                    fontSize: '0.95rem',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    backdropFilter: 'blur(10px)',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: isActive ? '0 4px 12px rgba(249, 115, 22, 0.3)' : 'none'
+                  }}
+                >
+                  <span>{cat.label}</span>
+                  <span 
+                    style={{ 
+                      fontSize: '0.75rem', 
+                      fontWeight: 700,
+                      background: isActive ? '#f97316' : 'rgba(255,255,255,0.12)', 
+                      color: 'white', 
+                      padding: '2px 8px', 
+                      borderRadius: '999px' 
+                    }}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* LISTADO DE PRODUCTOS */}
@@ -529,6 +674,29 @@ export default function PromocionesPublicas() {
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes fadeInUp { from { opacity: 0; transform: translate(50%, 20px); } to { opacity: 1; transform: translate(50%, 0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .category-tabs-wrapper::-webkit-scrollbar {
+          height: 6px;
+        }
+        .category-tabs-wrapper::-webkit-scrollbar-track {
+          background: rgba(30, 41, 59, 0.5);
+          border-radius: 999px;
+        }
+        .category-tabs-wrapper::-webkit-scrollbar-thumb {
+          background: #f97316;
+          border-radius: 999px;
+        }
+
+        @media (max-width: 640px) {
+          .category-tabs-wrapper button {
+            padding: 8px 14px !important;
+            font-size: 0.85rem !important;
+          }
+          .category-tabs-wrapper button span:last-child {
+            font-size: 0.7rem !important;
+            padding: 1px 6px !important;
+          }
+        }
       `}} />
     </div>
   );
