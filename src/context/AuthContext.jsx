@@ -96,22 +96,20 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     let isMounted = true;
 
-    // Recuperar sesión con timeout de 1.5s usando Promise.race para prevenir deadlocks del SDK
-    const fetchSessionWithTimeout = async (timeoutMs = 1500) => {
-      return Promise.race([
-        supabase.auth.getSession(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Session retrieval timeout')), timeoutMs)
-        )
-      ]);
-    };
-
     const initSession = async () => {
       try {
-        const { data, error } = await fetchSessionWithTimeout(1500);
-        if (error) throw error;
+        const { data: { session }, error } = await supabase.auth.getSession();
 
-        const session = data?.session || null;
+        if (error) {
+          console.warn('Error recuperando sesión:', error.message);
+          const errStr = (error.message || '').toLowerCase();
+          // Purga dura únicamente si es un error explícito de token inválido o revocado
+          if (errStr.includes('invalid') || errStr.includes('expired') || errStr.includes('not found')) {
+            if (isMounted) hardClearSession();
+            return;
+          }
+        }
+
         const currentUser = session?.user || null;
 
         if (isMounted) setUser(currentUser);
@@ -131,10 +129,7 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (err) {
-        console.warn('Sesión no encontrada o corrupta. Ejecutando limpieza dura:', err.message || err);
-        if (isMounted) {
-          hardClearSession();
-        }
+        console.error('Excepción al inicializar sesión:', err);
       } finally {
         if (isMounted) setLoading(false);
       }

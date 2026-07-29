@@ -12,7 +12,7 @@ const resolveTenantId = async (tenantId) => {
   } catch (e) {
     console.warn("Error resolviendo fallback de tenantId en inventario:", e);
   }
-  return null;
+  return '00000000-0000-0000-0000-000000000001';
 };
 
 // Obtener inventario filtrado exclusivamente por la carnicería activa
