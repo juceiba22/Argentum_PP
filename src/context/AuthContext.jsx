@@ -9,13 +9,15 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Función de purga dura para limpiar tokens o estados corruptos en localStorage
-  const hardClearSession = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      console.warn('SignOut falló durante la limpieza dura:', e);
-    }
+  // Función de purga dura para limpiar tokens o estados corruptos en localStorage sin bloquear la UI
+  const hardClearSession = () => {
+    // 1. Limpiar inmediatamente el estado local de React
+    setUser(null);
+    setTenantId(null);
+    setRole(null);
+    setLoading(false);
+
+    // 2. Limpieza síncrona manual de localStorage
     try {
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('sb-') || key.includes('auth-token')) {
@@ -23,12 +25,11 @@ export const AuthProvider = ({ children }) => {
         }
       });
     } catch (e) {
-      console.warn('Purga manual de localStorage falló:', e);
+      console.warn('Error purgando localStorage:', e);
     }
-    setUser(null);
-    setTenantId(null);
-    setRole(null);
-    setLoading(false);
+
+    // 3. Intentar signOut en segundo plano (sin await para no bloquear la UI)
+    supabase.auth.signOut().catch(() => {});
   };
 
   const fetchTenantAndRole = async (sessionUser) => {
@@ -132,7 +133,7 @@ export const AuthProvider = ({ children }) => {
       } catch (err) {
         console.warn('Sesión no encontrada o corrupta. Ejecutando limpieza dura:', err.message || err);
         if (isMounted) {
-          await hardClearSession();
+          hardClearSession();
         }
       } finally {
         if (isMounted) setLoading(false);
