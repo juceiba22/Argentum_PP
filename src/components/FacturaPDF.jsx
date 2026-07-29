@@ -173,7 +173,7 @@ const CONDICION_IVA_LABELS = {
 };
 
 const EMISOR_DEFAULT = {
-  nombre: 'Lo de Cacho Carnes',
+  nombre: 'Lo de Cacho Carnes ',
   eslogan: 'CALIDAD PREMIUM',
   domicilio: 'Tabare 6799',
   cuit: '20325361892',
