@@ -1,13 +1,20 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 
 const AuthContext = createContext();
+
+// Tiempo máximo que esperamos a getSession() antes de asumir que quedó colgada
+const SESSION_TIMEOUT_MS = 8000;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [tenantId, setTenantId] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Evita que StrictMode (doble invocación de efectos en dev) dispare dos
+  // inicializaciones de sesión en paralelo, compitiendo por el mismo estado.
+  const hasInitialized = useRef(false);
 
   // Función de purga dura para limpiar tokens o estados corruptos en localStorage sin bloquear la UI
   const hardClearSession = () => {
@@ -94,11 +101,29 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Guard contra doble montaje de StrictMode
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     let isMounted = true;
+
+    // Envuelve una promesa con un timeout. Si no resuelve a tiempo, se rechaza
+    // con un error identificable en vez de quedar pendiente para siempre.
+    const withTimeout = (promise, ms) => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('SESSION_TIMEOUT')), ms)
+        ),
+      ]);
+    };
 
     const initSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session }, error } = await withTimeout(
+          supabase.auth.getSession(),
+          SESSION_TIMEOUT_MS
+        );
 
         if (error) {
           console.warn('Error recuperando sesión:', error.message);
@@ -129,6 +154,11 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (err) {
+        if (err?.message === 'SESSION_TIMEOUT') {
+          console.warn('getSession() no respondió a tiempo. Purgando sesión para desbloquear la app.');
+          if (isMounted) hardClearSession();
+          return;
+        }
         console.error('Excepción al inicializar sesión:', err);
       } finally {
         if (isMounted) setLoading(false);
