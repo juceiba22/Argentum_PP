@@ -2,10 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { Calculator, Calendar, DollarSign, Package, PieChart, TrendingUp, Filter } from 'lucide-react';
 import { getGastos, getCompras, getComprasDetalle } from '../services/erpApi';
 import { getInventario } from '../services/inventarioApi';
+import { useAuth } from '../context/AuthContext';
+
+const withTimeout = (promise, timeoutMs = 12000) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('La carga de datos demoró demasiado.')), timeoutMs)
+    )
+  ]);
 
 export default function CalculadoraCostos() {
+  const { tenantId } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Datos crudos
   const [gastos, setGastos] = useState([]);
@@ -26,16 +38,26 @@ export default function CalculadoraCostos() {
   const [volumenVentasEstimado, setVolumenVentasEstimado] = useState(1000); // Kgs por mes
 
   useEffect(() => {
+    if (!tenantId) {
+      setLoading(false);
+      setLoadError('No se pudo identificar el comercio de esta sesión. Volvé a iniciar sesión e intentá de nuevo.');
+      return;
+    }
+
+    let isMounted = true;
+
     const fetchData = async () => {
       setLoading(true);
+      setLoadError(null);
       try {
-        const [g, c, cd, p] = await Promise.all([
-          getGastos(),
-          getCompras(),
-          getComprasDetalle(),
-          getInventario()
-        ]);
+        const [g, c, cd, p] = await withTimeout(Promise.all([
+          getGastos(tenantId),
+          getCompras(tenantId),
+          getComprasDetalle(tenantId),
+          getInventario(tenantId)
+        ]));
         
+        if (!isMounted) return;
         setGastos(g || []);
         setCompras(c || []);
         setComprasDetalle(cd || []);
@@ -44,12 +66,19 @@ export default function CalculadoraCostos() {
         calcularCostosBase(g || []);
       } catch (error) {
         console.error("Error al cargar datos para la calculadora", error);
+        if (isMounted) {
+          setLoadError('No pudimos cargar los datos financieros. Revisá tu conexión e intentá nuevamente.');
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchData();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantId, reloadKey]);
 
   const calcularCostosBase = (gastosList) => {
     let fijosMes = 0;
@@ -191,6 +220,11 @@ export default function CalculadoraCostos() {
 
       {loading ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>Cargando datos financieros y de compras...</div>
+      ) : loadError ? (
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+          <p style={{ marginBottom: '16px' }}>{loadError}</p>
+          <button className="btn btn-primary" onClick={() => setReloadKey(key => key + 1)}>Reintentar</button>
+        </div>
       ) : activeTab === 'general' ? (
         
         /* ----------------------------------------------------
