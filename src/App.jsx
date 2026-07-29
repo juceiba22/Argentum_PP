@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -24,7 +23,15 @@ import './index.css';
 
 // Componente para proteger y redirigir rutas
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, role } = useAuth();
+  const { user, role, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: '#0f172a', color: '#f8fafc' }}>
+        <p style={{ fontSize: '1.2rem', fontFamily: 'system-ui, sans-serif', fontWeight: 600 }}>Cargando sesión...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Navigate to="/" replace />;
@@ -47,7 +54,15 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 // Componente para manejar la redirección post-login
 const LoginRedirect = () => {
-  const { user, role } = useAuth();
+  const { user, role, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: '#0f172a', color: '#f8fafc' }}>
+        <p style={{ fontSize: '1.2rem', fontFamily: 'system-ui, sans-serif', fontWeight: 600 }}>Cargando...</p>
+      </div>
+    );
+  }
   
   if (user) {
     const effectiveRole = role || user?.user_metadata?.role || 'admin';

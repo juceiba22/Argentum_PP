@@ -9,6 +9,28 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Función de purga dura para limpiar tokens o estados corruptos en localStorage
+  const hardClearSession = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('SignOut falló durante la limpieza dura:', e);
+    }
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-') || key.includes('auth-token')) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      console.warn('Purga manual de localStorage falló:', e);
+    }
+    setUser(null);
+    setTenantId(null);
+    setRole(null);
+    setLoading(false);
+  };
+
   const fetchTenantAndRole = async (sessionUser) => {
     if (!sessionUser) {
       setTenantId(null);
@@ -37,12 +59,10 @@ export const AuthProvider = ({ children }) => {
       let fallbackTenantId = sessionUser.user_metadata?.tenant_id || null;
 
       if (!fallbackTenantId) {
-        // Intentar obtener el tenant_id de la tabla 'tenants'
         const { data: tenantData } = await supabase.from('tenants').select('id').limit(1).maybeSingle();
         if (tenantData?.id) {
           fallbackTenantId = tenantData.id;
         } else {
-          // Intentar obtener cualquier tenant_id existente en tenant_users
           const { data: anyTenantUser } = await supabase.from('tenant_users').select('tenant_id').limit(1).maybeSingle();
           if (anyTenantUser?.tenant_id) {
             fallbackTenantId = anyTenantUser.tenant_id;
@@ -54,7 +74,6 @@ export const AuthProvider = ({ children }) => {
         setTenantId(fallbackTenantId);
         setRole(defaultRole);
 
-        // Auto-asociar en tenant_users para evitar problemas futuros
         try {
           await supabase.from('tenant_users').insert([{
             tenant_id: fallbackTenantId,
@@ -74,71 +93,85 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Temporizador de seguridad: si Supabase tarda más de 800ms, liberar la carga de sesión
-    const safetyTimer = setTimeout(() => {
-      setLoading(false);
-    }, 800);
+    let isMounted = true;
 
-    // 1. Inicializar sesión al montar
+    // Recuperar sesión con timeout de 1.5s usando Promise.race para prevenir deadlocks del SDK
+    const fetchSessionWithTimeout = async (timeoutMs = 1500) => {
+      return Promise.race([
+        supabase.auth.getSession(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Session retrieval timeout')), timeoutMs)
+        )
+      ]);
+    };
+
     const initSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data, error } = await fetchSessionWithTimeout(1500);
         if (error) throw error;
 
+        const session = data?.session || null;
         const currentUser = session?.user || null;
-        setUser(currentUser);
+
+        if (isMounted) setUser(currentUser);
 
         if (currentUser) {
           const isVentas = currentUser.email?.toLowerCase().includes('ventas');
           const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
-          setRole(defaultRole);
-          setTenantId(currentUser.user_metadata?.tenant_id || null);
+          if (isMounted) {
+            setRole(defaultRole);
+            setTenantId(currentUser.user_metadata?.tenant_id || null);
+          }
           await fetchTenantAndRole(currentUser);
         } else {
-          setTenantId(null);
-          setRole(null);
+          if (isMounted) {
+            setTenantId(null);
+            setRole(null);
+          }
         }
       } catch (err) {
-        console.error('Error al obtener la sesión inicial:', err);
-        setUser(null);
-        setTenantId(null);
-        setRole(null);
+        console.warn('Sesión no encontrada o corrupta. Ejecutando limpieza dura:', err.message || err);
+        if (isMounted) {
+          await hardClearSession();
+        }
       } finally {
-        clearTimeout(safetyTimer);
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     initSession();
 
-    // 2. Escuchar cambios de autenticación (login / logout / token refresh)
+    // Listener de cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'INITIAL_SESSION') return;
 
       try {
         const currentUser = session?.user || null;
-        setUser(currentUser);
+        if (isMounted) setUser(currentUser);
 
         if (currentUser) {
           const isVentas = currentUser.email?.toLowerCase().includes('ventas');
           const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
-          setRole(defaultRole);
-          setTenantId(currentUser.user_metadata?.tenant_id || null);
+          if (isMounted) {
+            setRole(defaultRole);
+            setTenantId(currentUser.user_metadata?.tenant_id || null);
+          }
           await fetchTenantAndRole(currentUser);
         } else {
-          setTenantId(null);
-          setRole(null);
+          if (isMounted) {
+            setTenantId(null);
+            setRole(null);
+          }
         }
       } catch (err) {
         console.error('Error en el listener de auth:', err);
       } finally {
-        clearTimeout(safetyTimer);
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     });
 
     return () => {
-      clearTimeout(safetyTimer);
+      isMounted = false;
       subscription?.unsubscribe();
     };
   }, []);
