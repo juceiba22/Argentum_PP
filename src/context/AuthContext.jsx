@@ -74,10 +74,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Temporizador de seguridad: si Supabase o la red tardan más de 1.2s en F5, forzar salida del loading
+    // Temporizador de seguridad: si Supabase tarda más de 800ms, liberar la carga de sesión
     const safetyTimer = setTimeout(() => {
       setLoading(false);
-    }, 1200);
+    }, 800);
 
     // 1. Inicializar sesión al montar
     const initSession = async () => {
@@ -145,21 +145,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, tenantId, role, loading }}>
-      {loading ? (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: '100vh', 
-          flexDirection: 'column', 
-          backgroundColor: 'var(--bg-color, #FAFAFA)', 
-          color: 'var(--text-primary, #2C2C2C)' 
-        }}>
-          <p style={{ fontSize: '1.2rem', fontFamily: 'Lato, sans-serif', fontWeight: 600 }}>Cargando sesión...</p>
-        </div>
-      ) : (
-        children
-      )}
+      {children}
     </AuthContext.Provider>
   );
 };

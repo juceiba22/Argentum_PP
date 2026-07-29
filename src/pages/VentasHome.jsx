@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Megaphone, Store, LockOpen, Lock, Activity, Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +16,11 @@ export default function VentasHome() {
   const [confirmCerrarCaja, setConfirmCerrarCaja] = useState(false);
 
   const cargarCaja = async () => {
-    if (!user) return;
+    if (!user) {
+      setCaja(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const cajaAbierta = await getCajaAbierta(user.email);
