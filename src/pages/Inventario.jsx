@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PackageSearch, Plus, Trash2, Edit2, Check, X, AlertCircle, TrendingUp } from 'lucide-react';
 import { getInventario, addMercaderia, updateMercaderia, deleteMercaderia, uploadImage } from '../services/inventarioApi';
 import { useAuth } from '../context/AuthContext';
@@ -25,7 +25,11 @@ export default function Inventario() {
   const [editImagen, setEditImagen] = useState(null);
 
   const cargarInventario = async () => {
-    if (!tenantId) return;
+    if (!tenantId) {
+      setInventario([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const data = await getInventario(tenantId);
