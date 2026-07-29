@@ -4,7 +4,7 @@ import { getPromocionesActivas } from '../services/promocionesApi';
 import { getInventario } from '../services/inventarioApi';
 import { registrarPedidoWeb } from '../services/pedidosApi';
 import { supabase } from '../services/supabaseClient';
-import { Tag, ShoppingCart, Plus, Minus, X, CheckCircle, Info, Package } from 'lucide-react';
+import { Tag, ShoppingCart, Plus, Minus, X, CheckCircle, Info, Package, Search, Filter, ChevronDown } from 'lucide-react';
 
 export default function PromocionesPublicas() {
   const [searchParams] = useSearchParams();
@@ -18,6 +18,8 @@ export default function PromocionesPublicas() {
   
   // Categoría seleccionada por defecto: 'promociones'
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('promociones');
+  // Filtro de búsqueda por texto
+  const [busquedaText, setBusquedaText] = useState('');
 
   // Estados del carrito y checkout
   const [carrito, setCarrito] = useState([]);
@@ -307,7 +309,24 @@ export default function PromocionesPublicas() {
     }
   };
 
-  const listaActual = getItemsPorCategoria(categoriaSeleccionada);
+  // Filtrado final combinando categoría seleccionada + texto de búsqueda
+  const listaActual = (() => {
+    const baseList = getItemsPorCategoria(categoriaSeleccionada);
+    if (!busquedaText.trim()) return baseList;
+
+    const normalizar = (str) =>
+      (str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+    const query = normalizar(busquedaText);
+    return baseList.filter((item) => {
+      const nombre = normalizar(item.nombre_producto || item.nombre);
+      const cat = normalizar(item.categoria);
+      return nombre.includes(query) || cat.includes(query);
+    });
+  })();
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', padding: '40px 20px 120px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -321,82 +340,159 @@ export default function PromocionesPublicas() {
           <p style={{ fontSize: '1.1rem', color: '#94a3b8' }}>Catálogo online de ofertas y cortes seleccionados</p>
         </header>
 
-        {/* NAVEGACIÓN POR CATEGORÍAS (TABS RESPONSIVE) */}
-        <div style={{ position: 'relative', marginBottom: '36px' }}>
-          {/* Sombra en degradé a la derecha para señalar scroll horizontal en dispositivos móviles */}
+        {/* FILTROS: BARRA DESPLEGABLE DE CATEGORÍA + BUSCADOR DE TEXTO */}
+        <div 
+          style={{
+            background: 'rgba(30, 41, 59, 0.6)',
+            backdropFilter: 'blur(16px)',
+            borderRadius: '24px',
+            padding: '20px 24px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            boxShadow: '0 12px 32px rgba(0,0,0,0.3)',
+            marginBottom: '36px'
+          }}
+        >
           <div 
             style={{
-              position: 'absolute',
-              top: 0,
-              right: 0,
-              bottom: '14px',
-              width: '36px',
-              background: 'linear-gradient(to right, rgba(15, 23, 42, 0), #0f172a)',
-              pointerEvents: 'none',
-              zIndex: 10,
-              borderRadius: '0 12px 12px 0'
-            }}
-          />
-
-          <div
-            className="category-tabs-wrapper"
-            style={{
-              display: 'flex',
-              gap: '10px',
-              overflowX: 'auto',
-              paddingBottom: '14px',
-              paddingTop: '4px',
-              paddingLeft: '4px',
-              paddingRight: '36px',
-              WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'thin',
-              scrollbarColor: '#f97316 rgba(30, 41, 59, 0.5)'
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: '16px',
+              alignItems: 'flex-end'
             }}
           >
-            {CATEGORIAS.map(cat => {
-              const isActive = categoriaSeleccionada === cat.id;
-              const count = getCountCategoria(cat.id);
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setCategoriaSeleccionada(cat.id)}
+            {/* 1. DESPLEGABLE DE CATEGORÍAS */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Agrupador / Categoría
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Filter size={18} color="#f97316" style={{ position: 'absolute', left: '16px', pointerEvents: 'none', zIndex: 1 }} />
+                <select
+                  value={categoriaSeleccionada}
+                  onChange={(e) => setCategoriaSeleccionada(e.target.value)}
                   style={{
-                    flexShrink: 0,
-                    padding: '10px 20px',
-                    borderRadius: '999px',
-                    border: isActive ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.12)',
-                    background: isActive 
-                      ? 'linear-gradient(135deg, rgba(249, 115, 22, 0.35), rgba(234, 88, 12, 0.25))' 
-                      : 'rgba(30, 41, 59, 0.75)',
-                    color: isActive ? '#f97316' : '#cbd5e1',
-                    fontWeight: isActive ? 800 : 600,
-                    fontSize: '0.95rem',
+                    width: '100%',
+                    padding: '14px 44px 14px 46px',
+                    borderRadius: '14px',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: '#0f172a',
+                    color: '#f8fafc',
+                    fontSize: '1rem',
+                    fontWeight: 700,
                     cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    backdropFilter: 'blur(10px)',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: isActive ? '0 4px 12px rgba(249, 115, 22, 0.3)' : 'none'
+                    appearance: 'none',
+                    WebkitAppearance: 'none',
+                    outline: 'none',
+                    transition: 'all 0.2s ease',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
                   }}
+                  onFocus={(e) => e.target.style.borderColor = '#f97316'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.12)'}
                 >
-                  <span>{cat.label}</span>
-                  <span 
-                    style={{ 
-                      fontSize: '0.75rem', 
-                      fontWeight: 700,
-                      background: isActive ? '#f97316' : 'rgba(255,255,255,0.12)', 
-                      color: 'white', 
-                      padding: '2px 8px', 
-                      borderRadius: '999px' 
+                  {CATEGORIAS.map(cat => {
+                    const count = getCountCategoria(cat.id);
+                    return (
+                      <option 
+                        key={cat.id} 
+                        value={cat.id}
+                        style={{ background: '#0f172a', color: '#f8fafc', padding: '10px' }}
+                      >
+                        {cat.label} ({count})
+                      </option>
+                    );
+                  })}
+                </select>
+                <ChevronDown size={20} color="#94a3b8" style={{ position: 'absolute', right: '16px', pointerEvents: 'none' }} />
+              </div>
+            </div>
+
+            {/* 2. BUSCADOR POR TEXTO */}
+            <div>
+              <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Buscar producto o corte
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={18} color="#94a3b8" style={{ position: 'absolute', left: '16px', pointerEvents: 'none' }} />
+                <input
+                  type="text"
+                  value={busquedaText}
+                  onChange={(e) => setBusquedaText(e.target.value)}
+                  placeholder="Ej: asado, milanesa, pechuga..."
+                  style={{
+                    width: '100%',
+                    padding: '14px 44px 14px 46px',
+                    borderRadius: '14px',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: '#0f172a',
+                    color: '#f8fafc',
+                    fontSize: '1rem',
+                    fontWeight: 500,
+                    outline: 'none',
+                    transition: 'all 0.2s ease',
+                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#f97316'}
+                  onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.12)'}
+                />
+                {busquedaText && (
+                  <button
+                    onClick={() => setBusquedaText('')}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      background: 'rgba(255,255,255,0.15)',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '24px',
+                      height: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#cbd5e1',
+                      cursor: 'pointer'
                     }}
+                    title="Limpiar búsqueda"
                   >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* INDICADOR DE RESUMEN DE FILTROS Y RESULTADOS */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+              Mostrando <strong style={{ color: '#f8fafc' }}>{listaActual.length}</strong> {listaActual.length === 1 ? 'resultado' : 'resultados'}
+              {categoriaSeleccionada !== 'todos' && (
+                <span> en <strong style={{ color: '#f97316' }}>{CATEGORIAS.find(c => c.id === categoriaSeleccionada)?.label}</strong></span>
+              )}
+              {busquedaText && (
+                <span> para "<strong style={{ color: '#10b981' }}>{busquedaText}</strong>"</span>
+              )}
+            </div>
+
+            {(categoriaSeleccionada !== 'promociones' || busquedaText) && (
+              <button
+                onClick={() => {
+                  setCategoriaSeleccionada('promociones');
+                  setBusquedaText('');
+                }}
+                style={{
+                  background: 'rgba(249, 115, 22, 0.15)',
+                  color: '#f97316',
+                  border: '1px solid rgba(249, 115, 22, 0.3)',
+                  padding: '6px 14px',
+                  borderRadius: '99px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Resetear filtros
+              </button>
+            )}
           </div>
         </div>
 
@@ -406,10 +502,37 @@ export default function PromocionesPublicas() {
             Cargando catálogo...
           </div>
         ) : listaActual.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px', background: 'rgba(255,255,255,0.02)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+          <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(30, 41, 59, 0.4)', borderRadius: '24px', border: '1px dashed rgba(255,255,255,0.1)' }}>
             <Tag size={64} color="#475569" style={{ margin: '0 auto 24px' }} />
-            <h2 style={{ fontSize: '1.5rem', color: '#e2e8f0', marginBottom: '8px' }}>No hay productos en esta categoría en este momento.</h2>
-            <p style={{ color: '#94a3b8' }}>¡Probá seleccionando otra categoría arriba!</p>
+            <h2 style={{ fontSize: '1.5rem', color: '#e2e8f0', marginBottom: '8px' }}>
+              {busquedaText 
+                ? `No se encontraron productos para "${busquedaText}"`
+                : 'No hay productos disponibles en esta categoría en este momento.'}
+            </h2>
+            <p style={{ color: '#94a3b8', marginBottom: '20px' }}>
+              {busquedaText 
+                ? 'Intenta buscar con otra palabra clave o reseteá la búsqueda.' 
+                : '¡Probá seleccionando otra categoría en el menú desplegable arriba!'}
+            </p>
+            {(busquedaText || categoriaSeleccionada !== 'promociones') && (
+              <button
+                onClick={() => {
+                  setBusquedaText('');
+                  setCategoriaSeleccionada('promociones');
+                }}
+                style={{
+                  background: '#f97316',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 24px',
+                  borderRadius: '12px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                Ver todas las promociones
+              </button>
+            )}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '32px' }}>
