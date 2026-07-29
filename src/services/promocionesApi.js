@@ -10,7 +10,7 @@ const resolveTenantId = async (tenantId) => {
   } catch (e) {
     console.warn("Error resolviendo fallback de tenantId en promociones:", e);
   }
-  return null;
+  return '00000000-0000-0000-0000-000000000001';
 };
 
 export const getPromocionesActivas = async (tenantId) => {

@@ -22,7 +22,7 @@ const resolveTenantId = async (tenantId) => {
     console.warn("Error resolviendo fallback de tenantId:", e);
   }
 
-  return null;
+  return '00000000-0000-0000-0000-000000000001';
 };
 
 /**
