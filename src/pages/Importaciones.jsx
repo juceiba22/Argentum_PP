@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   UploadCloud, FileText, CheckCircle, AlertCircle, Clock, Loader2, Download, Trash2, Eye, 
-  Sparkles, X, TrendingUp, TrendingDown, AlertTriangle 
+  Sparkles, X, TrendingUp, TrendingDown, AlertTriangle, RefreshCw 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { ImportService } from '../services/ImportService';
@@ -16,6 +16,9 @@ export default function Importaciones() {
   const [progress, setProgress] = useState(0);
   const [origen, setOrigen] = useState('BANCO');
   
+  // IDs de archivos actualmente en procesamiento IA local
+  const [processingIds, setProcessingIds] = useState(new Set());
+
   // Mensajes (Toasts simulados en la UI)
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -50,6 +53,28 @@ export default function Importaciones() {
     setSuccess('');
   };
 
+  const handleGenerarReporte = async (importacion) => {
+    setError('');
+    setProcessingIds(prev => new Set(prev).add(importacion.id));
+
+    try {
+      showSuccess(`Generando Reporte IA para ${importacion.nombre_archivo}...`);
+      const updatedRecord = await ImportService.triggerProcessImportacion(importacion.id);
+      await fetchImportaciones();
+      showSuccess(`Reporte IA generado exitosamente para ${importacion.nombre_archivo}.`);
+      setSelectedReportImportacion(updatedRecord);
+    } catch (err) {
+      console.error(err);
+      showError(err.message || 'Error al generar el reporte IA.');
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(importacion.id);
+        return next;
+      });
+    }
+  };
+
   const validateAndProcessFile = async (file) => {
     setError('');
     setSuccess('');
@@ -77,13 +102,19 @@ export default function Importaciones() {
       clearInterval(progressInterval);
       setProgress(100);
 
-      if (result.success) {
-        showSuccess('Archivo subido correctamente. Procesando...');
+      if (result.success && result.data) {
+        showSuccess('Archivo subido correctamente. Generando reporte IA...');
         fetchImportaciones(); // Actualizar historial automáticamente
-        // Disparar procesamiento asincrono
-        ImportService.triggerProcessImportacion(result.data.id).then(() => {
+        
+        // Disparar procesamiento de reporte inmediatamente
+        try {
+          const updated = await ImportService.triggerProcessImportacion(result.data.id);
           fetchImportaciones();
-        }).catch(e => console.error(e));
+          setSelectedReportImportacion(updated);
+        } catch (procErr) {
+          console.error(procErr);
+          fetchImportaciones();
+        }
       } else {
         showError(result.error || 'No fue posible subir el archivo');
       }
@@ -131,6 +162,9 @@ export default function Importaciones() {
     try {
       await ImportService.deleteImportacion(importacion);
       showSuccess('Importación eliminada correctamente.');
+      if (selectedReportImportacion?.id === importacion.id) {
+        setSelectedReportImportacion(null);
+      }
       fetchImportaciones();
     } catch (err) {
       showError(err.message || 'Error al eliminar importación');
@@ -146,7 +180,8 @@ export default function Importaciones() {
     }
   };
 
-  const getStatusIcon = (estado) => {
+  const getStatusIcon = (estado, isProcessing) => {
+    if (isProcessing) return <Loader2 size={20} className="animate-spin" style={{ color: '#3b82f6' }} />;
     switch(estado) {
       case 'Pendiente': return <Clock size={20} style={{ color: 'var(--warning)' }} />;
       case 'Procesando': return <Loader2 size={20} className="animate-spin" style={{ color: '#3b82f6' }} />;
@@ -156,7 +191,8 @@ export default function Importaciones() {
     }
   };
 
-  const getBadgeClass = (estado) => {
+  const getBadgeClass = (estado, isProcessing) => {
+    if (isProcessing) return 'badge-enviado';
     switch(estado) {
       case 'Pendiente': return 'badge-pendiente';
       case 'Procesando': return 'badge-enviado';
@@ -323,7 +359,8 @@ export default function Importaciones() {
               </thead>
               <tbody>
                 {importaciones.map((imp) => {
-                  const tieneReporte = imp.estado === 'Procesado' && !!imp.resultado_procesamiento;
+                  const isProcessing = imp.estado === 'Procesando' || processingIds.has(imp.id);
+                  const tieneReporte = !!imp.resultado_procesamiento;
 
                   return (
                     <tr key={imp.id}>
@@ -351,15 +388,24 @@ export default function Importaciones() {
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                          {getStatusIcon(imp.estado)}
-                          <span className={`badge ${getBadgeClass(imp.estado)}`}>
-                            {imp.estado}
+                          {getStatusIcon(imp.estado, isProcessing)}
+                          <span className={`badge ${getBadgeClass(imp.estado, isProcessing)}`}>
+                            {isProcessing ? 'Procesando' : imp.estado}
                           </span>
                         </div>
                       </td>
                       <td style={{ textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                          {tieneReporte ? (
+                          {isProcessing ? (
+                            <button 
+                              className="btn btn-secondary" 
+                              style={{ padding: '6px 12px', fontSize: '0.8rem', opacity: 0.8 }}
+                              disabled
+                            >
+                              <Loader2 size={16} className="animate-spin" style={{ color: 'var(--accent-primary)' }} />
+                              <span>Procesando...</span>
+                            </button>
+                          ) : tieneReporte ? (
                             <button 
                               className="btn btn-primary" 
                               style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}
@@ -371,14 +417,22 @@ export default function Importaciones() {
                             </button>
                           ) : (
                             <button 
-                              className="btn btn-secondary" 
-                              style={{ padding: '6px', fontSize: '0.8rem' }}
-                              title="Ver Información"
-                              onClick={() => alert(`Información de ${imp.nombre_archivo}\nEstado: ${imp.estado}\nOrigen: ${imp.origen}`)}
+                              className="btn btn-primary" 
+                              style={{ 
+                                padding: '6px 12px', 
+                                fontSize: '0.8rem', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '6px'
+                              }}
+                              title="Generar Reporte IA"
+                              onClick={() => handleGenerarReporte(imp)}
                             >
-                              <Eye size={16} />
+                              <Sparkles size={16} />
+                              <span>Generar Reporte IA</span>
                             </button>
                           )}
+
                           <button 
                             className="btn btn-secondary" 
                             style={{ padding: '6px', fontSize: '0.8rem' }}
@@ -610,8 +664,17 @@ export default function Importaciones() {
               </div>
             )}
 
-            {/* BOTÓN INFERIOR CERRAR */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+            {/* BOTÓN INFERIOR CERRAR / RE-PROCESAR */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize: '0.85rem' }}
+                onClick={() => handleGenerarReporte(selectedReportImportacion)}
+              >
+                <RefreshCw size={14} style={{ marginRight: '6px' }} />
+                <span>Re-generar Reporte</span>
+              </button>
+
               <button
                 className="btn btn-primary"
                 onClick={() => setSelectedReportImportacion(null)}
