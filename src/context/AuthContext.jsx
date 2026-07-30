@@ -16,15 +16,21 @@ export const AuthProvider = ({ children }) => {
   // inicializaciones de sesión en paralelo, compitiendo por el mismo estado.
   const hasInitialized = useRef(false);
 
+  // Guarda el id del último usuario para el que ya resolvimos tenant/rol.
+  // Sirve para ignorar eventos de auth "ruidosos" (ej: TOKEN_REFRESHED al
+  // volver de background) que no implican un cambio real de usuario, y que
+  // de otro modo hacían "parpadear" tenantId a null y rompían la carga de
+  // datos en las páginas (Market, GestionPromociones, etc.).
+  const resolvedUserIdRef = useRef(null);
+
   // Función de purga dura para limpiar tokens o estados corruptos en localStorage sin bloquear la UI
   const hardClearSession = () => {
-    // 1. Limpiar inmediatamente el estado local de React
     setUser(null);
     setTenantId(null);
     setRole(null);
     setLoading(false);
+    resolvedUserIdRef.current = null;
 
-    // 2. Limpieza síncrona manual de localStorage
     try {
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('sb-') || key.includes('auth-token')) {
@@ -35,7 +41,6 @@ export const AuthProvider = ({ children }) => {
       console.warn('Error purgando localStorage:', e);
     }
 
-    // 3. Intentar signOut en segundo plano (sin await para no bloquear la UI)
     supabase.auth.signOut().catch(() => {});
   };
 
@@ -50,7 +55,6 @@ export const AuthProvider = ({ children }) => {
     const defaultRole = isVentas ? 'ventas' : (sessionUser.user_metadata?.role || 'admin');
 
     try {
-      // 1. Consultar la tabla puente 'tenant_users'
       const { data } = await supabase
         .from('tenant_users')
         .select('tenant_id, role')
@@ -63,7 +67,6 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // 2. Si no tiene registro en tenant_users, buscar el tenant id disponible en la base de datos
       let fallbackTenantId = sessionUser.user_metadata?.tenant_id || null;
 
       if (!fallbackTenantId) {
@@ -101,14 +104,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Guard contra doble montaje de StrictMode
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
     let isMounted = true;
 
-    // Envuelve una promesa con un timeout. Si no resuelve a tiempo, se rechaza
-    // con un error identificable en vez de quedar pendiente para siempre.
     const withTimeout = (promise, ms) => {
       return Promise.race([
         promise,
@@ -128,7 +128,6 @@ export const AuthProvider = ({ children }) => {
         if (error) {
           console.warn('Error recuperando sesión:', error.message);
           const errStr = (error.message || '').toLowerCase();
-          // Purga dura únicamente si es un error explícito de token inválido o revocado
           if (errStr.includes('invalid') || errStr.includes('expired') || errStr.includes('not found')) {
             if (isMounted) hardClearSession();
             return;
@@ -147,11 +146,13 @@ export const AuthProvider = ({ children }) => {
             setTenantId(currentUser.user_metadata?.tenant_id || null);
           }
           await fetchTenantAndRole(currentUser);
+          resolvedUserIdRef.current = currentUser.id;
         } else {
           if (isMounted) {
             setTenantId(null);
             setRole(null);
           }
+          resolvedUserIdRef.current = null;
         }
       } catch (err) {
         if (err?.message === 'SESSION_TIMEOUT') {
@@ -167,28 +168,40 @@ export const AuthProvider = ({ children }) => {
 
     initSession();
 
-    // Listener de cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'INITIAL_SESSION') return;
 
-      try {
-        const currentUser = session?.user || null;
-        if (isMounted) setUser(currentUser);
+      const currentUser = session?.user || null;
 
-        if (currentUser) {
-          const isVentas = currentUser.email?.toLowerCase().includes('ventas');
-          const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
-          if (isMounted) {
-            setRole(defaultRole);
-            setTenantId(currentUser.user_metadata?.tenant_id || null);
-          }
-          await fetchTenantAndRole(currentUser);
-        } else {
-          if (isMounted) {
-            setTenantId(null);
-            setRole(null);
-          }
+      if (isMounted) setUser(currentUser);
+
+      if (!currentUser) {
+        resolvedUserIdRef.current = null;
+        if (isMounted) {
+          setTenantId(null);
+          setRole(null);
         }
+        return;
+      }
+
+      // Si ya habíamos resuelto tenant/rol para este mismo usuario, ignoramos
+      // el evento. Esto cubre casos como TOKEN_REFRESHED disparado al volver
+      // de background (pestaña inactiva, tablet bloqueada, etc.), donde el
+      // usuario NO cambió y no hace falta tocar tenantId/role: hacerlo genera
+      // un valor intermedio (null) que rompe la carga de datos en las páginas.
+      if (currentUser.id === resolvedUserIdRef.current) {
+        return;
+      }
+
+      try {
+        const isVentas = currentUser.email?.toLowerCase().includes('ventas');
+        const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
+        if (isMounted) {
+          setRole(defaultRole);
+          setTenantId(currentUser.user_metadata?.tenant_id || null);
+        }
+        await fetchTenantAndRole(currentUser);
+        resolvedUserIdRef.current = currentUser.id;
       } catch (err) {
         console.error('Error en el listener de auth:', err);
       } finally {
