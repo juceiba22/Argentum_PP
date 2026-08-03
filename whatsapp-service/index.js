@@ -252,6 +252,38 @@ app.post('/api/logout', async (req, res) => {
 });
 
 /**
+ * POST /api/restart
+ * Reinicia la instancia del cliente WhatsApp para forzar la generación de un nuevo código QR
+ */
+app.post('/api/restart', async (req, res) => {
+  try {
+    console.log('🔄 Reiniciando cliente de WhatsApp...');
+    whatsappStatus = 'DISCONNECTED';
+    currentQrCodeDataUrl = null;
+
+    if (client) {
+      try {
+        await client.destroy();
+      } catch (err) {
+        console.warn('Advertencia destruyendo cliente previa al reinicio:', err.message);
+      }
+    }
+
+    setTimeout(() => {
+      createWhatsAppClient();
+    }, 1000);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cliente de WhatsApp reiniciado correctamente.'
+    });
+  } catch (err) {
+    console.error('Error al reiniciar cliente:', err);
+    res.status(500).json({ error: 'Error al reiniciar cliente de WhatsApp.' });
+  }
+});
+
+/**
  * POST /api/enviar-campana
  * Body: { tenantId: string, mensaje: string, flyerUrl?: string }
  */

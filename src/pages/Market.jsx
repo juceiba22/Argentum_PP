@@ -660,6 +660,30 @@ export default function Market() {
                   style={{ fontSize: '1.2rem', padding: '12px' }}
                   autoFocus
                 />
+                
+                {/* Botones de peso fraccionado rápido (1kg, 1.25kg, 1.5kg, 2kg, etc) */}
+                <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
+                  {[1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3].map(kgVal => (
+                    <button
+                      type="button"
+                      key={kgVal}
+                      onClick={() => setCantidadToAdd(String(kgVal))}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.8rem',
+                        fontWeight: String(cantidadToAdd) === String(kgVal) ? 700 : 500,
+                        borderRadius: '6px',
+                        border: String(cantidadToAdd) === String(kgVal) ? '1px solid var(--accent-primary)' : '1px solid var(--glass-border)',
+                        background: String(cantidadToAdd) === String(kgVal) ? 'rgba(236, 72, 153, 0.25)' : 'rgba(255,255,255,0.05)',
+                        color: String(cantidadToAdd) === String(kgVal) ? 'var(--accent-primary)' : 'var(--text-primary)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {kgVal.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} Kg
+                    </button>
+                  ))}
+                </div>
+
                 {selectedProduct.es_promocion && (
                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '8px' }}>
                      Precio promocional: ${(selectedProduct.precio_unitario_calculado).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} por {selectedProduct.unidad_medida}
