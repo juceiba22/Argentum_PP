@@ -396,7 +396,7 @@ export default function PromocionesPublicas() {
           {/* 1. BARRA DEL BUSCADOR (ARRIBA) */}
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              🔍 Buscar producto o corte (busca en todos por defecto)
+              🔍 Buscar producto o corte 
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <Search size={20} color="#f97316" style={{ position: 'absolute', left: '16px', pointerEvents: 'none' }} />
