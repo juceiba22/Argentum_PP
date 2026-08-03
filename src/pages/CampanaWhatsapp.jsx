@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
   MessageSquare, QrCode, CheckCircle2, AlertTriangle, RefreshCw, LogOut, 
-  Send, Users, Image as ImageIcon, Trash2, Sparkles, Clock, Loader2, X, Info 
+  Send, Users, Image as ImageIcon, Trash2, Sparkles, Clock, Loader2, X, Info,
+  Settings, Globe, Server, Terminal, Check
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getAllClientes } from '../services/clientesApi';
 import { uploadImage } from '../services/inventarioApi';
-import { getWhatsAppStatus, logoutWhatsApp, enviarCampanaWhatsApp } from '../services/whatsappApi';
+import { 
+  getWhatsAppStatus, logoutWhatsApp, enviarCampanaWhatsApp,
+  getWhatsAppServiceUrl, setWhatsAppServiceUrl, resetWhatsAppServiceUrl, restartWhatsAppClient 
+} from '../services/whatsappApi';
 
 export default function CampanaWhatsapp() {
   const { tenantId } = useAuth();
@@ -16,6 +20,13 @@ export default function CampanaWhatsapp() {
   const [qrCodeUrl, setQrCodeUrl] = useState(null);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+
+  // Estados de Configuración de URL del Microservicio
+  const [currentServiceUrl, setCurrentServiceUrl] = useState(getWhatsAppServiceUrl());
+  const [customUrlInput, setCustomUrlInput] = useState(getWhatsAppServiceUrl());
+  const [showUrlConfig, setShowUrlConfig] = useState(false);
+  const [restartingClient, setRestartingClient] = useState(false);
+  const [instructionTab, setInstructionTab] = useState('local'); // 'local' | 'cloud'
 
   // Estados de Clientes
   const [clientesCount, setClientesCount] = useState(0);
@@ -38,8 +49,12 @@ export default function CampanaWhatsapp() {
 
   // 1. Consultar estado del microservicio de WhatsApp con polling automático
   const checkStatus = async () => {
+    setLoadingStatus(true);
     try {
       const res = await getWhatsAppStatus();
+      if (res.serviceUrl) {
+        setCurrentServiceUrl(res.serviceUrl);
+      }
       if (res.status === 'OFFLINE') {
         setWaStatus('OFFLINE');
         setQrCodeUrl(null);
@@ -50,6 +65,8 @@ export default function CampanaWhatsapp() {
     } catch (err) {
       setWaStatus('OFFLINE');
       setQrCodeUrl(null);
+    } finally {
+      setLoadingStatus(false);
     }
   };
 
@@ -59,6 +76,38 @@ export default function CampanaWhatsapp() {
     const interval = setInterval(checkStatus, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleSaveCustomUrl = async (e) => {
+    e?.preventDefault();
+    setWhatsAppServiceUrl(customUrlInput);
+    const activeUrl = getWhatsAppServiceUrl();
+    setCurrentServiceUrl(activeUrl);
+    setCustomUrlInput(activeUrl);
+    setShowUrlConfig(false);
+    await checkStatus();
+  };
+
+  const handleResetUrl = async () => {
+    resetWhatsAppServiceUrl();
+    const activeUrl = getWhatsAppServiceUrl();
+    setCustomUrlInput(activeUrl);
+    setCurrentServiceUrl(activeUrl);
+    setShowUrlConfig(false);
+    await checkStatus();
+  };
+
+  const handleRestartClient = async () => {
+    setRestartingClient(true);
+    setErrorMsg('');
+    try {
+      await restartWhatsAppClient();
+      setTimeout(checkStatus, 1500);
+    } catch (err) {
+      setErrorMsg(err.message || 'Error al reiniciar el cliente de WhatsApp.');
+    } finally {
+      setRestartingClient(false);
+    }
+  };
 
   // 2. Cargar total de clientes del tenant
   useEffect(() => {
@@ -188,15 +237,64 @@ export default function CampanaWhatsapp() {
           </p>
         </div>
 
-        <button 
-          onClick={checkStatus}
-          className="btn btn-secondary"
-          style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}
-        >
-          <RefreshCw size={16} className={loadingStatus ? 'animate-spin' : ''} />
-          <span>Actualizar Estado</span>
-        </button>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button 
+            onClick={() => setShowUrlConfig(!showUrlConfig)}
+            className="btn btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <Settings size={16} />
+            <span>Configurar URL</span>
+          </button>
+          
+          <button 
+            onClick={checkStatus}
+            className="btn btn-secondary"
+            style={{ padding: '8px 16px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px' }}
+          >
+            <RefreshCw size={16} className={loadingStatus ? 'animate-spin' : ''} />
+            <span>Actualizar Estado</span>
+          </button>
+        </div>
       </div>
+
+      {/* PANEL DESPLEGABLE DE CONFIGURACIÓN DE URL DEL MICROSERVICIO */}
+      {showUrlConfig && (
+        <div className="glass-panel animate-fade-in" style={{ padding: '20px', marginBottom: '24px', border: '1px solid var(--accent-primary)', background: 'rgba(30, 41, 59, 0.9)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h4 style={{ margin: 0, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Server size={18} color="var(--accent-primary)" /> Configurar URL del Microservicio WhatsApp
+            </h4>
+            <button onClick={() => setShowUrlConfig(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <X size={18} />
+            </button>
+          </div>
+          
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '16px' }}>
+            Al estar tu aplicación alojada en Vercel, el microservicio que ejecuta Chromium con WhatsApp Web debe estar corriendo en un servidor (Render/Railway/VPS) o en tu PC local.
+          </p>
+
+          <form onSubmit={handleSaveCustomUrl} style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: '1 1 300px', position: 'relative' }}>
+              <Globe size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+              <input
+                type="text"
+                value={customUrlInput}
+                onChange={(e) => setCustomUrlInput(e.target.value)}
+                placeholder="Ej: http://localhost:3001 o https://mi-servidor.onrender.com"
+                style={{ width: '100%', padding: '10px 12px 10px 38px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '0.95rem' }}
+              />
+            </div>
+            
+            <button type="submit" className="btn btn-primary" style={{ padding: '10px 16px', fontSize: '0.88rem' }}>
+              Guardar y Conectar
+            </button>
+            <button type="button" onClick={handleResetUrl} className="btn btn-secondary" style={{ padding: '10px 16px', fontSize: '0.88rem' }}>
+              Restablecer Localhost (3001)
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* MENSAJES DE ERROR GLOBALES */}
       {errorMsg && (
@@ -299,36 +397,122 @@ export default function CampanaWhatsapp() {
                     style={{ width: '220px', height: '220px', display: 'block' }} 
                   />
                 </div>
-                <p style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px' }}>
-                  Escanear código QR
+                <p style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.98rem', marginBottom: '6px' }}>
+                  ¡Código QR Listo! Escanealo con tu celular
                 </p>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 16px 0', lineHeight: 1.4 }}>
                   Abrí WhatsApp en tu teléfono › <strong>Dispositivos vinculados</strong> › <strong>Vincular dispositivo</strong>.
                 </p>
+                
+                <button
+                  onClick={handleRestartClient}
+                  disabled={restartingClient}
+                  className="btn btn-secondary"
+                  style={{ padding: '6px 14px', fontSize: '0.8rem', margin: '0 auto' }}
+                >
+                  {restartingClient ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                  <span>Regenerar Código QR</span>
+                </button>
               </div>
             )}
 
             {waStatus === 'OFFLINE' && (
-              <div style={{ padding: '24px 16px', textAlign: 'center', background: 'rgba(183, 65, 52, 0.05)', borderRadius: '12px', border: '1px solid rgba(183, 65, 52, 0.15)' }}>
-                <AlertTriangle size={48} style={{ color: 'var(--danger)', margin: '0 auto 12px auto' }} />
-                <h4 style={{ fontSize: '1.1rem', marginBottom: '8px', color: 'var(--danger)' }}>
-                  Microservicio Desconectado
-                </h4>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '12px' }}>
-                  Asegurate de tener el microservicio corriendo localmente en el puerto 3001:
-                </p>
-                <code style={{ background: 'var(--code-bg)', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8rem', display: 'inline-block' }}>
-                  cd whatsapp-service && npm start
-                </code>
+              <div style={{ padding: '20px 16px', background: 'rgba(183, 65, 52, 0.05)', borderRadius: '12px', border: '1px solid rgba(183, 65, 52, 0.2)' }}>
+                <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+                  <AlertTriangle size={44} style={{ color: 'var(--danger)', margin: '0 auto 8px auto' }} />
+                  <h4 style={{ fontSize: '1.1rem', marginBottom: '4px', color: 'var(--danger)' }}>
+                    Microservicio Desconectado
+                  </h4>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                    Probando conexión con: <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px', color: 'var(--accent-primary)' }}>{currentServiceUrl}</code>
+                  </p>
+                </div>
+
+                {/* TABS DE INSTRUCCIONES: LOCAL VS NUBE */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '8px' }}>
+                  <button
+                    onClick={() => setInstructionTab('local')}
+                    style={{
+                      flex: 1, padding: '8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: instructionTab === 'local' ? 700 : 500,
+                      background: instructionTab === 'local' ? 'rgba(236, 72, 153, 0.2)' : 'transparent',
+                      color: instructionTab === 'local' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                      border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                    }}
+                  >
+                    <Terminal size={14} /> Ejecución Local
+                  </button>
+                  <button
+                    onClick={() => setInstructionTab('cloud')}
+                    style={{
+                      flex: 1, padding: '8px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: instructionTab === 'cloud' ? 700 : 500,
+                      background: instructionTab === 'cloud' ? 'rgba(236, 72, 153, 0.2)' : 'transparent',
+                      color: instructionTab === 'cloud' ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                      border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                    }}
+                  >
+                    <Globe size={14} /> Servidor en la Nube
+                  </button>
+                </div>
+
+                {instructionTab === 'local' ? (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    <p style={{ margin: '0 0 8px 0' }}>
+                      <strong>Si tenés el proyecto en tu computadora:</strong>
+                    </p>
+                    <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <li>Abrí una terminal en tu equipo.</li>
+                      <li>
+                        Ejecutá: <code style={{ background: 'var(--code-bg)', padding: '2px 8px', borderRadius: '4px' }}>cd whatsapp-service && npm start</code>
+                      </li>
+                      <li>Mantené esa terminal abierta para sostener WhatsApp Web.</li>
+                    </ol>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                    <p style={{ margin: '0 0 8px 0' }}>
+                      <strong>Si desplegaste el microservicio en Render/Railway:</strong>
+                    </p>
+                    <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <li>Desplegá la carpeta <code style={{ background: 'var(--code-bg)', padding: '2px 6px', borderRadius: '4px' }}>whatsapp-service</code> en la nube.</li>
+                      <li>Copiá la URL pública provista (ej: <code style={{ background: 'var(--code-bg)', padding: '2px 6px', borderRadius: '4px' }}>https://tu-app.onrender.com</code>).</li>
+                      <li>Hacé clic arriba en <strong>Configurar URL</strong> y guardala.</li>
+                    </ol>
+                  </div>
+                )}
+
+                <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={checkStatus}
+                    disabled={loadingStatus}
+                    className="btn btn-primary"
+                    style={{ width: '100%', padding: '10px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  >
+                    <RefreshCw size={14} className={loadingStatus ? 'animate-spin' : ''} />
+                    <span>Probar Conexión Ahora</span>
+                  </button>
+                </div>
               </div>
             )}
 
             {(waStatus === 'DISCONNECTED' || waStatus === 'CHECKING') && (
-              <div style={{ textAlign: 'center', padding: '40px 16px' }}>
-                <Loader2 size={48} className="animate-spin" style={{ color: 'var(--accent-primary)', margin: '0 auto 16px auto' }} />
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-                  Conectando con el servidor de WhatsApp...
+              <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+                <Loader2 size={44} className="animate-spin" style={{ color: 'var(--accent-primary)', margin: '0 auto 12px auto' }} />
+                <p style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px' }}>
+                  Inicializando servicio WhatsApp Web...
                 </p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
+                  Conectando a <code style={{ background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px' }}>{currentServiceUrl}</code>
+                </p>
+
+                <button
+                  onClick={handleRestartClient}
+                  disabled={restartingClient}
+                  className="btn btn-secondary"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem', margin: '0 auto' }}
+                >
+                  {restartingClient ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                  <span>Generar Código QR</span>
+                </button>
               </div>
             )}
           </div>
