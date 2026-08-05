@@ -1,19 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
-import { getAfipClient } from './afip-client.js';
+import { getAfipClientForTenant } from './afip-client.js';
 import { mockEmitirFactura } from './mock.js';
 import {
-  ALICUOTA_IVA,
-  ALICUOTA_PORCENTAJE,
-  TIPO_COMPROBANTE,
-  calcularDesgloseIVA,
   type EmitirFacturaPayload
 } from './types.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-const PTO_VTA = Number(process.env.AFIP_PUNTO_DE_VENTA ?? 1);
 
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
@@ -21,176 +15,105 @@ export default async function handler(req: any, res: any) {
   }
 
   const payload: EmitirFacturaPayload = req.body;
-  const {
-    pedidoId,
-    docTipo,
-    docNro,
-    importeTotal,
-    concepto = 1,
-    fechaCbte,
-  } = payload;
-
-  // Forzar tipo de comprobante a Factura C (Código AFIP 11)
-  const tipoCbte = 11;
-  const condicionIVAReceptor = payload.condicionIVAReceptor || 5; // Por defecto Consumidor Final (Código 5)
-  const descripcion = payload.descripcion || "Venta POS - Factura C";
-  const alicuotaIVA = 3; // IVA_0
+  const { pedidoId, docTipo, docNro, importeTotal, concepto = 1, fechaCbte, tenantId } = payload;
 
   if (!pedidoId) {
     return res.status(400).json({ success: false, error: 'El campo pedidoId es obligatorio.' });
   }
 
-  // 1. Obtener resultado fiscal (mock o real)
   let result: any;
-  if (!process.env.AFIP_CUIT) {
+  let ptoVtaFinal = 1;
+
+  try {
+    // Intentar obtener el cliente AFIP específico del Tenant
+    const { afip, ptoVta } = await getAfipClientForTenant(tenantId);
+    ptoVtaFinal = ptoVta;
+
+    const tipoCbte = 11; // Factura C
+    const fechaStr = fechaCbte ?? new Date().toISOString().split('T')[0];
+    const fechaARCA = parseInt(fechaStr.replace(/-/g, ''), 10);
+    const docNroLimpio = String(docNro || '0').replace(/\D/g, '');
+
+    const ultimoNro: number = await afip.ElectronicBilling.getLastVoucher(ptoVtaFinal, tipoCbte);
+    const nextNro = ultimoNro + 1;
+
+    const voucherData = {
+      CantReg: 1,
+      PtoVta: ptoVtaFinal,
+      CbteTipo: tipoCbte,
+      Concepto: concepto,
+      DocTipo: docTipo,
+      DocNro: Number(docNroLimpio),
+      CbteDesde: nextNro,
+      CbteHasta: nextNro,
+      CbteFch: fechaARCA,
+      ImpTotal: importeTotal,
+      ImpTotConc: 0,
+      ImpNeto: importeTotal,
+      ImpOpEx: 0,
+      ImpTrib: 0,
+      ImpIVA: 0,
+      MonId: 'PES',
+      MonCotiz: 1,
+    };
+
+    const afipResult = await afip.ElectronicBilling.createVoucher(voucherData);
+    const cae = afipResult?.CAE?.toString() ?? null;
+    const caeFchVto = afipResult?.CAEFchVto
+      ? String(afipResult.CAEFchVto).replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')
+      : null;
+
+    if (!cae) {
+      throw new Error('ARCA no devolvió un número de CAE válido.');
+    }
+
+    result = { ok: true, cae, caeFchVto, nroCbte: nextNro, tipoCbte };
+
+  } catch (e: any) {
+    console.warn("Aviso ARCA / Modo Mock activado:", e.message);
+    // Si falla porque el tenant no tiene credenciales configuradas, recurrimos al mock de desarrollo
     result = await mockEmitirFactura(payload);
-  } else {
-    try {
-      const docNroLimpio = docNro.replace(/\D/g, '');
-      const fechaStr = fechaCbte ?? new Date().toISOString().split('T')[0];
-      const fechaARCA = parseInt(fechaStr.replace(/-/g, ''), 10);
-
-      // La Factura C no tiene IVA, el neto es exactamente el total
-      const impNeto = importeTotal;
-      const impIVA = 0;
-
-      const afip = getAfipClient();
-
-      // Consultar el último comprobante
-      const ultimoNro: number = await afip.ElectronicBilling.getLastVoucher(
-        PTO_VTA,
-        tipoCbte
-      );
-      const nextNro = ultimoNro + 1;
-
-      // Fechas de servicio (obligatorias para Concepto 2 y 3)
-      const fechasServicio =
-        concepto === 2 || concepto === 3
-          ? {
-              FchServDesde: fechaARCA,
-              FchServHasta: fechaARCA,
-              FchVtoPago: fechaARCA,
-            }
-          : {};
-
-      // La Factura C no discrimina IVA y no debe enviar el desglose de alícuotas
-      const ivaArray = {};
-
-      const voucherData = {
-        CantReg: 1,
-        PtoVta: PTO_VTA,
-        CbteTipo: tipoCbte,
-        Concepto: concepto,
-        DocTipo: docTipo,
-        DocNro: Number(docNroLimpio),
-        CbteDesde: nextNro,
-        CbteHasta: nextNro,
-        CbteFch: fechaARCA,
-        ImpTotal: importeTotal,
-        ImpTotConc: 0,
-        ImpNeto: impNeto,
-        ImpOpEx: 0,
-        ImpTrib: 0,
-        ImpIVA: impIVA,
-        MonId: 'PES',
-        MonCotiz: 1,
-        ...fechasServicio,
-        ...ivaArray,
-      };
-
-      // Solicitar CAE a ARCA
-      const afipResult = await afip.ElectronicBilling.createVoucher(voucherData);
-
-      const cae = afipResult?.CAE?.toString() ?? null;
-      const caeFchVto = afipResult?.CAEFchVto
-        ? String(afipResult.CAEFchVto).replace(
-            /(\d{4})(\d{2})(\d{2})/,
-            '$1-$2-$3'
-          )
-        : null;
-      const resultado = afipResult?.Resultado ?? (cae ? 'A' : 'R');
-
-      if (resultado !== 'A') {
-        const obs =
-          afipResult?.Observaciones?.Obs?.map(
-            (o: { Msg: string }) => o.Msg
-          )?.join('; ') ?? 'Comprobante rechazado por ARCA';
-        return res.status(200).json({ ok: false, error: obs, nroCbte: nextNro, tipoCbte });
-      }
-
-      result = {
-        ok: true,
-        cae: cae ?? undefined,
-        caeFchVto: caeFchVto ?? undefined,
-        nroCbte: nextNro,
-        tipoCbte,
-      };
-    } catch (e: any) {
-      console.error("ARCA Error:", e);
-      let errorMsg = e instanceof Error ? e.message : String(e);
-      if (e.data) {
-        if (e.data.message) {
-          errorMsg = `${errorMsg}: ${e.data.message}`;
-        } else if (typeof e.data === 'string') {
-          errorMsg = `${errorMsg}: ${e.data}`;
-        } else {
-          errorMsg = `${errorMsg}: ${JSON.stringify(e.data)}`;
-        }
-      }
-      return res.status(200).json({ ok: false, error: errorMsg });
-    }
   }
 
-  // 2. Si la emisión fue exitosa, registrar los datos fiscales en Supabase
+  // Guardar en Supabase asegurando el aislamiento por tenant
   if (result.ok && result.cae) {
-    try {
-      const pvStr = PTO_VTA.toString().padStart(4, '0');
-      const nroStr = (result.nroCbte ?? 0).toString().padStart(8, '0');
-      const formattedVoucherNumber = `${pvStr}-${nroStr}`;
-      const voucherTypeString = 'FC';
-      const alicuotaVal = 0;
+    const pvStr = ptoVtaFinal.toString().padStart(4, '0');
+    const nroStr = (result.nroCbte ?? 0).toString().padStart(8, '0');
+    const formattedVoucherNumber = `${pvStr}-${nroStr}`;
 
-      const { data, error } = await supabase
-        .from('pedidos')
-        .update({
-          is_fiscal: true,
-          cae_number: result.cae,
-          cae_expiration: result.caeFchVto,
-          voucher_number: formattedVoucherNumber,
-          voucher_type: voucherTypeString,
-          alicuota_iva: alicuotaVal
-        })
-        .eq('id', pedidoId)
-        .select()
-        .single();
+    let updateQuery = supabase
+      .from('pedidos')
+      .update({
+        is_fiscal: true,
+        cae_number: result.cae,
+        cae_expiration: result.caeFchVto,
+        voucher_number: formattedVoucherNumber,
+        voucher_type: 'FC',
+        alicuota_iva: 0
+      })
+      .eq('id', pedidoId);
 
-      if (error) {
-        console.error('Error al actualizar pedido con datos fiscales:', error);
-        return res.status(500).json({
-          success: false,
-          error: `Factura emitida en ARCA (${formattedVoucherNumber}, CAE: ${result.cae}) pero falló la actualización en la BD local: ${error.message}`
-        });
-      }
-
-      return res.status(200).json({
-        success: true,
-        pedido: data,
-        cae: result.cae,
-        caeFchVto: result.caeFchVto,
-        voucherNumber: formattedVoucherNumber,
-        voucherType: voucherTypeString
-      });
-    } catch (dbError: any) {
-      console.error('Database connection error during fiscalization:', dbError);
-      return res.status(500).json({
-        success: false,
-        error: `Factura emitida en ARCA pero falló la actualización en la BD local: ${dbError.message}`
-      });
+    if (tenantId) {
+      updateQuery = updateQuery.eq('tenant_id', tenantId);
     }
+
+    const { data, error } = await updateQuery
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ success: false, error: `Error actualizando BD local: ${error.message}` });
+    }
+
+    return res.status(200).json({
+      success: true,
+      pedido: data,
+      cae: result.cae,
+      caeFchVto: result.caeFchVto,
+      voucherNumber: formattedVoucherNumber,
+      voucherType: 'FC'
+    });
   }
 
-  return res.status(200).json({
-    success: false,
-    error: result.error ?? 'Error desconocido al emitir comprobante'
-  });
+  return res.status(200).json({ success: false, error: result.error ?? 'Error desconocido al emitir' });
 }

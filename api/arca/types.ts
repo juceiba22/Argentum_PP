@@ -92,6 +92,8 @@ export interface EmitirFacturaPayload {
   fechaCbte?: string;
   /** ID del pedido para vincular */
   pedidoId?: string;
+  /** ID del tenant para aislamiento multitenant */
+  tenantId?: string;
   /** Alícuota IVA a aplicar (default: 21%) */
   alicuotaIVA?: AlicuotaIVA;
 }
