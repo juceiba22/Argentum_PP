@@ -15,6 +15,7 @@ import DashboardLiquidez from './pages/DashboardLiquidez';
 import Caja from './pages/Caja';
 import VentasHome from './pages/VentasHome';
 import Facturacion from './pages/Facturacion';
+import ConfiguracionFiscal from './pages/ConfiguracionFiscal';
 import Importaciones from './pages/Importaciones';
 import CampanaWhatsapp from './pages/CampanaWhatsapp';
 import { ActivityProvider } from './context/ActivityContext';
@@ -92,6 +93,7 @@ function App() {
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
               <Route path="/facturacion" element={<ProtectedRoute allowedRoles={['admin']}><Facturacion /></ProtectedRoute>} />
+              <Route path="/configuracion-fiscal" element={<ProtectedRoute allowedRoles={['admin']}><ConfiguracionFiscal /></ProtectedRoute>} />
               <Route path="/importaciones" element={<ProtectedRoute allowedRoles={['admin']}><Importaciones /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
               <Route path="/market" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><Market /></ProtectedRoute>} />

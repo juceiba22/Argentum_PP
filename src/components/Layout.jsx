@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare } from 'lucide-react';
+import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare, ShieldCheck } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -45,6 +45,7 @@ export default function Layout() {
       subItems: [
         { path: '/erp/dashboard-liquidez', label: 'Ingresos/Egresos', icon: <Activity size={20} />, allowed: ['admin'] },
         { path: '/facturacion', label: 'Ventas (ARCA)', icon: <Receipt size={20} />, allowed: ['admin'] },
+        { path: '/configuracion-fiscal', label: 'Config. Fiscal ARCA', icon: <ShieldCheck size={20} />, allowed: ['admin'] },
         { path: '/erp/compras', label: 'Compras', icon: <ShoppingCart size={20} />, allowed: ['admin'] },
         { path: '/erp/gastos', label: 'Gastos', icon: <Receipt size={20} />, allowed: ['admin'] },
         { path: '/erp/caja', label: 'Caja', icon: <List size={20} />, allowed: ['admin'] }
