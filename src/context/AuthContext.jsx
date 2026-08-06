@@ -70,14 +70,27 @@ export const AuthProvider = ({ children }) => {
       let fallbackTenantId = sessionUser.user_metadata?.tenant_id || null;
 
       if (!fallbackTenantId) {
-        const { data: tenantData } = await supabase.from('tenants').select('id').limit(1).maybeSingle();
-        if (tenantData?.id) {
-          fallbackTenantId = tenantData.id;
-        } else {
-          const { data: anyTenantUser } = await supabase.from('tenant_users').select('tenant_id').limit(1).maybeSingle();
-          if (anyTenantUser?.tenant_id) {
-            fallbackTenantId = anyTenantUser.tenant_id;
+        // Auto-crear un nuevo tenant aislado para que el nuevo usuario inicie con cuenta limpia (en 0)
+        const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'nuevo';
+        const nombreNuevoComercio = sessionUser.user_metadata?.nombre_comercio || `Comercio (${userSlug})`;
+
+        try {
+          const { data: newTenant, error: createTenantErr } = await supabase
+            .from('tenants')
+            .insert([{
+              nombre: nombreNuevoComercio,
+              nombre_comercio: nombreNuevoComercio
+            }])
+            .select('id')
+            .single();
+
+          if (!createTenantErr && newTenant?.id) {
+            fallbackTenantId = newTenant.id;
+          } else {
+            console.warn('No se pudo auto-crear tenant en la tabla tenants:', createTenantErr);
           }
+        } catch (errCreate) {
+          console.warn('Excepción al intentar auto-crear nuevo tenant:', errCreate);
         }
       }
 
