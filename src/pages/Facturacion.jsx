@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
 import { createCliente, getAllClientes } from '../services/clientesApi';
 import { useAuth } from '../context/AuthContext';
@@ -6,7 +7,7 @@ import FacturaPDF from '../components/FacturaPDF';
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { 
   Receipt, Search, Calendar, CheckCircle2, AlertCircle, 
-  Loader2, Filter, Eye, DollarSign, Download, Printer, UserPlus
+  Loader2, Filter, Eye, DollarSign, Download, Printer, UserPlus, ShieldCheck
 } from 'lucide-react';
 
 const CONDICION_IVA_OPTIONS = [
@@ -165,6 +166,7 @@ export default function Facturacion() {
 
     const payload = {
       pedidoId: selectedPedido.id,
+      tenantId: tenantId,
       tipoCbte: 11,
       condicionIVAReceptor,
       docTipo,
@@ -185,16 +187,24 @@ export default function Facturacion() {
         body: JSON.stringify(payload)
       });
 
-      const resData = await response.json();
+      let resData;
+      const responseText = await response.text();
+      try {
+        resData = JSON.parse(responseText);
+      } catch (jsonErr) {
+        console.error('Respuesta no JSON recibida del servidor:', responseText);
+        throw new Error('Ocurrió un error inesperado en el servidor (Respuesta no válida).');
+      }
+
       if (!resData.success) {
-        throw new Error(resData.error || 'Error al emitir factura electrónica.');
+        throw new Error(resData.error || 'Error al emitir la factura electrónica.');
       }
 
       // Éxito
       cargarDatos();
       handleCloseEmision();
     } catch (err) {
-      console.error(err);
+      console.error('Error al emitir factura ARCA:', err);
       setErrorEmision(err.message || 'Ocurrió un error al procesar el comprobante.');
     } finally {
       setProcesandoEmision(false);
@@ -239,13 +249,17 @@ export default function Facturacion() {
 
   return (
     <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '2rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Receipt size={32} color="var(--accent-primary)" /> Facturación Electrónica ARCA
           </h1>
           <p style={{ color: 'var(--text-secondary)' }}>Administra las ventas realizadas en Market y emite facturas A y B con validez fiscal.</p>
         </div>
+        <Link to="/configuracion-fiscal" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+          <ShieldCheck size={18} />
+          Configuración Fiscal ARCA
+        </Link>
       </div>
 
       {errorCarga && (
