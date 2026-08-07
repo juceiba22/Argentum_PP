@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import DelegacionArcaWizard from '../components/DelegacionArcaWizard';
 import { 
   ShieldCheck, Building2, Server, Save, Loader2, AlertCircle, 
-  CheckCircle2, Info, ExternalLink, HelpCircle, RefreshCw, Clock
+  CheckCircle2, Info, ExternalLink, HelpCircle, RefreshCw, Clock, MessageCircle
 } from 'lucide-react';
 
 export default function ConfiguracionFiscal() {
@@ -424,6 +424,40 @@ export default function ConfiguracionFiscal() {
         </div>
 
       </form>
+
+      {/* SECCIÓN SOPORTE DIRECTO */}
+      <div className="glass-panel" style={{ padding: '24px', marginTop: '24px', textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: 'var(--text-primary)' }}>
+          ¿Necesitas ayuda con la delegación fiscal o tu punto de venta en ARCA?
+        </h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>
+          Nuestro equipo de soporte técnico te guiará paso a paso para completar la configuración de tu comercio.
+        </p>
+        <a
+          href="https://wa.me/5491178270751?text=Hola%20Soporte%20Argentum,%20necesito%20asistencia%20con%20la%20configuraci%C3%B3n%20fiscal%20de%20ARCA."
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justify: 'center',
+            gap: '12px',
+            backgroundColor: '#25D366',
+            color: '#FFFFFF',
+            padding: '14px 28px',
+            borderRadius: '10px',
+            fontWeight: 800,
+            fontSize: '1.05rem',
+            textDecoration: 'none',
+            boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
+            transition: 'all 0.2s ease-in-out',
+            maxWidth: '450px',
+            width: '100%'
+          }}
+        >
+          <MessageCircle size={24} /> Contactar con Soporte de Argentum
+        </a>
+      </div>
 
       {/* Modal Instructivo Paso a Paso */}
       {showInstructivo && (
