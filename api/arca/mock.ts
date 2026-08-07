@@ -1,4 +1,4 @@
-import type { EmitirFacturaPayload, EmitirFacturaResult, ARCAServerStatus } from './types';
+import type { EmitirFacturaPayload, EmitirFacturaResult, ARCAServerStatus } from './types.js';
 
 export async function mockVerificarConexionARCA(): Promise<ARCAServerStatus> {
   await new Promise((resolve) => setTimeout(resolve, 800));
