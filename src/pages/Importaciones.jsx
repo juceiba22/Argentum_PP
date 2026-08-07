@@ -196,7 +196,6 @@ export default function Importaciones() {
           >
             <option value="BANCO">Extracto Bancario</option>
             <option value="ARCA">Comprobantes ARCA</option>
-            <option value="PAYWAY">Liquidación PayWay</option>
             <option value="MERCADOPAGO">Movimientos Mercado Pago</option>
             <option value="OTRO">Otro Origen</option>
           </select>

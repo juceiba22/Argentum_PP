@@ -1,5 +1,5 @@
 export type EstadoImportacion = 'Pendiente' | 'Procesando' | 'Procesado' | 'Error';
-export type OrigenImportacion = 'BANCO' | 'ARCA' | 'PAYWAY' | 'MERCADOPAGO' | 'OTRO';
+export type OrigenImportacion = 'BANCO' | 'ARCA' | 'MERCADOPAGO' | 'OTRO';
 
 export interface ReporteGemini {
   resumen: string;
