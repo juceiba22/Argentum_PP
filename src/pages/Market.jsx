@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2, Megaphone, UserPlus, Loader, Activity } from 'lucide-react';
+import { ShoppingCart, DollarSign, Check, X, Tag, Banknote, CreditCard, Smartphone, QrCode, Building, ArrowLeft, Trash2, Megaphone, UserPlus, Loader, Activity, MessageCircle } from 'lucide-react';
 import { getInventario, updateMercaderia } from '../services/inventarioApi';
 import { getPromocionesActivas } from '../services/promocionesApi';
 import { registrarVentaDirecta } from '../services/pedidosApi';
@@ -870,7 +870,7 @@ export default function Market() {
                         </div>
                         <div>{mensaje.text}</div>
                         {mensaje.link && (
-                          <div style={{ marginTop: '12px' }}>
+                          <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             <Link 
                               to={mensaje.link} 
                               onClick={handleCloseCheckout}
@@ -884,6 +884,26 @@ export default function Market() {
                             >
                               {mensaje.linkText || 'Ir a Configuración'} →
                             </Link>
+                            <a
+                              href="https://wa.me/5491178270751?text=Hola%20Soporte%20Argentum,%20necesito%20asistencia%20con%20el%20Punto%20de%20Venta%20POS%20y%20Mercado%20Pago%20Point."
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '8px',
+                                backgroundColor: '#25D366',
+                                color: '#FFFFFF',
+                                padding: '10px 16px',
+                                borderRadius: '8px',
+                                fontWeight: 800,
+                                fontSize: '0.85rem',
+                                textDecoration: 'none'
+                              }}
+                            >
+                              <MessageCircle size={18} /> Contactar con Soporte de Argentum
+                            </a>
                           </div>
                         )}
                       </div>
@@ -912,8 +932,8 @@ export default function Market() {
                 {metodoPago === 'tarjeta' && (
                   <div style={{ padding: '20px', background: 'rgba(249, 115, 22, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
                     <CreditCard size={48} color="#f97316" style={{ margin: '0 auto 16px' }} />
-                    <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Posnet Pawway</h3>
-                    <p style={{ color: 'var(--text-secondary)' }}>Digita manualmente <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> en el dispositivo Pawway. Al aprobarse, presiona confirmar.</p>
+                    <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Posnet / Terminal de Tarjetas</h3>
+                    <p style={{ color: 'var(--text-secondary)' }}>Digita manualmente <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> en el dispositivo. Al aprobarse, presiona confirmar.</p>
                   </div>
                 )}
                 {metodoPago === 'transferencia' && (

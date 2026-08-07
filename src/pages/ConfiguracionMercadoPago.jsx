@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   CreditCard, Smartphone, Key, Save, Loader2, AlertCircle, 
   CheckCircle2, Info, ExternalLink, HelpCircle, RefreshCw, Clock,
-  Eye, EyeOff, ShieldCheck, Check
+  Eye, EyeOff, ShieldCheck, Check, MessageCircle
 } from 'lucide-react';
 
 export default function ConfiguracionMercadoPago() {
@@ -408,6 +408,40 @@ export default function ConfiguracionMercadoPago() {
         </div>
 
       </form>
+
+      {/* SECCIÓN SOPORTE DIRECTO */}
+      <div className="glass-panel" style={{ padding: '24px', marginTop: '24px', textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1.15rem', marginBottom: '8px', color: 'var(--text-primary)' }}>
+          ¿Tenés dudas o querés ayuda para conectar tu terminal Mercado Pago Point?
+        </h3>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '16px' }}>
+          Hablá directamente con nuestro equipo de soporte técnico para asistirte con tus credenciales y dispositivo.
+        </p>
+        <a
+          href="https://wa.me/5491178270751?text=Hola%20Soporte%20Argentum,%20necesito%20asistencia%20con%20la%20configuraci%C3%B3n%20de%20Mercado%20Pago%20Point."
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justify: 'center',
+            gap: '12px',
+            backgroundColor: '#25D366',
+            color: '#FFFFFF',
+            padding: '14px 28px',
+            borderRadius: '10px',
+            fontWeight: 800,
+            fontSize: '1.05rem',
+            textDecoration: 'none',
+            boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
+            transition: 'all 0.2s ease-in-out',
+            maxWidth: '450px',
+            width: '100%'
+          }}
+        >
+          <MessageCircle size={24} /> Contactar con Soporte de Argentum
+        </a>
+      </div>
 
       {/* Modal Instructivo Paso a Paso */}
       {showInstructivo && (
