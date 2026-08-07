@@ -91,3 +91,33 @@ export const enviarCampanaWhatsApp = async ({ tenantId, mensaje, flyerUrl }) => 
     throw err;
   }
 };
+
+/**
+ * Plantilla oficial para alta de nuevo comercio / bienvenida con delegación ARCA
+ */
+export const getMensajeBienvenidaDelegacion = (nombreComercio = 'tu comercio') => {
+  return `¡Hola {nombre}! Bienvenido a la plataforma para ${nombreComercio}.\n\n` +
+    `Para habilitar la Facturación Electrónica de tu comercio, por favor realizá la delegación del servicio en ARCA / AFIP:\n\n` +
+    `1. Ingresá al portal oficial de ARCA: https://auth.afip.gob.ar/\n` +
+    `2. En 'Administrador de Relaciones', delegá el servicio de Facturación Electrónica a nuestro CUIT de plataforma.\n` +
+    `3. De regreso en la app, ingresá a 'Configuración Fiscal' y hacé clic en 'Verificar delegación'.\n\n` +
+    `Recordá que la plataforma NUNCA te solicitará tu Clave Fiscal ni certificados privados.`;
+};
+
+/**
+ * Envía notificación individual al dar de alta un comercio nuevo por WhatsApp
+ */
+export const enviarNotificacionAltaComercio = async ({ telefono, nombreComercio }) => {
+  const serviceUrl = getWhatsAppServiceUrl();
+  const mensaje = getMensajeBienvenidaDelegacion(nombreComercio);
+  try {
+    const res = await fetch(`${serviceUrl}/api/enviar-notificacion`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telefono, mensaje })
+    });
+    return await res.json();
+  } catch (err) {
+    console.warn('No se pudo enviar la notificación de alta por WhatsApp:', err.message);
+  }
+};

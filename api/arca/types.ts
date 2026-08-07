@@ -1,6 +1,6 @@
 /**
  * Tipos específicos para la integración con ARCA (ex AFIP).
- * Facturación electrónica para Responsable Inscripto (Factura A + B).
+ * Facturación electrónica para Responsable Inscripto (Factura A + B) y Monotributo (Factura C).
  */
 
 // ─── Tipos de comprobante ────────────────────────────────────────────────────
@@ -71,11 +71,32 @@ export const CONCEPTO = {
 
 export type Concepto = (typeof CONCEPTO)[keyof typeof CONCEPTO];
 
+// ─── Configuración Fiscal de Tenant (Modelo Delegación AFIP) ────────────────
+
+export interface TenantFiscalConfig {
+  id: string;
+  afip_cuit_delegado?: string | null;
+  afip_punto_de_venta?: number | null;
+  afip_env?: 'development' | 'production' | null;
+  afip_delegacion_verificada: boolean;
+  afip_delegacion_verificada_at?: string | null;
+}
+
+export interface VerificarDelegacionPayload {
+  tenantId: string;
+}
+
+export interface VerificarDelegacionResult {
+  success: boolean;
+  verifiedAt?: string;
+  error?: string;
+}
+
 // ─── Interfaces para la API ──────────────────────────────────────────────────
 
 export interface EmitirFacturaPayload {
-  /** Tipo de comprobante (1=Factura A, 6=Factura B) */
-  tipoCbte: typeof TIPO_COMPROBANTE.FACTURA_A | typeof TIPO_COMPROBANTE.FACTURA_B;
+  /** Tipo de comprobante (1=Factura A, 6=Factura B, 11=Factura C) */
+  tipoCbte: typeof TIPO_COMPROBANTE.FACTURA_A | typeof TIPO_COMPROBANTE.FACTURA_B | typeof TIPO_COMPROBANTE.FACTURA_C;
   /** Condición IVA del receptor (determina si es Factura A o B) */
   condicionIVAReceptor: CondicionIVA;
   /** Tipo de documento del receptor */

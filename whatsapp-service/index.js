@@ -346,6 +346,43 @@ app.post('/api/enviar-campana', async (req, res) => {
     console.error('💥 Error no controlado en /api/enviar-campana:', error);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
+/**
+ * POST /api/enviar-notificacion
+ * Body: { telefono: string, mensaje: string }
+ * Envía un mensaje de notificación individual (ej: bienvenida / alta de comercio con instrucciones de ARCA)
+ */
+app.post('/api/enviar-notificacion', async (req, res) => {
+  try {
+    const { telefono, mensaje } = req.body;
+
+    if (!telefono || typeof telefono !== 'string' || !telefono.trim()) {
+      return res.status(400).json({ error: 'El campo "telefono" es requerido.' });
+    }
+
+    if (!mensaje || typeof mensaje !== 'string' || !mensaje.trim()) {
+      return res.status(400).json({ error: 'El campo "mensaje" es requerido.' });
+    }
+
+    if (whatsappStatus !== 'CONNECTED') {
+      return res.status(503).json({ error: 'El servicio de WhatsApp aún no está conectado.' });
+    }
+
+    const chatId = formatPhoneNumber(telefono);
+    if (!chatId) {
+      return res.status(400).json({ error: 'Formato de número telefónico inválido.' });
+    }
+
+    await client.sendMessage(chatId, mensaje);
+    console.log(`✅ Notificación individual de bienvenida enviada a ${chatId}`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Notificación enviada correctamente.'
+    });
+  } catch (error) {
+    console.error('💥 Error en /api/enviar-notificacion:', error);
+    res.status(500).json({ error: error.message || 'Error interno del servidor al enviar notificación.' });
+  }
 });
 
 // Endpoint Health Check

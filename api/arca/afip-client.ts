@@ -34,73 +34,73 @@ function parsePemOrBase64(input?: string | null): string {
 
 /**
  * Retorna la instancia de AfipSDK configurada dinámicamente para un tenant específico.
- * Consulta la tabla `tenants` de Supabase usando la Service Role Key para garantizar
- * el aislamiento multi-tenant estricto.
+ * Utiliza el CUIT delegado del tenant junto con el Certificado y Clave Privada ÚNICOS
+ * de la Plataforma (PLATFORM_AFIP_CERT y PLATFORM_AFIP_KEY).
+ * 
+ * Si skipDelegationCheck es true, no exige que afip_delegacion_verificada sea true (útil para verificar).
  */
-export async function getAfipClientForTenant(tenantId?: string) {
-  let cuit: number | null = process.env.AFIP_CUIT ? Number(process.env.AFIP_CUIT) : null;
-  let env = process.env.AFIP_ENV ?? 'development';
-  let accessToken: string | undefined = process.env.AFIP_ACCESS_TOKEN;
-  let certRaw: string | undefined = process.env.AFIP_CERT;
-  let keyRaw: string | undefined = process.env.AFIP_PRIVATE_KEY;
+export async function getAfipClientForTenant(tenantId?: string, skipDelegationCheck: boolean = false) {
+  let cuitDelegado: string | null = null;
   let puntoVenta = Number(process.env.AFIP_PUNTO_DE_VENTA ?? 1);
+  let env = process.env.AFIP_ENV ?? 'development';
+  let delegacionVerificada = false;
 
-  // Si se provee un tenantId, consultamos sus credenciales exclusivas en la tabla `tenants`
   if (tenantId) {
     const { data: tenant, error } = await supabase
       .from('tenants')
-      .select('afip_cuit, afip_punto_de_venta, afip_cert, afip_private_key, afip_env, afip_access_token')
+      .select('afip_cuit_delegado, afip_punto_de_venta, afip_env, afip_delegacion_verificada')
       .eq('id', tenantId)
       .maybeSingle();
 
     if (error) {
-      console.error(`Error consultando credenciales para tenant ${tenantId}:`, error.message);
+      console.error(`Error consultando tenant ${tenantId} en Supabase:`, error.message);
     }
 
     if (tenant) {
-      if (tenant.afip_cuit) cuit = Number(tenant.afip_cuit);
+      cuitDelegado = tenant.afip_cuit_delegado ? String(tenant.afip_cuit_delegado).trim() : null;
       if (tenant.afip_punto_de_venta) puntoVenta = Number(tenant.afip_punto_de_venta);
       if (tenant.afip_env) env = tenant.afip_env;
-      if (tenant.afip_access_token) accessToken = tenant.afip_access_token;
-      if (tenant.afip_cert) certRaw = tenant.afip_cert;
-      if (tenant.afip_private_key) keyRaw = tenant.afip_private_key;
+      delegacionVerificada = Boolean(tenant.afip_delegacion_verificada);
     }
+  } else {
+    // Fallback si no se provee tenantId (para invocaciones genéricas)
+    cuitDelegado = process.env.AFIP_CUIT ?? null;
+    delegacionVerificada = true;
   }
 
-  // Validación 1: Verificar existencia del CUIT del comercio
-  if (!cuit || isNaN(cuit)) {
-    throw new Error('El comercio no tiene configurado un CUIT fiscal válido en sus credenciales de AFIP.');
+  // 1. Error explícito si afip_cuit_delegado no está configurado
+  if (!cuitDelegado) {
+    throw new Error('El comercio no tiene configurado un CUIT delegado de AFIP.');
   }
 
-  const isDev = env === 'development';
-
-  // Opción 1: Modo desarrollo con access_token de afipsdk.com
-  if (isDev && accessToken) {
-    return {
-      afip: new Afip({
-        CUIT: cuit,
-        access_token: accessToken,
-        production: false,
-      }),
-      ptoVta: puntoVenta,
-      isMock: false
-    };
+  const cuitNumber = Number(cuitDelegado.replace(/\D/g, ''));
+  if (!cuitNumber || isNaN(cuitNumber)) {
+    throw new Error('El CUIT delegado del comercio no es un número válido.');
   }
 
-  // Opción 2: Autenticación nativa AFIP con certificados digitales (.crt y .key)
+  // 2. Error explícito distinto si afip_delegacion_verificada es false
+  if (!skipDelegationCheck && !delegacionVerificada) {
+    throw new Error('La delegación del servicio de AFIP / ARCA no ha sido verificada para este comercio.');
+  }
+
+  // 3. Obtener certificado y clave privada ÚNICOS de la plataforma
+  const certRaw = process.env.PLATFORM_AFIP_CERT || process.env.AFIP_CERT;
+  const keyRaw = process.env.PLATFORM_AFIP_KEY || process.env.AFIP_PRIVATE_KEY;
+
   const cert = parsePemOrBase64(certRaw);
   const key = parsePemOrBase64(keyRaw);
 
   if (!cert || !key) {
-    throw new Error('El comercio no tiene configuradas sus credenciales fiscales de AFIP (Certificado .crt o Clave Privada .key faltantes).');
+    throw new Error('Faltan configurar los certificados de la plataforma (PLATFORM_AFIP_CERT y PLATFORM_AFIP_KEY).');
   }
+
+  const isDev = env === 'development';
 
   try {
     const afipInstance = new Afip({
-      CUIT: cuit,
+      CUIT: cuitNumber,
       cert: cert,
       key: key,
-      access_token: accessToken,
       production: !isDev,
     });
 

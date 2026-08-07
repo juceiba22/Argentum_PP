@@ -9,7 +9,8 @@ import { getAllClientes } from '../services/clientesApi';
 import { uploadImage } from '../services/inventarioApi';
 import { 
   getWhatsAppStatus, logoutWhatsApp, enviarCampanaWhatsApp,
-  getWhatsAppServiceUrl, setWhatsAppServiceUrl, resetWhatsAppServiceUrl, restartWhatsAppClient 
+  getWhatsAppServiceUrl, setWhatsAppServiceUrl, resetWhatsAppServiceUrl, restartWhatsAppClient,
+  getMensajeBienvenidaDelegacion
 } from '../services/whatsappApi';
 
 export default function CampanaWhatsapp() {
@@ -577,9 +578,26 @@ export default function CampanaWhatsapp() {
         <form onSubmit={handleOpenConfirm}>
           {/* CAMPO MENSAJE */}
           <div className="input-group" style={{ marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
               <label className="input-label" style={{ margin: 0 }}>Mensaje de Texto</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => setMensaje(getMensajeBienvenidaDelegacion())}
+                  style={{
+                    background: 'rgba(74, 124, 89, 0.1)',
+                    color: 'var(--success)',
+                    border: '1px solid rgba(74, 124, 89, 0.3)',
+                    padding: '4px 10px',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                  title="Cargar plantilla de alta de comercio y delegación ARCA"
+                >
+                  📋 Plantilla: Alta Comercio / Delegación ARCA
+                </button>
                 <button
                   type="button"
                   onClick={() => insertVariable('{nombre}')}
