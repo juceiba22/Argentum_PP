@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare, ShieldCheck, CreditCard } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -33,7 +33,8 @@ export default function Layout() {
         { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
         { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
         { path: '/campana-whatsapp', label: 'Campaña WhatsApp', icon: <MessageSquare size={20} />, allowed: ['admin'] },
-        { path: '/market', label: 'POS / Terminal', icon: <Store size={20} />, allowed: ['admin', 'ventas'] }
+        { path: '/market', label: 'POS / Terminal', icon: <Store size={20} />, allowed: ['admin', 'ventas'] },
+        { path: '/configuracion-mercadopago', label: 'Config. MP Point', icon: <CreditCard size={20} />, allowed: ['admin'] }
       ]
     },
 

@@ -1,8 +1,11 @@
-// Servicio para comunicarse con el endpoint serverless de Vercel (Mercado Pago Point)
+// Servicio para comunicarse con los endpoints serverless de Vercel (Mercado Pago Point Multi-tenant)
 
 export const cobrarConPoint = async (total, pedidoId, mesa, tenantId) => {
+  if (!tenantId) {
+    throw new Error('Debes iniciar sesión con un comercio activo para realizar un cobro por terminal Point.');
+  }
+
   try {
-    // Apuntamos a la ruta local/relativa que Vercel expone para la carpeta /api
     const response = await fetch('/api/mercadopago/create-point-payment', {
       method: 'POST',
       headers: {
@@ -19,23 +22,27 @@ export const cobrarConPoint = async (total, pedidoId, mesa, tenantId) => {
     const data = await response.json();
 
     if (!response.ok || !data.success) {
-      throw new Error(data.error || 'Fallo al iniciar cobro en el terminal Point');
+      throw new Error(data.error || 'Fallo al iniciar cobro en la terminal Mercado Pago Point.');
     }
 
     return data.paymentIntent;
   } catch (error) {
-    console.error("Error en servicio mercadoPagoApi:", error);
+    console.error("Error en servicio mercadoPagoApi (cobrarConPoint):", error);
     throw error;
   }
 };
 
 export const getPaymentIntentStatus = async (paymentIntentId, tenantId) => {
+  if (!tenantId) {
+    throw new Error('Tenant ID no especificado.');
+  }
+
   try {
-    const response = await fetch(`/api/mercadopago/get-payment-intent?payment_intent_id=${paymentIntentId}&tenantId=${tenantId || ''}`);
+    const response = await fetch(`/api/mercadopago/get-payment-intent?payment_intent_id=${encodeURIComponent(paymentIntentId)}&tenantId=${encodeURIComponent(tenantId)}`);
     const data = await response.json();
 
     if (!response.ok || !data.success) {
-      throw new Error(data.error || 'Fallo al consultar el estado del pago');
+      throw new Error(data.error || 'Fallo al consultar el estado del pago en la terminal.');
     }
 
     return data.intent;
@@ -46,6 +53,10 @@ export const getPaymentIntentStatus = async (paymentIntentId, tenantId) => {
 };
 
 export const cancelarPointPayment = async (paymentIntentId, tenantId) => {
+  if (!tenantId) {
+    throw new Error('Tenant ID no especificado.');
+  }
+
   try {
     const response = await fetch('/api/mercadopago/cancel-point-payment', {
       method: 'POST',

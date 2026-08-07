@@ -7,7 +7,7 @@ import { createCliente } from '../services/clientesApi';
 import { cobrarConPoint, getPaymentIntentStatus, cancelarPointPayment } from '../services/mercadoPagoApi';
 import { getCajaAbierta, abrirCaja } from '../services/cajasApi';
 import { useAuth } from '../context/AuthContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 
 
 
@@ -231,6 +231,16 @@ export default function Market() {
   };
 
   const handleCobroMercadoPago = async () => {
+    if (!tenantId) {
+      setMensaje({
+        type: 'error',
+        text: 'Debes iniciar sesión con un comercio activo para operar la terminal de pago Point.',
+        link: '/configuracion-mercadopago',
+        linkText: 'Ir a Configuración MP Point'
+      });
+      return;
+    }
+
     setProcesando(true);
     setMpStatus('waiting');
     setMensaje(null);
@@ -241,22 +251,44 @@ export default function Market() {
       const pId = intent.id;
       setCurrentMpOrderId(pId);
 
+      let pollCount = 0;
+      const maxPolls = 60; // 3 minutos máximo (60 iteraciones x 3s)
+
       const interval = setInterval(async () => {
+        pollCount++;
         try {
+          if (pollCount > maxPolls) {
+            clearInterval(interval);
+            setPollingInterval(null);
+            setProcesando(false);
+            setMpStatus(null);
+            setMensaje({ 
+              type: 'error', 
+              text: 'Tiempo de espera agotado (3 min). No se detectó respuesta de la terminal física.' 
+            });
+            if (pId) {
+              cancelarPointPayment(pId, tenantId).catch(console.error);
+            }
+            return;
+          }
+
           const statusData = await getPaymentIntentStatus(pId, tenantId);
-          const status = statusData.status;
+          const status = statusData ? statusData.status : null;
+
           if (status === 'processed') {
              clearInterval(interval);
+             setPollingInterval(null);
              setMpStatus('approved');
              await confirmarVenta(); // Completa la venta real en Supabase
           } else if (status === 'canceled' || status === 'failed' || status === 'expired') {
              clearInterval(interval);
+             setPollingInterval(null);
              setProcesando(false);
              setMpStatus(null);
              setMensaje({ type: 'error', text: 'El cobro fue cancelado o rechazado en la terminal.' });
           }
         } catch (e) {
-          console.error("Error consultando estado:", e);
+          console.error("Error consultando estado del posnet:", e);
         }
       }, 3000);
 
@@ -264,7 +296,20 @@ export default function Market() {
     } catch (error) {
       setProcesando(false);
       setMpStatus(null);
-      setMensaje({ type: 'error', text: 'Error al iniciar el cobro en el terminal físico. Revisa tus credenciales.' });
+
+      const errorText = error.message || 'Error al iniciar el cobro en la terminal física.';
+      const isUnconfigured = 
+        errorText.toLowerCase().includes('configurad') || 
+        errorText.toLowerCase().includes('token') || 
+        errorText.toLowerCase().includes('device') ||
+        errorText.toLowerCase().includes('pos');
+
+      setMensaje({ 
+        type: 'error', 
+        text: errorText,
+        link: isUnconfigured ? '/configuracion-mercadopago' : null,
+        linkText: isUnconfigured ? 'Ir a Configuración Mercado Pago Point' : null
+      });
     }
   };
 
@@ -445,18 +490,33 @@ export default function Market() {
 
         {mensaje && (
           <div className="animate-fade-in" style={{
-            padding: '16px',
+            padding: '16px 20px',
             marginBottom: '24px',
             borderRadius: '8px',
-            backgroundColor: mensaje.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+            backgroundColor: mensaje.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
             color: mensaje.type === 'success' ? 'var(--success)' : 'var(--danger)',
             border: `1px solid ${mensaje.type === 'success' ? 'var(--success)' : 'var(--danger)'}`,
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '12px',
+            fontWeight: 600
           }}>
             {mensaje.type === 'success' ? <Check size={20} /> : <X size={20} />}
-            {mensaje.text}
+            <span style={{ flex: 1 }}>{mensaje.text}</span>
+            {mensaje.link && (
+              <Link 
+                to={mensaje.link} 
+                className="btn btn-primary"
+                style={{ 
+                  padding: '6px 14px', 
+                  fontSize: '0.85rem', 
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {mensaje.linkText || 'Ir a Configuración'} →
+              </Link>
+            )}
           </div>
         )}
 
@@ -793,6 +853,42 @@ export default function Market() {
                   <div style={{ padding: '20px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
                     <Smartphone size={48} color="#38bdf8" style={{ margin: '0 auto 16px' }} />
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Mercado Pago Point</h3>
+                    
+                    {mensaje && mensaje.type === 'error' && (
+                      <div style={{
+                        padding: '14px 16px',
+                        marginBottom: '16px',
+                        borderRadius: '6px',
+                        backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                        color: 'var(--danger)',
+                        border: '1px solid var(--danger)',
+                        fontSize: '0.9rem',
+                        textAlign: 'left'
+                      }}>
+                        <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <X size={16} /> Error de Integración Point:
+                        </div>
+                        <div>{mensaje.text}</div>
+                        {mensaje.link && (
+                          <div style={{ marginTop: '12px' }}>
+                            <Link 
+                              to={mensaje.link} 
+                              onClick={handleCloseCheckout}
+                              className="btn btn-primary"
+                              style={{ 
+                                padding: '8px 14px', 
+                                fontSize: '0.85rem', 
+                                display: 'inline-block',
+                                textDecoration: 'none' 
+                              }}
+                            >
+                              {mensaje.linkText || 'Ir a Configuración'} →
+                            </Link>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {mpStatus === 'waiting' ? (
                        <div style={{ padding: '16px 0' }}>
                           <Loader className="spin" size={32} color="#38bdf8" style={{ margin: '0 auto 16px', animation: 'spin 2s linear infinite' }} />
