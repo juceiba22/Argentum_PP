@@ -331,6 +331,14 @@ export default function Market() {
   const confirmarVenta = async () => {
     if (carrito.length === 0 || !metodoPago) return;
 
+    if (!tenantId) {
+      setMensaje({
+        type: 'error',
+        text: 'Cargando identificador del comercio... Por favor reintentá el cobro en unos segundos.'
+      });
+      return;
+    }
+
     setProcesando(true);
     try {
       for (const cartItem of carrito) {

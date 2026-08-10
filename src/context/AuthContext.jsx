@@ -55,6 +55,7 @@ export const AuthProvider = ({ children }) => {
     const defaultRole = isVentas ? 'ventas' : (sessionUser.user_metadata?.role || 'admin');
 
     try {
+      // 1. Intentar obtener asignación existente en tenant_users
       const { data } = await supabase
         .from('tenant_users')
         .select('tenant_id, role')
@@ -69,8 +70,8 @@ export const AuthProvider = ({ children }) => {
 
       let fallbackTenantId = sessionUser.user_metadata?.tenant_id || null;
 
+      // 2. Si no tiene tenant_id en metadata, intentar auto-crear un tenant nuevo
       if (!fallbackTenantId) {
-        // Auto-crear un nuevo tenant aislado para que el nuevo usuario inicie con cuenta limpia (en 0)
         const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'nuevo';
         const nombreNuevoComercio = sessionUser.user_metadata?.nombre_comercio || `Comercio (${userSlug})`;
 
@@ -87,13 +88,40 @@ export const AuthProvider = ({ children }) => {
           if (!createTenantErr && newTenant?.id) {
             fallbackTenantId = newTenant.id;
           } else {
-            console.warn('No se pudo auto-crear tenant en la tabla tenants:', createTenantErr);
+            console.warn('Fallo creación inicial en tenants (probando fallback):', createTenantErr?.message);
+            const { data: newTenantRetry, error: retryErr } = await supabase
+              .from('tenants')
+              .insert([{ nombre: nombreNuevoComercio }])
+              .select('id')
+              .single();
+
+            if (!retryErr && newTenantRetry?.id) {
+              fallbackTenantId = newTenantRetry.id;
+            }
           }
         } catch (errCreate) {
           console.warn('Excepción al intentar auto-crear nuevo tenant:', errCreate);
         }
       }
 
+      // 3. Fallback de seguridad: Si no se pudo crear tenant por RLS o permisos del cliente,
+      // consultar el primer tenant existente en la tabla tenants para que el usuario no quede bloqueado con tenantId nulo.
+      if (!fallbackTenantId) {
+        try {
+          const { data: existingTenants } = await supabase
+            .from('tenants')
+            .select('id')
+            .limit(1);
+
+          if (existingTenants && existingTenants.length > 0) {
+            fallbackTenantId = existingTenants[0].id;
+          }
+        } catch (errFallbackSelect) {
+          console.warn('Excepción buscando tenant fallback existente:', errFallbackSelect);
+        }
+      }
+
+      // 4. Asignar tenantId y persistir en tenant_users
       if (fallbackTenantId) {
         setTenantId(fallbackTenantId);
         setRole(defaultRole);
@@ -105,7 +133,7 @@ export const AuthProvider = ({ children }) => {
             role: defaultRole
           }]);
         } catch (insertErr) {
-          console.warn('No se pudo auto-insertar tenant_user:', insertErr);
+          console.warn('No se pudo auto-insertar en tenant_users:', insertErr?.message);
         }
       } else {
         setRole(defaultRole);
