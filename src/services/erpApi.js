@@ -46,7 +46,7 @@ export const deleteProveedor = async (id) => {
 };
 
 // ==========================================
-// MÓDULO: MOVIMIENTOS FINANCIEROS
+// MÓDULO: MOVIMIENTOS FINANCIEROS Y ESTADÍSTICAS
 // ==========================================
 export const registrarMovimiento = async (movimiento, tenantId) => {
   if (!tenantId && !movimiento.tenant_id) throw new Error('Falta tenant_id en movimiento');
@@ -73,7 +73,6 @@ export const getMovimientos = async (tenantId) => {
 
 export const getIngresosY_Egresos = async (tenantId) => {
   if (!tenantId) return { ingresos: 0, egresos: 0, liquidez: 0 };
-  // Optimizada para el Dashboard
   const { data, error } = await supabase
     .from('movimientos_financieros')
     .select('tipo, monto')
@@ -88,6 +87,157 @@ export const getIngresosY_Egresos = async (tenantId) => {
   });
   
   return { ingresos, egresos, liquidez: ingresos - egresos };
+};
+
+/**
+ * Consulta y calcula estadísticas generales de negocio consolidadas para el Dashboard
+ */
+export const getEstadisticasGenerales = async (tenantId) => {
+  if (!tenantId) {
+    return {
+      ventasTotales: 0,
+      cantidadVentas: 0,
+      ticketPromedio: 0,
+      ingresosTotales: 0,
+      egresosTotales: 0,
+      margenNeto: 0,
+      porcentajeMargen: 0,
+      valorCostoStock: 0,
+      valorVentaStock: 0,
+      gananciaLatenteStock: 0,
+      stockOptimoCount: 0,
+      stockBajoCount: 0,
+      mediosPagoBreakdown: {},
+      topProductos: [],
+      gastosPorCategoria: {},
+      ultimosPedidos: [],
+      ultimasCompras: []
+    };
+  }
+
+  // Consultas en paralelo a Supabase
+  const [pedidosRes, movimientosRes, inventarioRes, comprasRes, itemsRes] = await Promise.all([
+    supabase.from('pedidos').select('*').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
+    supabase.from('movimientos_financieros').select('*').eq('tenant_id', tenantId),
+    supabase.from('inventario').select('*').eq('tenant_id', tenantId),
+    supabase.from('compras').select('*, proveedores(nombre)').eq('tenant_id', tenantId).order('created_at', { ascending: false }),
+    supabase.from('items_pedido').select('*').eq('tenant_id', tenantId)
+  ]);
+
+  const pedidos = pedidosRes.data || [];
+  const movimientos = movimientosRes.data || [];
+  const inventario = inventarioRes.data || [];
+  const compras = comprasRes.data || [];
+  const itemsPedido = itemsRes.data || [];
+
+  // 1. Métricas de Ventas
+  const ventasTotales = pedidos.reduce((acc, p) => acc + Number(p.total || 0), 0);
+  const cantidadVentas = pedidos.length;
+  const ticketPromedio = cantidadVentas > 0 ? +(ventasTotales / cantidadVentas).toFixed(2) : 0;
+
+  // Desglose por Medio de Pago
+  const mediosPagoBreakdown = {
+    efectivo: 0,
+    mercado_pago: 0,
+    cuenta_dni: 0,
+    transferencia: 0,
+    tarjeta: 0
+  };
+  pedidos.forEach(p => {
+    const mpKey = (p.medio_pago || 'efectivo').toLowerCase();
+    if (mediosPagoBreakdown[mpKey] !== undefined) {
+      mediosPagoBreakdown[mpKey] += Number(p.total || 0);
+    } else {
+      mediosPagoBreakdown.efectivo += Number(p.total || 0);
+    }
+  });
+
+  // 2. Métricas Financieras (Movimientos)
+  let ingresosTotales = 0;
+  let egresosTotales = 0;
+  const gastosPorCategoria = {};
+
+  movimientos.forEach(m => {
+    const monto = Number(m.monto || 0);
+    if (m.tipo === 'INGRESO') {
+      ingresosTotales += monto;
+    } else if (m.tipo === 'EGRESO') {
+      egresosTotales += monto;
+      const cat = m.categoria || 'Varios';
+      gastosPorCategoria[cat] = (gastosPorCategoria[cat] || 0) + monto;
+    }
+  });
+
+  // Fallback si no hay ingresos expresos pero sí pedidos
+  if (ingresosTotales === 0 && ventasTotales > 0) {
+    ingresosTotales = ventasTotales;
+  }
+
+  const margenNeto = ingresosTotales - egresosTotales;
+  const porcentajeMargen = ingresosTotales > 0 ? +((margenNeto / ingresosTotales) * 100).toFixed(1) : 0;
+
+  // 3. Valorización e Índice de Salud de Inventario
+  let valorCostoStock = 0;
+  let valorVentaStock = 0;
+  let stockOptimoCount = 0;
+  let stockBajoCount = 0;
+
+  inventario.forEach(item => {
+    const cant = Number(item.cantidad || 0);
+    const precioCompra = Number(item.precio_compra || item.precio || 0);
+    const precioVenta = Number(item.precio_venta || item.precio || 0);
+
+    valorCostoStock += cant * precioCompra;
+    valorVentaStock += cant * precioVenta;
+
+    const minStock = Number(item.stock_minimo || 5);
+    if (cant <= minStock) {
+      stockBajoCount++;
+    } else {
+      stockOptimoCount++;
+    }
+  });
+
+  const gananciaLatenteStock = valorVentaStock - valorCostoStock;
+
+  // 4. Top 5 Productos más Vendidos
+  const productAggMap = {};
+  itemsPedido.forEach(item => {
+    const name = item.producto_nombre || 'Producto';
+    const qty = Number(item.cantidad || 0);
+    const price = Number(item.precio_unitario || 0);
+    const totalItem = qty * price;
+
+    if (!productAggMap[name]) {
+      productAggMap[name] = { nombre: name, cantidad: 0, montoTotal: 0 };
+    }
+    productAggMap[name].cantidad += qty;
+    productAggMap[name].montoTotal += totalItem;
+  });
+
+  const topProductos = Object.values(productAggMap)
+    .sort((a, b) => b.montoTotal - a.montoTotal)
+    .slice(0, 5);
+
+  return {
+    ventasTotales,
+    cantidadVentas,
+    ticketPromedio,
+    ingresosTotales,
+    egresosTotales,
+    margenNeto,
+    porcentajeMargen,
+    valorCostoStock,
+    valorVentaStock,
+    gananciaLatenteStock,
+    stockOptimoCount,
+    stockBajoCount,
+    mediosPagoBreakdown,
+    topProductos,
+    gastosPorCategoria,
+    ultimosPedidos: pedidos.slice(0, 5),
+    ultimasCompras: compras.slice(0, 5)
+  };
 };
 
 // ==========================================
@@ -123,7 +273,6 @@ export const getComprasDetalle = async (tenantId) => {
 
 export const registrarCompraCompleta = async (compraData, items, usuario_auditoria, tenantId) => {
   if (!tenantId) throw new Error('Se requiere tenantId para registrar la compra.');
-  // 1. Insertar en tabla `compras`
   const { data: compra, error: compraError } = await supabase
     .from('compras')
     .insert([{ ...compraData, estado: 'Pagada', usuario_auditoria, tenant_id: tenantId }])
@@ -132,7 +281,6 @@ export const registrarCompraCompleta = async (compraData, items, usuario_auditor
   
   if (compraError) throw compraError;
 
-  // 2. Insertar en `compras_detalle`
   const detalles = items.map(item => ({
     compra_id: compra.id,
     producto_id: item.producto_id,
@@ -147,7 +295,6 @@ export const registrarCompraCompleta = async (compraData, items, usuario_auditor
 
   if (detallesError) throw detallesError;
 
-  // 3. Registrar el Egreso Financiero
   await registrarMovimiento({
     tipo: 'EGRESO',
     monto: compra.importe,
@@ -158,9 +305,7 @@ export const registrarCompraCompleta = async (compraData, items, usuario_auditor
     tenant_id: tenantId
   }, tenantId);
 
-  // 4. Actualizar Stock en Inventario
   for (const item of items) {
-    // Buscar cantidad actual
     const { data: invItem } = await supabase.from('inventario').select('cantidad').eq('id', item.producto_id).single();
     if (invItem) {
       await supabase.from('inventario').update({
@@ -188,7 +333,6 @@ export const getGastos = async (tenantId) => {
 
 export const registrarGasto = async (gasto, usuario_auditoria, tenantId) => {
   if (!tenantId) throw new Error('Se requiere tenantId para el gasto');
-  // 1. Insertar en tabla `gastos`
   const { data: nuevoGasto, error: gastoError } = await supabase
     .from('gastos')
     .insert([{ ...gasto, tenant_id: tenantId }])
@@ -197,11 +341,10 @@ export const registrarGasto = async (gasto, usuario_auditoria, tenantId) => {
   
   if (gastoError) throw gastoError;
 
-  // 2. Registrar el Egreso Financiero
   await registrarMovimiento({
     tipo: 'EGRESO',
     monto: nuevoGasto.importe,
-    categoria: nuevoGasto.categoria_principal, // 'Costos Fijos', 'Depreciación de Capital', 'Salario / Ganancia'
+    categoria: nuevoGasto.categoria_principal,
     origen_id: nuevoGasto.id,
     descripcion: nuevoGasto.rubro,
     usuario_auditoria,

@@ -32,7 +32,6 @@ export default function Layout() {
       subItems: [
         { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
         { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
-        { path: '/campana-whatsapp', label: 'Campaña WhatsApp', icon: <MessageSquare size={20} />, allowed: ['admin'] },
         { path: '/market', label: 'POS / Terminal', icon: <Store size={20} />, allowed: ['admin', 'ventas'] },
         { path: '/configuracion-mercadopago', label: 'Config. MP Point', icon: <CreditCard size={20} />, allowed: ['admin'] }
       ]
@@ -47,6 +46,7 @@ export default function Layout() {
         { path: '/erp/dashboard-liquidez', label: 'Ingresos/Egresos', icon: <Activity size={20} />, allowed: ['admin'] },
         { path: '/facturacion', label: 'Ventas (ARCA)', icon: <Receipt size={20} />, allowed: ['admin'] },
         { path: '/configuracion-fiscal', label: 'Config. Fiscal ARCA', icon: <ShieldCheck size={20} />, allowed: ['admin'] },
+        { path: '/importaciones', label: 'IIBB (IVA)', icon: <UploadCloud size={20} />, allowed: ['admin'] },
         { path: '/erp/compras', label: 'Compras', icon: <ShoppingCart size={20} />, allowed: ['admin'] },
         { path: '/erp/gastos', label: 'Gastos', icon: <Receipt size={20} />, allowed: ['admin'] },
         { path: '/erp/caja', label: 'Caja', icon: <List size={20} />, allowed: ['admin'] }
@@ -70,13 +70,10 @@ export default function Layout() {
       icon: <PieChart size={20} />, 
       allowed: ['admin'],
       subItems: [
-        { path: '/erp/dashboard-proveedores', label: 'Analítica Prov.', icon: <BarChart2 size={20} />, allowed: ['admin'] },
+        { path: '/erp/dashboard-proveedores', label: 'Estadísticas del Negocio', icon: <BarChart2 size={20} />, allowed: ['admin'] },
         { path: '/erp/calculadora-costos', label: 'Calculadora Costos', icon: <BarChart2 size={20} />, allowed: ['admin'] }
       ]
-    },
-    
-    // Suelta fuera de grupos
-    { path: '/importaciones', label: 'Importaciones', icon: <UploadCloud size={20} />, allowed: ['admin'] }
+    }
   ];
 
   const currentRole = role || 'admin';

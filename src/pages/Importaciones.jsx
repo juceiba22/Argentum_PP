@@ -154,7 +154,7 @@ export default function Importaciones() {
   return (
     <div className="animate-fade-in" style={{ paddingBottom: '40px', maxWidth: '1000px', margin: '0 auto' }}>
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>Repositorio de Importaciones</h2>
+        <h2 style={{ fontSize: '2rem', marginBottom: '8px' }}>IIBB (IVA) - Repositorio de Documentos</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem' }}>
           Resguardá tus extractos bancarios, comprobantes y liquidaciones de forma segura.
         </p>

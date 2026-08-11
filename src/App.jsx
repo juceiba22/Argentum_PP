@@ -18,7 +18,6 @@ import Facturacion from './pages/Facturacion';
 import ConfiguracionFiscal from './pages/ConfiguracionFiscal';
 import ConfiguracionMercadoPago from './pages/ConfiguracionMercadoPago';
 import Importaciones from './pages/Importaciones';
-import CampanaWhatsapp from './pages/CampanaWhatsapp';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -101,7 +100,6 @@ function App() {
               <Route path="/market" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><Market /></ProtectedRoute>} />
               <Route path="/ventas-home" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><VentasHome /></ProtectedRoute>} />
               <Route path="/gestion-promociones" element={<ProtectedRoute allowedRoles={['admin']}><GestionPromociones /></ProtectedRoute>} />
-              <Route path="/campana-whatsapp" element={<ProtectedRoute allowedRoles={['admin']}><CampanaWhatsapp /></ProtectedRoute>} />
               {/* ERP Rutas */}
               <Route path="/erp/proveedores" element={<ProtectedRoute allowedRoles={['admin']}><Proveedores /></ProtectedRoute>} />
               <Route path="/erp/compras" element={<ProtectedRoute allowedRoles={['admin']}><Compras /></ProtectedRoute>} />
