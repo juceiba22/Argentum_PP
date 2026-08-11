@@ -6,6 +6,13 @@ const AuthContext = createContext();
 // Tiempo máximo que esperamos a getSession() antes de asumir que quedó colgada
 const SESSION_TIMEOUT_MS = 8000;
 
+// Único email que puede heredar el tenant histórico original (el que tiene
+// todas las ventas/compras/proveedores reales del comercio principal).
+// IMPORTANTE: esto es una whitelist explícita y cerrada, no un "includes()".
+// Cualquier otro usuario, sea cual sea su email o el rol que traiga en
+// user_metadata, SIEMPRE arranca con su propio tenant aislado.
+const ADMIN_PRINCIPAL_EMAIL = 'admin@argentum.com';
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [tenantId, setTenantId] = useState(null);
@@ -52,12 +59,15 @@ export const AuthProvider = ({ children }) => {
     }
 
     const emailLower = sessionUser.email?.toLowerCase() || '';
-    const isAdminUser = emailLower.includes('admin') || sessionUser.user_metadata?.role === 'admin';
     const isVentas = emailLower.includes('ventas');
-    const defaultRole = isVentas ? 'ventas' : (sessionUser.user_metadata?.role || 'admin');
+    // El rol mostrado en la UI puede venir de user_metadata (es solo display),
+    // pero NUNCA se usa para decidir a qué tenant se conecta el usuario.
+    const defaultRole = isVentas ? 'ventas' : (sessionUser.user_metadata?.role || 'usuario');
 
     try {
-      // 1. Intentar obtener asignación existente en tenant_users
+      // 1. Intentar obtener asignación existente en tenant_users.
+      // Esta es la ÚNICA fuente de verdad sobre a qué tenant pertenece un
+      // usuario ya vinculado anteriormente.
       const { data } = await supabase
         .from('tenant_users')
         .select('tenant_id, role')
@@ -72,8 +82,10 @@ export const AuthProvider = ({ children }) => {
 
       let assignedTenantId = null;
 
-      // 2. Si el usuario es el Administrador Principal (admin@argentum.com), recuperamos el tenant histórico original
-      if (isAdminUser || emailLower === 'admin@argentum.com') {
+      // 2. Solo el Administrador Principal (whitelist exacta por email, NO
+      // por substring ni por el role que haya en user_metadata) recupera el
+      // tenant histórico original.
+      if (emailLower === ADMIN_PRINCIPAL_EMAIL) {
         try {
           const { data: primaryTenants } = await supabase
             .from('tenants')
@@ -89,7 +101,8 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // 3. Si es un usuario nuevo distinto del admin y no tenía tenant asignado, crear un NUEVO tenant aislado único
+      // 3. Cualquier otro usuario sin tenant asignado (todos, salvo el admin
+      // principal) SIEMPRE recibe un tenant nuevo, aislado y único.
       if (!assignedTenantId) {
         const newTenantId = crypto.randomUUID();
         const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'comercio';
@@ -186,7 +199,9 @@ export const AuthProvider = ({ children }) => {
 
         if (currentUser) {
           const isVentas = currentUser.email?.toLowerCase().includes('ventas');
-          const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
+          // Este es solo un valor optimista/temporal mientras resolvemos el
+          // tenant real en fetchTenantAndRole; no decide accesos por sí solo.
+          const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'usuario');
           if (isMounted) {
             setRole(defaultRole);
             setTenantId(currentUser.user_metadata?.tenant_id || null);
@@ -241,7 +256,7 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const isVentas = currentUser.email?.toLowerCase().includes('ventas');
-        const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
+        const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'usuario');
         if (isMounted) {
           setRole(defaultRole);
           setTenantId(currentUser.user_metadata?.tenant_id || null);

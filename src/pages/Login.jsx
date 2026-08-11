@@ -28,11 +28,21 @@ export default function Login() {
       if (data.user) {
         let newRole = data.user.user_metadata?.role;
         const normalizedEmail = email.toLowerCase();
-        
-        // 1. Inyección de roles duros según el correo
-        if (normalizedEmail === 'admin@argentum.com' || normalizedEmail === 'juceiba22@gmail.com') newRole = 'admin';
-        else if (normalizedEmail.includes('ventas')) newRole = 'ventas';
-        else if (!newRole) newRole = 'admin';
+
+        // 1. Inyección de roles duros según el correo.
+        // IMPORTANTE: 'admin' se otorga SOLO por whitelist explícita, nunca por
+        // defecto. Antes, cualquier usuario nuevo sin rol previo caía en
+        // "admin" automáticamente, lo que hacía que AuthContext lo vinculara
+        // al tenant histórico con todas las ventas/compras/proveedores reales.
+        if (normalizedEmail === 'admin@argentum.com' || normalizedEmail === 'juceiba22@gmail.com') {
+          newRole = 'admin';
+        } else if (normalizedEmail.includes('ventas')) {
+          newRole = 'ventas';
+        } else if (!newRole) {
+          // Rol neutro por defecto para cualquier usuario nuevo.
+          // Cada usuario nuevo arranca aislado en su propio tenant/comercio.
+          newRole = 'usuario';
+        }
 
         // 2. Guardar en Supabase permanentemente si es diferente al actual
         if (data.user.user_metadata?.role !== newRole) {
