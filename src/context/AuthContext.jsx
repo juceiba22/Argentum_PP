@@ -51,7 +51,9 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    const isVentas = sessionUser.email?.toLowerCase().includes('ventas');
+    const emailLower = sessionUser.email?.toLowerCase() || '';
+    const isAdminUser = emailLower.includes('admin') || sessionUser.user_metadata?.role === 'admin';
+    const isVentas = emailLower.includes('ventas');
     const defaultRole = isVentas ? 'ventas' : (sessionUser.user_metadata?.role || 'admin');
 
     try {
@@ -68,46 +70,67 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // 2. Si el usuario no tiene tenant_id asignado, crear un NUEVO tenant aislado único
-      const newTenantId = crypto.randomUUID();
-      const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'comercio';
-      const nombreNuevoComercio = sessionUser.user_metadata?.nombre_comercio || `Comercio (${userSlug})`;
+      let assignedTenantId = null;
 
-      let assignedTenantId = newTenantId;
+      // 2. Si el usuario es el Administrador Principal (admin@argentum.com), recuperamos el tenant histórico original
+      if (isAdminUser || emailLower === 'admin@argentum.com') {
+        try {
+          const { data: primaryTenants } = await supabase
+            .from('tenants')
+            .select('id')
+            .order('created_at', { ascending: true })
+            .limit(1);
 
-      try {
-        const { data: newTenant, error: createTenantErr } = await supabase
-          .from('tenants')
-          .insert([{
-            id: newTenantId,
-            nombre: nombreNuevoComercio,
-            nombre_comercio: nombreNuevoComercio
-          }])
-          .select('id')
-          .maybeSingle();
+          if (primaryTenants && primaryTenants.length > 0) {
+            assignedTenantId = primaryTenants[0].id;
+          }
+        } catch (errPrimary) {
+          console.warn('Error recuperando tenant histórico del admin:', errPrimary);
+        }
+      }
 
-        if (newTenant?.id) {
-          assignedTenantId = newTenant.id;
-        } else if (createTenantErr) {
-          console.warn('Reintentando creación de tenant con esquema simplificado:', createTenantErr.message);
-          const { data: retryTenant } = await supabase
+      // 3. Si es un usuario nuevo distinto del admin y no tenía tenant asignado, crear un NUEVO tenant aislado único
+      if (!assignedTenantId) {
+        const newTenantId = crypto.randomUUID();
+        const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'comercio';
+        const nombreNuevoComercio = sessionUser.user_metadata?.nombre_comercio || `Comercio (${userSlug})`;
+
+        assignedTenantId = newTenantId;
+
+        try {
+          const { data: newTenant, error: createTenantErr } = await supabase
             .from('tenants')
             .insert([{
               id: newTenantId,
-              nombre: nombreNuevoComercio
+              nombre: nombreNuevoComercio,
+              nombre_comercio: nombreNuevoComercio
             }])
             .select('id')
             .maybeSingle();
 
-          if (retryTenant?.id) {
-            assignedTenantId = retryTenant.id;
+          if (newTenant?.id) {
+            assignedTenantId = newTenant.id;
+          } else if (createTenantErr) {
+            console.warn('Reintentando creación de tenant nuevo:', createTenantErr.message);
+            const { data: retryTenant } = await supabase
+              .from('tenants')
+              .insert([{
+                id: newTenantId,
+                nombre: nombreNuevoComercio
+              }])
+              .select('id')
+              .maybeSingle();
+
+            if (retryTenant?.id) {
+              assignedTenantId = retryTenant.id;
+            }
           }
+        } catch (errCreate) {
+          console.warn('Excepción al intentar crear nuevo tenant en BD:', errCreate);
         }
-      } catch (errCreate) {
-        console.warn('Excepción al intentar crear nuevo tenant en BD:', errCreate);
       }
 
-      // 3. Asignar el tenant aislado y vincularlo en tenant_users
+      // 4. Asignar el tenant y vincularlo en tenant_users
       setTenantId(assignedTenantId);
       setRole(defaultRole);
 
