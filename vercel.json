@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/api/mercadopago/:path*",
+      "destination": "/api/mercadopago/index.js"
+    },
+    {
+      "source": "/api/arca/:path*",
+      "destination": "/api/arca/index.ts"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
