@@ -10,6 +10,7 @@ const RUBROS_CATALOGO = [
   { value: 'Carnicería', label: '🥩 Carnicería' },
   { value: 'Petshop', label: '🐶 Petshop' },
   { value: 'Minimercado', label: '🛒 Minimercado' },
+  { value: 'Librería', label: '📚 Librería' },
   { value: 'Dietética', label: '🌿 Dietética' },
   { value: 'Fiambrería', label: '🧀 Fiambrería' },
   { value: 'Verdulería', label: '🍎 Verdulería' },
@@ -41,6 +42,13 @@ const STARTER_PRODUCTS_BY_RUBRO = {
     { nombre: 'Gaseosa Cola 2.25L', cantidad: 24, unidad_medida: 'unidades', precio_unitario: 2800, categoria: 'Bebidas' },
     { nombre: 'Aceite de Girasol 900ml', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 2100, categoria: 'Almacén' },
     { nombre: 'Yerba Mate 500g', cantidad: 30, unidad_medida: 'paquetes', precio_unitario: 2600, categoria: 'Infusiones' }
+  ],
+  'Librería': [
+    { nombre: 'Cuaderno A4 Espiralado 80h', cantidad: 15, unidad_medida: 'unidades', precio_unitario: 3800, categoria: 'Cuadernos y Hojas' },
+    { nombre: 'Birome Azul x10', cantidad: 20, unidad_medida: 'paquetes', precio_unitario: 2400, categoria: 'Escritura' },
+    { nombre: 'Resma de Papel A4 75g 500h', cantidad: 10, unidad_medida: 'paquetes', precio_unitario: 8500, categoria: 'Papelería' },
+    { nombre: 'Set de Resaltadores Pastel x4', cantidad: 12, unidad_medida: 'paquetes', precio_unitario: 4200, categoria: 'Escritura' },
+    { nombre: 'Mochila Escolar Reforzada', cantidad: 8, unidad_medida: 'unidades', precio_unitario: 24500, categoria: 'Mochilas' }
   ],
   'Dietética': [
     { nombre: 'Mix de Frutos Secos', cantidad: 10, unidad_medida: 'kg', precio_unitario: 14000, categoria: 'Frutos Secos' },
@@ -193,21 +201,22 @@ export default function OnboardingWizard({ onBackToLogin }) {
     setPaso(prev => Math.max(1, prev - 1));
   };
 
-  // Carga de productos por defecto en el inventario del nuevo tenant
+  // Carga de productos por defecto en el inventario del nuevo tenant (Ejecutado con usuario autenticado)
   const seedProductosIniciales = async (tenantId, rubroElegido) => {
     const items = STARTER_PRODUCTS_BY_RUBRO[rubroElegido] || STARTER_PRODUCTS_BY_RUBRO['General / Otro'];
     const payload = items.map(item => ({
       ...item,
+      precio: item.precio_unitario, // Sincronizar tanto precio como precio_unitario
       tenant_id: tenantId
     }));
 
     try {
       const { error } = await supabase.from('inventario').insert(payload);
       if (error) {
-        console.warn('Advertencia poblando productos iniciales:', error.message);
+        console.error('Error insertando productos iniciales:', error.message || error);
       }
     } catch (e) {
-      console.warn('Excepción poblando productos iniciales:', e);
+      console.error('Excepción insertando productos iniciales:', e);
     }
   };
 
@@ -236,10 +245,20 @@ export default function OnboardingWizard({ onBackToLogin }) {
       const user = authData.user;
       if (!user) throw new Error('No se pudo crear la cuenta de usuario.');
 
-      // 2. Generar UUID aislado para el nuevo Tenant
+      // 2. Iniciar sesión PRIMERO para autenticar el cliente de Supabase (JWT activo)
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password
+      });
+
+      if (signInError) {
+        console.warn('Advertencia al iniciar sesión inicial:', signInError.message);
+      }
+
+      // 3. Generar UUID aislado para el nuevo Tenant
       const newTenantId = crypto.randomUUID();
 
-      // 3. Crear el nuevo Tenant en la tabla 'tenants'
+      // 4. Crear el nuevo Tenant en la tabla 'tenants' (Cliente ya autenticado)
       const { error: tenantError } = await supabase
         .from('tenants')
         .insert([{
@@ -267,7 +286,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
         console.warn('Advertencia creando tenant:', tenantError.message);
       }
 
-      // 4. Vincular el usuario en 'tenant_users'
+      // 5. Vincular el usuario en 'tenant_users'
       const { error: linkError } = await supabase
         .from('tenant_users')
         .insert([{
@@ -283,14 +302,8 @@ export default function OnboardingWizard({ onBackToLogin }) {
         console.warn('Advertencia en tenant_users:', linkError.message);
       }
 
-      // 5. Poblar catálogo inicial de productos por defecto en inventario
+      // 6. Poblar catálogo inicial de productos por defecto en inventario (Cliente ya autenticado con RLS válido)
       await seedProductosIniciales(newTenantId, formData.rubro);
-
-      // 6. Iniciar sesión automáticamente en el cliente
-      await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
-      });
 
       // Marcar registro exitoso para mostrar pantalla final de éxito
       setRegistroExitoso(true);
