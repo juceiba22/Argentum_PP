@@ -68,75 +68,57 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      let fallbackTenantId = sessionUser.user_metadata?.tenant_id || null;
+      // 2. Si el usuario no tiene tenant_id asignado, crear un NUEVO tenant aislado único
+      const newTenantId = crypto.randomUUID();
+      const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'comercio';
+      const nombreNuevoComercio = sessionUser.user_metadata?.nombre_comercio || `Comercio (${userSlug})`;
 
-      // 2. Si no tiene tenant_id en metadata, intentar auto-crear un tenant nuevo
-      if (!fallbackTenantId) {
-        const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'nuevo';
-        const nombreNuevoComercio = sessionUser.user_metadata?.nombre_comercio || `Comercio (${userSlug})`;
+      let assignedTenantId = newTenantId;
 
-        try {
-          const { data: newTenant, error: createTenantErr } = await supabase
+      try {
+        const { data: newTenant, error: createTenantErr } = await supabase
+          .from('tenants')
+          .insert([{
+            id: newTenantId,
+            nombre: nombreNuevoComercio,
+            nombre_comercio: nombreNuevoComercio
+          }])
+          .select('id')
+          .maybeSingle();
+
+        if (newTenant?.id) {
+          assignedTenantId = newTenant.id;
+        } else if (createTenantErr) {
+          console.warn('Reintentando creación de tenant con esquema simplificado:', createTenantErr.message);
+          const { data: retryTenant } = await supabase
             .from('tenants')
             .insert([{
-              nombre: nombreNuevoComercio,
-              nombre_comercio: nombreNuevoComercio
+              id: newTenantId,
+              nombre: nombreNuevoComercio
             }])
             .select('id')
-            .single();
+            .maybeSingle();
 
-          if (!createTenantErr && newTenant?.id) {
-            fallbackTenantId = newTenant.id;
-          } else {
-            console.warn('Fallo creación inicial en tenants (probando fallback):', createTenantErr?.message);
-            const { data: newTenantRetry, error: retryErr } = await supabase
-              .from('tenants')
-              .insert([{ nombre: nombreNuevoComercio }])
-              .select('id')
-              .single();
-
-            if (!retryErr && newTenantRetry?.id) {
-              fallbackTenantId = newTenantRetry.id;
-            }
+          if (retryTenant?.id) {
+            assignedTenantId = retryTenant.id;
           }
-        } catch (errCreate) {
-          console.warn('Excepción al intentar auto-crear nuevo tenant:', errCreate);
         }
+      } catch (errCreate) {
+        console.warn('Excepción al intentar crear nuevo tenant en BD:', errCreate);
       }
 
-      // 3. Fallback de seguridad: Si no se pudo crear tenant por RLS o permisos del cliente,
-      // consultar el primer tenant existente en la tabla tenants para que el usuario no quede bloqueado con tenantId nulo.
-      if (!fallbackTenantId) {
-        try {
-          const { data: existingTenants } = await supabase
-            .from('tenants')
-            .select('id')
-            .limit(1);
+      // 3. Asignar el tenant aislado y vincularlo en tenant_users
+      setTenantId(assignedTenantId);
+      setRole(defaultRole);
 
-          if (existingTenants && existingTenants.length > 0) {
-            fallbackTenantId = existingTenants[0].id;
-          }
-        } catch (errFallbackSelect) {
-          console.warn('Excepción buscando tenant fallback existente:', errFallbackSelect);
-        }
-      }
-
-      // 4. Asignar tenantId y persistir en tenant_users
-      if (fallbackTenantId) {
-        setTenantId(fallbackTenantId);
-        setRole(defaultRole);
-
-        try {
-          await supabase.from('tenant_users').insert([{
-            tenant_id: fallbackTenantId,
-            user_id: sessionUser.id,
-            role: defaultRole
-          }]);
-        } catch (insertErr) {
-          console.warn('No se pudo auto-insertar en tenant_users:', insertErr?.message);
-        }
-      } else {
-        setRole(defaultRole);
+      try {
+        await supabase.from('tenant_users').insert([{
+          tenant_id: assignedTenantId,
+          user_id: sessionUser.id,
+          role: defaultRole
+        }]);
+      } catch (insertErr) {
+        console.warn('No se pudo auto-insertar en tenant_users:', insertErr?.message);
       }
     } catch (err) {
       console.error('Excepción al resolver el tenant:', err);
