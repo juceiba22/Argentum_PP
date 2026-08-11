@@ -18,7 +18,7 @@ export default function Layout() {
     }));
   };
 
-  const { role } = useAuth();
+  const { role, isTrialActive, isLicenseActive, daysRemainingTrial } = useAuth();
 
   const navItems = [
     // Suelta fuera de grupos
@@ -117,6 +117,25 @@ export default function Layout() {
         <div className="sidebar-header">
           <h2 className="brand-title">Argentum</h2>
           <p className="brand-subtitle">Gestión Interna</p>
+          {isTrialActive && !isLicenseActive && (
+            <div style={{
+              marginTop: '10px',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              backgroundColor: 'rgba(197, 160, 89, 0.15)',
+              border: '1px solid var(--accent-primary)',
+              color: 'var(--accent-primary)',
+              fontSize: '0.78rem',
+              fontWeight: 700,
+              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}>
+              <span>⚡ Prueba: {daysRemainingTrial} días restantes</span>
+            </div>
+          )}
         </div>
 
         <nav className="sidebar-nav">

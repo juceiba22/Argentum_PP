@@ -23,9 +23,11 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
 
+import PaywallScreen from './components/PaywallScreen';
+
 // Componente para proteger y redirigir rutas
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, hasValidAccess } = useAuth();
 
   if (loading) {
     return (
@@ -37,6 +39,11 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (!user) {
     return <Navigate to="/" replace />;
+  }
+
+  // Validación Centralizada: Si el trial de 15 días expiró y no tiene licencia activa, desplegar Paywall
+  if (hasValidAccess === false) {
+    return <PaywallScreen />;
   }
 
   // Fallback seguro de rol si el rol aún es nulo o se está resolviendo

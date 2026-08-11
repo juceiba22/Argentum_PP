@@ -278,6 +278,8 @@ export default function OnboardingWizard({ onBackToLogin }) {
           necesita_crear_pto_venta: !formData.tienePuntoVenta,
           afip_delegacion_verificada: true,
           afip_delegacion_verificada_at: new Date().toISOString(),
+          trial_ends_at: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+          is_active: true,
           onboarding_completado: true,
           onboarding_paso_actual: 4
         }]);

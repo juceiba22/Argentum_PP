@@ -18,6 +18,14 @@ export const AuthProvider = ({ children }) => {
   const [tenantId, setTenantId] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [licenseInfo, setLicenseInfo] = useState({
+    isTrialActive: true,
+    isLicenseActive: false,
+    daysRemainingTrial: 15,
+    hasValidAccess: true,
+    trialEndsAt: null,
+    licenseState: null
+  });
 
   // Evita que StrictMode (doble invocación de efectos en dev) dispare dos
   // inicializaciones de sesión en paralelo, compitiendo por el mismo estado.
@@ -107,6 +115,8 @@ export const AuthProvider = ({ children }) => {
         const newTenantId = crypto.randomUUID();
         const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'comercio';
         const nombreNuevoComercio = sessionUser.user_metadata?.nombre_comercio || `Comercio (${userSlug})`;
+        const trialEndsAtDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
+        const userCuit = sessionUser.user_metadata?.cuit || '00-00000000-0';
 
         assignedTenantId = newTenantId;
 
@@ -115,8 +125,10 @@ export const AuthProvider = ({ children }) => {
             .from('tenants')
             .insert([{
               id: newTenantId,
-              nombre: nombreNuevoComercio,
-              nombre_comercio: nombreNuevoComercio
+              nombre_comercio: nombreNuevoComercio,
+              cuit: userCuit,
+              trial_ends_at: trialEndsAtDate,
+              is_active: true
             }])
             .select('id')
             .maybeSingle();
@@ -129,7 +141,8 @@ export const AuthProvider = ({ children }) => {
               .from('tenants')
               .insert([{
                 id: newTenantId,
-                nombre: nombreNuevoComercio
+                nombre_comercio: nombreNuevoComercio,
+                cuit: userCuit
               }])
               .select('id')
               .maybeSingle();
@@ -143,22 +156,92 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // 4. Asignar el tenant y vincularlo en tenant_users
-      setTenantId(assignedTenantId);
-      setRole(defaultRole);
-
-      try {
-        await supabase.from('tenant_users').insert([{
-          tenant_id: assignedTenantId,
-          user_id: sessionUser.id,
-          role: defaultRole
-        }]);
-      } catch (insertErr) {
-        console.warn('No se pudo auto-insertar en tenant_users:', insertErr?.message);
-      }
+      // 5. Verificar estado de Trial de 15 días y Licencias activas por Email
+      await checkTrialAndLicense(sessionUser, assignedTenantId);
     } catch (err) {
       console.error('Excepción al resolver el tenant:', err);
       setRole(defaultRole);
+    }
+  };
+
+  const checkTrialAndLicense = async (sessionUser, resolvedTenantId) => {
+    if (!sessionUser) {
+      setLicenseInfo({
+        isTrialActive: false,
+        isLicenseActive: false,
+        daysRemainingTrial: 0,
+        hasValidAccess: false,
+        trialEndsAt: null,
+        licenseState: null
+      });
+      return;
+    }
+
+    try {
+      // 1. Consultar si posee una Licencia Activa Paga en 'licencias_activas' vinculada por Email
+      let isLicenseActive = false;
+      let licenseState = null;
+
+      if (email) {
+        const { data: licData } = await supabase
+          .from('licencias_activas')
+          .select('*')
+          .eq('email', email)
+          .eq('estado', 'activa')
+          .maybeSingle();
+
+        if (licData) {
+          const expDate = licData.valida_hasta || licData.fecha_vencimiento ? new Date(licData.valida_hasta || licData.fecha_vencimiento) : null;
+          if (!expDate || expDate >= now) {
+            isLicenseActive = true;
+            licenseState = licData;
+          }
+        }
+      }
+
+      // 2. Consultar fecha de trial (trial_ends_at) e is_active en la tabla tenants
+      let trialEndsAt = null;
+      let tenantActive = true;
+
+      if (resolvedTenantId) {
+        const { data: tenantData } = await supabase
+          .from('tenants')
+          .select('trial_ends_at, is_active')
+          .eq('id', resolvedTenantId)
+          .maybeSingle();
+
+        if (tenantData) {
+          trialEndsAt = tenantData.trial_ends_at ? new Date(tenantData.trial_ends_at) : null;
+          if (tenantData.is_active !== undefined && tenantData.is_active !== null) {
+            tenantActive = tenantData.is_active;
+          }
+        }
+      }
+
+      // 3. Calcular si el Trial de 15 días sigue vigente
+      let isTrialActive = false;
+      let daysRemainingTrial = 0;
+
+      if (trialEndsAt && trialEndsAt >= now) {
+        isTrialActive = true;
+        const diffTime = Math.abs(trialEndsAt - now);
+        daysRemainingTrial = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+      }
+
+      // 4. Determinar acceso general: Excepción admin principal, o Licencia Activa, o Trial Vigente
+      const isSystemAdmin = email?.toLowerCase() === ADMIN_PRINCIPAL_EMAIL;
+      const hasValidAccess = tenantActive && (isLicenseActive || isTrialActive || isSystemAdmin);
+
+      setLicenseInfo({
+        isTrialActive,
+        isLicenseActive,
+        daysRemainingTrial,
+        hasValidAccess,
+        trialEndsAt,
+        licenseState
+      });
+    } catch (errLic) {
+      console.warn('Error verificando prueba/licencia:', errLic);
     }
   };
 
@@ -277,7 +360,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, tenantId, role, loading }}>
+    <AuthContext.Provider value={{ user, tenantId, role, loading, licenseInfo, ...licenseInfo }}>
       {children}
     </AuthContext.Provider>
   );
