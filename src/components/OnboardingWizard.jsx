@@ -2,21 +2,112 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, Building2, MapPin, Receipt, ShieldCheck, CheckCircle2, 
-  ArrowRight, ArrowLeft, ExternalLink, HelpCircle, Sparkles, AlertCircle, Loader2, Check
+  ArrowRight, ArrowLeft, Sparkles, AlertCircle, Loader2, Check, Store
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
-import DelegacionArcaWizard, { PLATFORM_CUIT } from './DelegacionArcaWizard';
+
+const RUBROS_CATALOGO = [
+  { value: 'Carnicería', label: '🥩 Carnicería' },
+  { value: 'Petshop', label: '🐶 Petshop' },
+  { value: 'Minimercado', label: '🛒 Minimercado' },
+  { value: 'Dietética', label: '🌿 Dietética' },
+  { value: 'Fiambrería', label: '🧀 Fiambrería' },
+  { value: 'Verdulería', label: '🍎 Verdulería' },
+  { value: 'Ferretería', label: '🔧 Ferretería' },
+  { value: 'Cervecería', label: '🍺 Cervecería' },
+  { value: 'Cafetería', label: '☕ Cafetería' },
+  { value: 'Artículos de Limpieza', label: '🧼 Artículos de Limpieza' },
+  { value: 'General / Otro', label: '🏪 General / Otro' }
+];
+
+const STARTER_PRODUCTS_BY_RUBRO = {
+  'Carnicería': [
+    { nombre: 'Asado de Tira', cantidad: 10, unidad_medida: 'kg', precio_unitario: 9500, categoria: 'Cortes Vacunos' },
+    { nombre: 'Milanesa de Peceto', cantidad: 15, unidad_medida: 'kg', precio_unitario: 11200, categoria: 'Elaborados' },
+    { nombre: 'Chorizo Bombón', cantidad: 8, unidad_medida: 'kg', precio_unitario: 6800, categoria: 'Embutidos' },
+    { nombre: 'Bife de Chorizo', cantidad: 12, unidad_medida: 'kg', precio_unitario: 12500, categoria: 'Cortes Vacunos' },
+    { nombre: 'Carne Picada Especial', cantidad: 20, unidad_medida: 'kg', precio_unitario: 6200, categoria: 'Picadas' }
+  ],
+  'Petshop': [
+    { nombre: 'Alimento Perro Adulto 15kg', cantidad: 10, unidad_medida: 'unidades', precio_unitario: 32000, categoria: 'Alimentos Perro' },
+    { nombre: 'Alimento Gato Cachorro 3kg', cantidad: 15, unidad_medida: 'unidades', precio_unitario: 14500, categoria: 'Alimentos Gato' },
+    { nombre: 'Piedras Sanitarias Gato', cantidad: 20, unidad_medida: 'paquetes', precio_unitario: 4800, categoria: 'Higiene' },
+    { nombre: 'Comedero Acero Inoxidable', cantidad: 12, unidad_medida: 'unidades', precio_unitario: 3500, categoria: 'Accesorios' },
+    { nombre: 'Pipeta Pulguicida Perro', cantidad: 25, unidad_medida: 'unidades', precio_unitario: 5200, categoria: 'Salud' }
+  ],
+  'Minimercado': [
+    { nombre: 'Leche Entera 1L', cantidad: 30, unidad_medida: 'unidades', precio_unitario: 1400, categoria: 'Lácteos' },
+    { nombre: 'Galletitas Dulces 300g', cantidad: 40, unidad_medida: 'paquetes', precio_unitario: 1200, categoria: 'Almacén' },
+    { nombre: 'Gaseosa Cola 2.25L', cantidad: 24, unidad_medida: 'unidades', precio_unitario: 2800, categoria: 'Bebidas' },
+    { nombre: 'Aceite de Girasol 900ml', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 2100, categoria: 'Almacén' },
+    { nombre: 'Yerba Mate 500g', cantidad: 30, unidad_medida: 'paquetes', precio_unitario: 2600, categoria: 'Infusiones' }
+  ],
+  'Dietética': [
+    { nombre: 'Mix de Frutos Secos', cantidad: 10, unidad_medida: 'kg', precio_unitario: 14000, categoria: 'Frutos Secos' },
+    { nombre: 'Granola Crocante con Miel', cantidad: 15, unidad_medida: 'kg', precio_unitario: 7500, categoria: 'Cereales' },
+    { nombre: 'Harina de Almendras', cantidad: 8, unidad_medida: 'kg', precio_unitario: 12800, categoria: 'Harinas Especiales' },
+    { nombre: 'Semillas de Chía', cantidad: 12, unidad_medida: 'kg', precio_unitario: 5400, categoria: 'Semillas' },
+    { nombre: 'Miel Pura de Abejas 1kg', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 6200, categoria: 'Endulzantes' }
+  ],
+  'Fiambrería': [
+    { nombre: 'Jamón Cocido Especial', cantidad: 8, unidad_medida: 'kg', precio_unitario: 12500, categoria: 'Fiambres' },
+    { nombre: 'Queso Tybo Feteado', cantidad: 10, unidad_medida: 'kg', precio_unitario: 10800, categoria: 'Quesos' },
+    { nombre: 'Salame Tandilero', cantidad: 6, unidad_medida: 'kg', precio_unitario: 14200, categoria: 'Embutidos' },
+    { nombre: 'Aceitunas Verdes Rellenas', cantidad: 15, unidad_medida: 'kg', precio_unitario: 6500, categoria: 'Encurtidos' },
+    { nombre: 'Queso Reggianito Horma', cantidad: 5, unidad_medida: 'kg', precio_unitario: 16000, categoria: 'Quesos duros' }
+  ],
+  'Verdulería': [
+    { nombre: 'Tomate Perita', cantidad: 25, unidad_medida: 'kg', precio_unitario: 2200, categoria: 'Verduras' },
+    { nombre: 'Papa Negra Especial', cantidad: 40, unidad_medida: 'kg', precio_unitario: 950, categoria: 'Verduras' },
+    { nombre: 'Banana Ecuador', cantidad: 30, unidad_medida: 'kg', precio_unitario: 2400, categoria: 'Frutas' },
+    { nombre: 'Palta Hass Premium', cantidad: 15, unidad_medida: 'kg', precio_unitario: 5800, categoria: 'Frutas' },
+    { nombre: 'Manzana Red Delicious', cantidad: 20, unidad_medida: 'kg', precio_unitario: 1900, categoria: 'Frutas' }
+  ],
+  'Ferretería': [
+    { nombre: 'Cinta Aisladora Negra', cantidad: 30, unidad_medida: 'unidades', precio_unitario: 1100, categoria: 'Electricidad' },
+    { nombre: 'Martillo Galponero 500g', cantidad: 10, unidad_medida: 'unidades', precio_unitario: 9500, categoria: 'Herramientas' },
+    { nombre: 'Set Destornilladores x6', cantidad: 8, unidad_medida: 'paquetes', precio_unitario: 14000, categoria: 'Herramientas' },
+    { nombre: 'Taquetes Fisher 8mm x100', cantidad: 15, unidad_medida: 'paquetes', precio_unitario: 3200, categoria: 'Fijaciones' },
+    { nombre: 'Lubricante Aerosol 300ml', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 4800, categoria: 'Químicos' }
+  ],
+  'Cervecería': [
+    { nombre: 'Cerveza IPA Artesanal 500ml', cantidad: 48, unidad_medida: 'unidades', precio_unitario: 2800, categoria: 'Cervezas' },
+    { nombre: 'Cerveza Honey 500ml', cantidad: 48, unidad_medida: 'unidades', precio_unitario: 2700, categoria: 'Cervezas' },
+    { nombre: 'Cerveza Stout 500ml', cantidad: 36, unidad_medida: 'unidades', precio_unitario: 2900, categoria: 'Cervezas' },
+    { nombre: 'Papas Fritas Rústicas', cantidad: 20, unidad_medida: 'paquetes', precio_unitario: 3500, categoria: 'Snacks' },
+    { nombre: 'Maní Salado Tostado', cantidad: 15, unidad_medida: 'kg', precio_unitario: 4200, categoria: 'Snacks' }
+  ],
+  'Cafetería': [
+    { nombre: 'Café en Grano Tostado 1kg', cantidad: 10, unidad_medida: 'paquetes', precio_unitario: 28000, categoria: 'Cafetería' },
+    { nombre: 'Medialunas de Manteca', cantidad: 60, unidad_medida: 'unidades', precio_unitario: 650, categoria: 'Panadería' },
+    { nombre: 'Tostado Jamón y Queso', cantidad: 30, unidad_medida: 'unidades', precio_unitario: 3800, categoria: 'Comidas' },
+    { nombre: 'Jugo Naranja Exprimido 500ml', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 2200, categoria: 'Bebidas' },
+    { nombre: 'Capuchino Especial', cantidad: 25, unidad_medida: 'unidades', precio_unitario: 3200, categoria: 'Cafetería' }
+  ],
+  'Artículos de Limpieza': [
+    { nombre: 'Lavandina Concentrada 2L', cantidad: 30, unidad_medida: 'unidades', precio_unitario: 1800, categoria: 'Limpieza del hogar' },
+    { nombre: 'Detergente Lavavajillas 750ml', cantidad: 25, unidad_medida: 'unidades', precio_unitario: 2400, categoria: 'Cocina' },
+    { nombre: 'Jabón Líquido Para Ropa 3L', cantidad: 15, unidad_medida: 'unidades', precio_unitario: 7800, categoria: 'Ropa' },
+    { nombre: 'Rollos de Cocina x3', cantidad: 20, unidad_medida: 'paquetes', precio_unitario: 2600, categoria: 'Papelería' },
+    { nombre: 'Limpiador Multiuso Aerosol', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 3100, categoria: 'Superficies' }
+  ],
+  'General / Otro': [
+    { nombre: 'Producto Ejemplo A', cantidad: 10, unidad_medida: 'unidades', precio_unitario: 1500, categoria: 'General' },
+    { nombre: 'Producto Ejemplo B', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 2500, categoria: 'General' },
+    { nombre: 'Producto Ejemplo C', cantidad: 15, unidad_medida: 'unidades', precio_unitario: 3000, categoria: 'General' }
+  ]
+};
 
 export default function OnboardingWizard({ onBackToLogin }) {
   const navigate = useNavigate();
 
-  // Paso actual (1 al 6)
+  // Paso actual (1 al 4, o 5 para Pantalla de Éxito)
   const [paso, setPaso] = useState(1);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [showInstructivo, setShowInstructivo] = useState(false);
+  const [registroExitoso, setRegistroExitoso] = useState(false);
 
-  // Estado del Formulario Multi-paso
+  // Estado del Formulario Multi-paso (4 Pasos)
   const [formData, setFormData] = useState({
     // Paso 1: Tu cuenta
     nombre: '',
@@ -29,6 +120,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
     // Paso 2: Tu comercio
     nombre_comercio: '',
     razon_social: '',
+    rubro: 'Carnicería',
     cuit: '',
     condicion_fiscal: 'Monotributista',
 
@@ -40,17 +132,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
 
     // Paso 4: Facturación electrónica
     tienePuntoVenta: true,
-    afip_punto_de_venta: '1',
-
-    // Paso 5: Delegación ARCA
-    delegacionIniciada: false,
-
-    // Paso 6: Verificación
-    verificadoCuit: false,
-    verificadoDelegacion: false,
-    verificadoCertificado: false,
-    verificadoPuntoVenta: false,
-    comercioHabilitado: false
+    afip_punto_de_venta: '1'
   });
 
   const handleChange = (e) => {
@@ -61,7 +143,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
     }));
   };
 
-  // Validaciones y avance de pasos
+  // Validaciones y avance de pasos (1 -> 2 -> 3 -> 4 -> Registro)
   const handleSiguientePaso = (e) => {
     if (e) e.preventDefault();
     setErrorMsg('');
@@ -79,13 +161,17 @@ export default function OnboardingWizard({ onBackToLogin }) {
         setErrorMsg('La contraseña debe tener al menos 6 caracteres.');
         return;
       }
+      setPaso(2);
+      return;
     }
 
     if (paso === 2) {
-      if (!formData.nombre_comercio || !formData.cuit) {
-        setErrorMsg('Por favor ingresá el nombre de tu comercio y CUIT.');
+      if (!formData.nombre_comercio || !formData.cuit || !formData.rubro) {
+        setErrorMsg('Por favor ingresá el nombre de tu comercio, CUIT y rubro.');
         return;
       }
+      setPaso(3);
+      return;
     }
 
     if (paso === 3) {
@@ -93,14 +179,13 @@ export default function OnboardingWizard({ onBackToLogin }) {
         setErrorMsg('Por favor completa los datos de tu domicilio fiscal.');
         return;
       }
+      setPaso(4);
+      return;
     }
 
-    if (paso === 5) {
-      // Al pasar del Paso 5 al 6, iniciamos la verificación animada
-      iniciarVerificacionPaso6();
+    if (paso === 4) {
+      handleFinalizarRegistro();
     }
-
-    setPaso(prev => Math.min(6, prev + 1));
   };
 
   const handlePasoAnterior = () => {
@@ -108,35 +193,25 @@ export default function OnboardingWizard({ onBackToLogin }) {
     setPaso(prev => Math.max(1, prev - 1));
   };
 
-  // Animación de Verificación en Paso 6
-  const iniciarVerificacionPaso6 = async () => {
-    setFormData(prev => ({
-      ...prev,
-      verificadoCuit: false,
-      verificadoDelegacion: false,
-      verificadoCertificado: false,
-      verificadoPuntoVenta: false,
-      comercioHabilitado: false
+  // Carga de productos por defecto en el inventario del nuevo tenant
+  const seedProductosIniciales = async (tenantId, rubroElegido) => {
+    const items = STARTER_PRODUCTS_BY_RUBRO[rubroElegido] || STARTER_PRODUCTS_BY_RUBRO['General / Otro'];
+    const payload = items.map(item => ({
+      ...item,
+      tenant_id: tenantId
     }));
 
-    setTimeout(() => {
-      setFormData(prev => ({ ...prev, verificadoCuit: true }));
-    }, 600);
-
-    setTimeout(() => {
-      setFormData(prev => ({ ...prev, verificadoDelegacion: true }));
-    }, 1400);
-
-    setTimeout(() => {
-      setFormData(prev => ({ ...prev, verificadoCertificado: true }));
-    }, 2200);
-
-    setTimeout(() => {
-      setFormData(prev => ({ ...prev, verificadoPuntoVenta: true, comercioHabilitado: true }));
-    }, 3000);
+    try {
+      const { error } = await supabase.from('inventario').insert(payload);
+      if (error) {
+        console.warn('Advertencia poblando productos iniciales:', error.message);
+      }
+    } catch (e) {
+      console.warn('Excepción poblando productos iniciales:', e);
+    }
   };
 
-  // Finalizar Registro y Guardar en Supabase
+  // Finalizar Registro y Guardar en Supabase al completar el Paso 4
   const handleFinalizarRegistro = async () => {
     setLoading(true);
     setErrorMsg('');
@@ -172,6 +247,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
           nombre: formData.nombre_comercio,
           nombre_comercio: formData.nombre_comercio,
           razon_social: formData.razon_social || formData.nombre_comercio,
+          rubro: formData.rubro,
           cuit: formData.cuit,
           afip_cuit_delegado: formData.cuit,
           condicion_fiscal: formData.condicion_fiscal,
@@ -184,7 +260,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
           afip_delegacion_verificada: true,
           afip_delegacion_verificada_at: new Date().toISOString(),
           onboarding_completado: true,
-          onboarding_paso_actual: 6
+          onboarding_paso_actual: 4
         }]);
 
       if (tenantError) {
@@ -207,13 +283,18 @@ export default function OnboardingWizard({ onBackToLogin }) {
         console.warn('Advertencia en tenant_users:', linkError.message);
       }
 
-      // 5. Iniciar Sesión con las credenciales creadas
+      // 5. Poblar catálogo inicial de productos por defecto en inventario
+      await seedProductosIniciales(newTenantId, formData.rubro);
+
+      // 6. Iniciar sesión automáticamente en el cliente
       await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       });
 
-      navigate('/market');
+      // Marcar registro exitoso para mostrar pantalla final de éxito
+      setRegistroExitoso(true);
+      setPaso(5); // Pantalla de Éxito
     } catch (err) {
       console.error('Error durante el registro:', err);
       setErrorMsg(err.message || 'Ocurrió un error al registrar el comercio. Por favor intentá nuevamente.');
@@ -222,11 +303,15 @@ export default function OnboardingWizard({ onBackToLogin }) {
     }
   };
 
+  const handleIngresarAlPos = () => {
+    navigate('/market');
+  };
+
   return (
     <div style={{ maxWidth: '680px', width: '100%', margin: '0 auto' }}>
       <div className="glass-panel animate-fade-in" style={{ padding: '36px', position: 'relative' }}>
 
-        {/* Encabezado e Indicador de Pasos */}
+        {/* Encabezado e Indicador de Pasos (1 al 4) */}
         <div style={{ marginBottom: '28px', textAlign: 'center' }}>
           <h1 className="brand-title" style={{ fontSize: '2.2rem', marginBottom: '6px' }}>
             Argentum
@@ -235,35 +320,37 @@ export default function OnboardingWizard({ onBackToLogin }) {
             Registro y Configuración Inicial de Comercio
           </p>
 
-          {/* Progress Bar (Pasos 1 a 6) */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '24px', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '16px', left: '10%', right: '10%', height: '3px', backgroundColor: 'rgba(0,0,0,0.08)', zIndex: 0 }}></div>
-            <div style={{ position: 'absolute', top: '16px', left: '10%', width: `${((paso - 1) / 5) * 80}%`, height: '3px', backgroundColor: 'var(--accent-primary)', zIndex: 0, transition: 'width 0.4s ease' }}></div>
+          {/* Progress Bar (Pasos 1 a 4) */}
+          {!registroExitoso && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '24px', position: 'relative', maxWidth: '480px', margin: '24px auto 0 auto' }}>
+              <div style={{ position: 'absolute', top: '16px', left: '12%', right: '12%', height: '3px', backgroundColor: 'rgba(0,0,0,0.08)', zIndex: 0 }}></div>
+              <div style={{ position: 'absolute', top: '16px', left: '12%', width: `${((paso - 1) / 3) * 76}%`, height: '3px', backgroundColor: 'var(--accent-primary)', zIndex: 0, transition: 'width 0.4s ease' }}></div>
 
-            {[1, 2, 3, 4, 5, 6].map(num => (
-              <div key={num} style={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                <div style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '50%',
-                  backgroundColor: paso >= num ? 'var(--accent-primary)' : 'var(--card-bg)',
-                  color: paso >= num ? '#FFFFFF' : 'var(--text-secondary)',
-                  border: `2px solid ${paso >= num ? 'var(--accent-primary)' : 'rgba(0,0,0,0.1)'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  transition: 'all 0.3s ease'
-                }}>
-                  {paso > num ? <Check size={18} /> : num}
+              {[1, 2, 3, 4].map(num => (
+                <div key={num} style={{ zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                  <div style={{
+                    width: '34px',
+                    height: '34px',
+                    borderRadius: '50%',
+                    backgroundColor: paso >= num ? 'var(--accent-primary)' : 'var(--card-bg)',
+                    color: paso >= num ? '#FFFFFF' : 'var(--text-secondary)',
+                    border: `2px solid ${paso >= num ? 'var(--accent-primary)' : 'rgba(0,0,0,0.1)'}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    {paso > num ? <Check size={18} /> : num}
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: paso === num ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: paso === num ? 700 : 400 }}>
+                    Paso {num}
+                  </span>
                 </div>
-                <span style={{ fontSize: '0.7rem', color: paso === num ? 'var(--text-primary)' : 'var(--text-secondary)', fontWeight: paso === num ? 700 : 400 }}>
-                  Paso {num}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {errorMsg && (
@@ -332,7 +419,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
         )}
 
         {/* ========================================================================= */}
-        {/* PASO 2 — TU COMERCIO */}
+        {/* PASO 2 — TU COMERCIO Y RUBRO */}
         {/* ========================================================================= */}
         {paso === 2 && (
           <form onSubmit={handleSiguientePaso} className="animate-fade-in">
@@ -340,17 +427,37 @@ export default function OnboardingWizard({ onBackToLogin }) {
               <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
                 PASO 2 — Tu comercio
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>¿Cómo se llama tu comercio?</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>¿Cómo se llama tu comercio y a qué rubro pertenece?</p>
             </div>
 
             <div className="input-group">
               <label className="input-label">Nombre comercial *</label>
-              <input type="text" name="nombre_comercio" className="input-field" placeholder="Carnicería El Chañar" value={formData.nombre_comercio} onChange={handleChange} required />
+              <input type="text" name="nombre_comercio" className="input-field" placeholder="Ej: Don Pedro" value={formData.nombre_comercio} onChange={handleChange} required />
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Rubro del Comercio *</label>
+              <select 
+                name="rubro" 
+                className="input-field" 
+                value={formData.rubro} 
+                onChange={handleChange}
+                style={{ cursor: 'pointer', fontWeight: 600 }}
+              >
+                {RUBROS_CATALOGO.map(r => (
+                  <option key={r.value} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
+                Cargaremos automáticamente un catálogo inicial de 5 productos de {formData.rubro} para que pruebes el sistema de inmediato.
+              </span>
             </div>
 
             <div className="input-group">
               <label className="input-label">Razón social</label>
-              <input type="text" name="razon_social" className="input-field" placeholder="El Chañar S.R.L. / Juan Pérez" value={formData.razon_social} onChange={handleChange} />
+              <input type="text" name="razon_social" className="input-field" placeholder="Don Pedro S.R.L. / Juan Pérez" value={formData.razon_social} onChange={handleChange} />
             </div>
 
             <div className="input-group">
@@ -437,7 +544,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
         )}
 
         {/* ========================================================================= */}
-        {/* PASO 4 — FACTURACIÓN ELECTRÓNICA */}
+        {/* PASO 4 — FACTURACIÓN ELECTRÓNICA (PASO FINAL DE ALTA) */}
         {/* ========================================================================= */}
         {paso === 4 && (
           <form onSubmit={handleSiguientePaso} className="animate-fade-in">
@@ -493,156 +600,64 @@ export default function OnboardingWizard({ onBackToLogin }) {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px' }}>
-              <button type="button" onClick={handlePasoAnterior} className="btn btn-secondary" style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '32px' }}>
+              <button type="button" onClick={handlePasoAnterior} className="btn btn-secondary" style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '6px' }} disabled={loading}>
                 <ArrowLeft size={18} /> Anterior
               </button>
-              <button type="submit" className="btn btn-primary" style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                Siguiente Paso <ArrowRight size={18} />
+              <button type="submit" className="btn btn-primary" style={{ padding: '12px 28px', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }} disabled={loading}>
+                {loading ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
+                {loading ? 'Dando de Alta...' : 'Finalizar Registro'}
               </button>
             </div>
           </form>
         )}
 
         {/* ========================================================================= */}
-        {/* PASO 5 — DELEGAR ARGENTUM EN ARCA */}
+        {/* PANTALLA FINAL — CARTA DE ÉXITO (COMERCIO HABILITADO) */}
         {/* ========================================================================= */}
-        {paso === 5 && (
-          <div className="animate-fade-in">
-            <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                PASO 5 — Delegar Argentum en ARCA
+        {registroExitoso && paso === 5 && (
+          <div className="animate-fade-in" style={{ textAlign: 'center', padding: '12px 0' }}>
+            <div style={{ 
+              padding: '32px 24px', borderRadius: '16px', 
+              backgroundColor: 'rgba(16, 185, 129, 0.08)', 
+              border: '2px solid var(--success)', 
+              marginBottom: '28px' 
+            }}>
+              <div style={{
+                width: '64px', height: '64px', borderRadius: '50%',
+                backgroundColor: 'var(--success)', color: '#FFFFFF',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 16px auto'
+              }}>
+                <Sparkles size={36} />
+              </div>
+
+              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--success)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '8px' }}>
+                COMERCIO HABILITADO
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.5 }}>
-                Necesitamos autorización para facturar electrónicamente en tu nombre.
+              <p style={{ fontSize: '1.05rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+                ¡Bienvenido a Argentum!
+              </p>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '6px', maxWidth: '480px', margin: '6px auto 0 auto' }}>
+                Tu comercio <strong>{formData.nombre_comercio}</strong> (Rubro: <strong>{formData.rubro}</strong>) ha sido registrado. Cargamos automáticamente <strong>5 productos iniciales</strong> en tu inventario para que puedas probar el sistema de inmediato.
               </p>
             </div>
 
-            <div style={{ backgroundColor: 'rgba(197, 160, 89, 0.08)', border: '1px solid var(--glass-border)', padding: '20px', borderRadius: '8px', marginBottom: '24px', textAlign: 'center' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                CUIT de la Plataforma Argentum
-              </span>
-              <h3 style={{ fontSize: '1.4rem', fontWeight: 800, fontFamily: 'monospace', color: 'var(--text-primary)', margin: '4px 0 12px 0' }}>
-                {PLATFORM_CUIT}
-              </h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Delegación 100% oficial en el portal de ARCA. Tu Clave Fiscal nunca se comparte.
-              </p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
               <button 
                 type="button" 
-                onClick={() => setShowInstructivo(true)} 
-                className="btn btn-secondary" 
-                style={{ padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 600 }}
-              >
-                <HelpCircle size={18} /> Ver instrucciones
-              </button>
-
-              <a 
-                href="https://auth.afip.gob.ar/" 
-                target="_blank" 
-                rel="noopener noreferrer" 
+                onClick={handleIngresarAlPos} 
                 className="btn btn-primary" 
-                style={{ padding: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none' }}
+                style={{ padding: '14px 40px', fontSize: '1.05rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}
               >
-                Abrir ARCA <ExternalLink size={18} />
-              </a>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px' }}>
-              <button type="button" onClick={handlePasoAnterior} className="btn btn-secondary" style={{ padding: '10px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ArrowLeft size={18} /> Anterior
-              </button>
-              <button type="button" onClick={handleSiguientePaso} className="btn btn-primary" style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                Verificar Delegación <ArrowRight size={18} />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================================= */}
-        {/* PASO 6 — VERIFICAR */}
-        {/* ========================================================================= */}
-        {paso === 6 && (
-          <div className="animate-fade-in" style={{ textAlign: 'center' }}>
-            <div style={{ marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                PASO 6 — Verificar
-              </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Verificando conexión con ARCA...</p>
-            </div>
-
-            {/* Checklist Animado */}
-            <div style={{ maxWidth: '360px', margin: '0 auto 32px auto', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-              
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '8px', background: 'var(--card-bg)', border: '1px solid rgba(0,0,0,0.06)' }}>
-                {formData.verificadoCuit ? <CheckCircle2 color="var(--success)" size={22} /> : <Loader2 className="animate-spin" size={22} color="var(--accent-primary)" />}
-                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>CUIT ({formData.cuit})</span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '8px', background: 'var(--card-bg)', border: '1px solid rgba(0,0,0,0.06)' }}>
-                {formData.verificadoDelegacion ? <CheckCircle2 color="var(--success)" size={22} /> : <Loader2 className="animate-spin" size={22} color="var(--text-secondary)" />}
-                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Delegación WebServices</span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '8px', background: 'var(--card-bg)', border: '1px solid rgba(0,0,0,0.06)' }}>
-                {formData.verificadoCertificado ? <CheckCircle2 color="var(--success)" size={22} /> : <Loader2 className="animate-spin" size={22} color="var(--text-secondary)" />}
-                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Certificado Digital Plataforma</span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '8px', background: 'var(--card-bg)', border: '1px solid rgba(0,0,0,0.06)' }}>
-                {formData.verificadoPuntoVenta ? <CheckCircle2 color="var(--success)" size={22} /> : <Loader2 className="animate-spin" size={22} color="var(--text-secondary)" />}
-                <span style={{ fontWeight: 600, fontSize: '0.95rem' }}>Punto de venta #{formData.afip_punto_de_venta || '1'}</span>
-              </div>
-
-            </div>
-
-            {/* Cartel Comercio Habilitado */}
-            {formData.comercioHabilitado ? (
-              <div className="animate-fade-in" style={{ padding: '24px', borderRadius: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '2px solid var(--success)', marginBottom: '28px' }}>
-                <Sparkles size={36} color="var(--success)" style={{ margin: '0 auto 8px auto' }} />
-                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)', letterSpacing: '1px', textTransform: 'uppercase' }}>
-                  COMERCIO HABILITADO
-                </h3>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: '4px' }}>
-                  ¡Todo listo! Tu comercio <strong>{formData.nombre_comercio}</strong> está configurado y habilitado para facturar electrónicamente.
-                </p>
-              </div>
-            ) : (
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontStyle: 'italic', marginBottom: '28px' }}>
-                Sincronizando parámetros con los servidores oficiales de AFIP...
-              </p>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-              <button 
-                type="button" 
-                onClick={handleFinalizarRegistro} 
-                className="btn btn-primary" 
-                style={{ padding: '14px 36px', fontSize: '1rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-                disabled={!formData.comercioHabilitado || loading}
-              >
-                {loading ? <Loader2 className="animate-spin" size={20} /> : <Sparkles size={20} />}
-                {loading ? 'Finalizando Registro...' : 'Ingresar a Argentum POS'}
+                <span>Ingresar a Argentum POS</span>
+                <ArrowRight size={20} />
               </button>
             </div>
           </div>
         )}
 
       </div>
-
-      {/* Modal Instructivo de Delegación (Paso 5) */}
-      {showInstructivo && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '20px'
-        }}>
-          <DelegacionArcaWizard onClose={() => setShowInstructivo(false)} />
-        </div>
-      )}
     </div>
   );
 }
