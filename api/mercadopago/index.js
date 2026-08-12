@@ -1,27 +1,20 @@
-import { Order, Preference } from 'mercadopago';
+import { Order } from 'mercadopago';
 import crypto from 'crypto';
 import fetch from 'node-fetch';
-import { createClient } from '@supabase/supabase-js';
 import { getMercadoPagoCredentialsForTenant } from './mp-client.js';
-
-// Inicializar cliente de Supabase con Service Role Key para operaciones administrativas sin RLS
-const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
-const supabaseServiceKey = 
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 
-  process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 
-  process.env.SUPABASE_ANON_KEY || 
-  process.env.VITE_SUPABASE_ANON_KEY || 
-  '';
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false
-  }
-});
 
 /**
  * Enrutador Central de Mercado Pago para Vercel Serverless Functions
+ *
+ * IMPORTANTE: este archivo maneja EXCLUSIVAMENTE los cobros con terminal
+ * Point (create-point-payment / get-payment-intent / cancel-point-payment).
+ * La compra y activación de licencias (create-preference / webhook) vive
+ * únicamente en el repo Argentum-Comercios (api/mercadopago/create-preference.js
+ * y api/mercadopago/webhook.js), que es el checkout público real. No
+ * dupliques esa lógica acá: hubo dos implementaciones divergentes que
+ * escribían a licencias_activas con reglas distintas y eso costó bugs de
+ * licencias que nunca se activaban. Si un comercio necesita cobrar con Point,
+ * es un flujo completamente aparte de la compra de licencia.
  */
 export default async function handler(req, res) {
   // Asegurar cabeceras de CORS y JSON
@@ -47,7 +40,7 @@ export default async function handler(req, res) {
       route = parts[parts.length - 1];
     }
     if (route === 'mercadopago' || !route) {
-      route = 'webhook';
+      route = '';
     }
 
     switch (route) {
@@ -57,11 +50,9 @@ export default async function handler(req, res) {
         return await handleGetPaymentIntent(req, res);
       case 'cancel-point-payment':
         return await handleCancelPointPayment(req, res);
-      case 'create-preference':
-        return await handleCreatePreference(req, res);
-      case 'webhook':
       default:
-        return await handleWebhook(req, res);
+        // create-preference/webhook de licencias viven solo en Argentum-Comercios.
+        return res.status(404).json({ success: false, error: `Ruta no encontrada: ${route || '(vacía)'}` });
     }
   } catch (err) {
     console.error('[MP Central Router] Error general en el manejador:', err);
@@ -205,154 +196,3 @@ async function handleCancelPointPayment(req, res) {
   return res.status(200).json({ success: true });
 }
 
-// -----------------------------------------------------------------------------
-// 4. HANDLER: create-preference (Checkout de suscripción/licencia)
-// -----------------------------------------------------------------------------
-async function handleCreatePreference(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ success: false, error: 'Método no permitido (solo POST).' });
-  }
-
-  const { email, planName = 'Pro', price = 15000 } = req.body || {};
-
-  if (!email) {
-    return res.status(400).json({ success: false, error: 'Email del comprador es obligatorio.' });
-  }
-
-  const mpAccessToken = process.env.MP_ACCESS_TOKEN || process.env.VITE_MP_ACCESS_TOKEN;
-  if (!mpAccessToken) {
-    return res.status(500).json({ success: false, error: 'Falta configurar MP_ACCESS_TOKEN global en el servidor.' });
-  }
-
-  const preference = new Preference({ accessToken: mpAccessToken });
-  
-  const response = await preference.create({
-    body: {
-      items: [
-        {
-          title: `Licencia Anual Argentum - Plan ${planName}`,
-          quantity: 1,
-          unit_price: Number(price),
-          currency_id: 'ARS'
-        }
-      ],
-      payer: {
-        email: email.toLowerCase().trim()
-      },
-      external_reference: email.toLowerCase().trim(),
-      metadata: {
-        payer_email: email.toLowerCase().trim(),
-        plan: planName
-      },
-      back_urls: {
-        success: 'https://argentum.com/market',
-        failure: 'https://argentum.com/market',
-        pending: 'https://argentum.com/market'
-      },
-      auto_return: 'approved'
-    }
-  });
-
-  return res.status(200).json({
-    success: true,
-    init_point: response.init_point,
-    id: response.id
-  });
-}
-
-// -----------------------------------------------------------------------------
-// 5. HANDLER: webhook (IPN / Webhooks con Service Role Key de Supabase)
-// -----------------------------------------------------------------------------
-async function handleWebhook(req, res) {
-  const query = req.query || {};
-  const body = req.body || {};
-
-  const type = query.type || query.topic || body.type || body.action;
-  const paymentId = query.id || query['data.id'] || body?.data?.id || body?.id;
-
-  console.log(`[MP Webhook Central] Notificación recibida: type=${type}, id=${paymentId}`);
-
-  if (!paymentId) {
-    return res.status(200).json({ success: true, message: 'Webhook recibido sin ID de pago' });
-  }
-
-  const mpAccessToken = process.env.MP_ACCESS_TOKEN || process.env.VITE_MP_ACCESS_TOKEN;
-  let paymentData = null;
-
-  if (mpAccessToken) {
-    try {
-      const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${mpAccessToken.trim()}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (mpResponse.ok) {
-        paymentData = await mpResponse.json();
-      }
-    } catch (mpErr) {
-      console.warn(`[MP Webhook] Excepción consultando pago ${paymentId}:`, mpErr);
-    }
-  }
-
-  if (!paymentData && body.status) {
-    paymentData = body;
-  }
-
-  if (!paymentData) {
-    return res.status(200).json({ success: true, message: 'Notificación procesada sin detalles de pago' });
-  }
-
-  const status = paymentData.status;
-
-  if (status === 'approved') {
-    const payerEmail = 
-      paymentData.payer?.email || 
-      paymentData.additional_info?.payer?.email || 
-      paymentData.external_reference || 
-      paymentData.metadata?.payer_email;
-
-    const planName = paymentData.metadata?.plan || 'Pro';
-
-    if (!payerEmail) {
-      return res.status(200).json({ success: false, error: 'Email de pagador no encontrado en el pago' });
-    }
-
-    const cleanEmail = payerEmail.toLowerCase().trim();
-
-    const validaHastaDate = new Date();
-    validaHastaDate.setFullYear(validaHastaDate.getFullYear() + 1);
-
-    const { error } = await supabase
-      .from('licencias_activas')
-      .upsert({
-        email: cleanEmail,
-        plan: planName,
-        valida_hasta: validaHastaDate.toISOString(),
-        external_reference_pago: String(paymentId),
-        estado: 'activa',
-        fecha_compra: new Date().toISOString()
-      }, {
-        onConflict: 'email'
-      });
-
-    if (error) {
-      console.error(`[MP Webhook] Error en upsert de licencias_activas para ${cleanEmail}:`, error.message);
-      return res.status(500).json({ success: false, error: error.message });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: `Licencia de 1 año activada para ${cleanEmail}`,
-      email: cleanEmail,
-      valida_hasta: validaHastaDate.toISOString()
-    });
-  }
-
-  return res.status(200).json({
-    success: true,
-    message: `Pago en estado '${status}', no requiere activación de licencia`
-  });
-}
