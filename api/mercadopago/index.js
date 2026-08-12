@@ -1,6 +1,5 @@
 import { Order } from 'mercadopago';
 import crypto from 'crypto';
-import fetch from 'node-fetch';
 import { getMercadoPagoCredentialsForTenant } from './mp-client.js';
 import { verifyTenantAccess } from '../_shared/verifyTenantAuth.js';
 
