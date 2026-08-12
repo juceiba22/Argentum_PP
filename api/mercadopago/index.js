@@ -2,6 +2,7 @@ import { Order } from 'mercadopago';
 import crypto from 'crypto';
 import fetch from 'node-fetch';
 import { getMercadoPagoCredentialsForTenant } from './mp-client.js';
+import { verifyTenantAccess } from '../_shared/verifyTenantAuth.js';
 
 /**
  * Enrutador Central de Mercado Pago para Vercel Serverless Functions
@@ -74,6 +75,12 @@ async function handleCreatePointPayment(req, res) {
     return res.status(400).json({ success: false, error: 'Faltan parámetros obligatorios: total y/o pedidoId' });
   }
 
+  try {
+    await verifyTenantAccess(req, tenantId);
+  } catch (authErr) {
+    return res.status(401).json({ success: false, error: authErr.message });
+  }
+
   let mpCredentials;
   try {
     mpCredentials = await getMercadoPagoCredentialsForTenant(tenantId);
@@ -136,6 +143,12 @@ async function handleGetPaymentIntent(req, res) {
     return res.status(400).json({ success: false, error: 'Falta el parámetro payment_intent_id.' });
   }
 
+  try {
+    await verifyTenantAccess(req, tenantId);
+  } catch (authErr) {
+    return res.status(401).json({ success: false, error: authErr.message });
+  }
+
   let mpCredentials;
   try {
     mpCredentials = await getMercadoPagoCredentialsForTenant(tenantId);
@@ -168,6 +181,12 @@ async function handleCancelPointPayment(req, res) {
 
   if (!payment_intent_id) {
     return res.status(400).json({ success: false, error: 'Falta el parámetro payment_intent_id.' });
+  }
+
+  try {
+    await verifyTenantAccess(req, tenantId);
+  } catch (authErr) {
+    return res.status(401).json({ success: false, error: authErr.message });
   }
 
   let mpCredentials;

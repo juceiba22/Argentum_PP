@@ -1,4 +1,5 @@
 // Servicio para comunicarse con los endpoints serverless de Vercel (Mercado Pago Point Multi-tenant)
+import { getAuthHeaders } from './authHeader';
 
 export const cobrarConPoint = async (total, pedidoId, mesa, tenantId) => {
   if (!tenantId) {
@@ -10,6 +11,7 @@ export const cobrarConPoint = async (total, pedidoId, mesa, tenantId) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(await getAuthHeaders())
       },
       body: JSON.stringify({
         total,
@@ -46,8 +48,10 @@ export const getPaymentIntentStatus = async (paymentIntentId, tenantId) => {
   }
 
   try {
-    const response = await fetch(`/api/mercadopago/get-payment-intent?payment_intent_id=${encodeURIComponent(paymentIntentId)}&tenantId=${encodeURIComponent(tenantId)}`);
-    
+    const response = await fetch(`/api/mercadopago/get-payment-intent?payment_intent_id=${encodeURIComponent(paymentIntentId)}&tenantId=${encodeURIComponent(tenantId)}`, {
+      headers: await getAuthHeaders()
+    });
+
     let data;
     const contentType = response.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
@@ -77,6 +81,7 @@ export const cancelarPointPayment = async (paymentIntentId, tenantId) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(await getAuthHeaders())
       },
       body: JSON.stringify({ payment_intent_id: paymentIntentId, tenantId })
     });

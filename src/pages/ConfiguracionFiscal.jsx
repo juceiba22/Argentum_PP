@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { getAuthHeaders } from '../services/authHeader';
 import { useAuth } from '../context/AuthContext';
 import DelegacionArcaWizard from '../components/DelegacionArcaWizard';
 import { 
@@ -149,7 +150,7 @@ export default function ConfiguracionFiscal() {
     try {
       const res = await fetch('/api/arca/verificar-delegacion', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
         body: JSON.stringify({ tenantId })
       });
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../services/supabaseClient';
 import { createCliente, getAllClientes } from '../services/clientesApi';
+import { getAuthHeaders } from '../services/authHeader';
 import { useAuth } from '../context/AuthContext';
 import FacturaPDF from '../components/FacturaPDF';
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
@@ -182,7 +183,8 @@ export default function Facturacion() {
       const response = await fetch('/api/arca/emitir', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(await getAuthHeaders())
         },
         body: JSON.stringify(payload)
       });

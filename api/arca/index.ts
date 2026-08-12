@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { getAfipClientForTenant } from './afip-client.js';
+import { verifyTenantAccess } from '../_shared/verifyTenantAuth.js';
 import type { EmitirFacturaPayload, ARCAServerStatus } from './types.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
@@ -70,6 +71,12 @@ async function handleEmitir(req: any, res: any) {
 
   if (!importeTotal || importeTotal <= 0) {
     return res.status(400).json({ success: false, error: 'El importe total debe ser mayor a 0.' });
+  }
+
+  try {
+    await verifyTenantAccess(req, tenantId);
+  } catch (authErr: any) {
+    return res.status(401).json({ success: false, error: authErr.message });
   }
 
   let afipClientInfo: { afip: any; ptoVta: number; isMock: boolean };
@@ -194,6 +201,12 @@ async function handleStatus(req: any, res: any) {
     req.body?.tenantId
   ) as string | undefined;
 
+  try {
+    await verifyTenantAccess(req, tenantId);
+  } catch (authErr: any) {
+    return res.status(401).json({ success: false, error: authErr.message });
+  }
+
   let afipClientInfo;
   try {
     afipClientInfo = await getAfipClientForTenant(tenantId);
@@ -243,6 +256,12 @@ async function handleVerificarDelegacion(req: any, res: any) {
 
   if (!tenantId) {
     return res.status(200).json({ success: false, error: 'El campo tenantId es obligatorio.' });
+  }
+
+  try {
+    await verifyTenantAccess(req, tenantId);
+  } catch (authErr: any) {
+    return res.status(401).json({ success: false, error: authErr.message });
   }
 
   let afipClientInfo;
