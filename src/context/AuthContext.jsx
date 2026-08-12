@@ -159,6 +159,29 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
+      // 3.5 Vincular el usuario a su tenant en tenant_users. Sin esto, el
+      // usuario nunca "recuerda" su tenant entre sesiones (cada login volvía
+      // a crear uno nuevo, huérfano) y, como tenants tiene RLS restringido a
+      // tenant_users, tampoco puede leer ni actualizar su propio tenant
+      // (incluido trial_ends_at) — quedaba bloqueado por el paywall aunque
+      // el trial fuera válido.
+      if (assignedTenantId) {
+        try {
+          const { error: linkError } = await supabase
+            .from('tenant_users')
+            .insert([{
+              tenant_id: assignedTenantId,
+              user_id: sessionUser.id,
+              role: defaultRole
+            }]);
+          if (linkError) {
+            console.warn('No se pudo vincular el usuario a su tenant en tenant_users:', linkError.message);
+          }
+        } catch (errLink) {
+          console.warn('Excepción al vincular usuario a tenant_users:', errLink);
+        }
+      }
+
       // 4. Asignar tenantId y guardar en localStorage
       setTenantId(assignedTenantId);
       setRole(defaultRole);
