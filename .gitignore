@@ -23,3 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Certificados y claves privadas: NUNCA deben commitearse. La plataforma usa
+# PLATFORM_AFIP_CERT / PLATFORM_AFIP_KEY como variables de entorno (ver
+# api/arca/afip-client.ts), nunca lee estos archivos en runtime.
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
+*.pfx
