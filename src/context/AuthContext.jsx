@@ -121,10 +121,15 @@ export const AuthProvider = ({ children }) => {
         const trialEndsAtDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
         const userCuit = sessionUser.user_metadata?.cuit || '00-00000000-0';
 
-        assignedTenantId = newTenantId;
-
         try {
-          const { data: newTenant, error: createTenantErr } = await supabase
+          // OJO: sin .select() a propósito. La policy de SELECT de tenants
+          // exige un vínculo en tenant_users que todavía no existe en este
+          // punto (se crea recién en el paso 3.5, siguiente), así que pedir
+          // la fila de vuelta con RETURNING hacía fallar el INSERT entero
+          // con "new row violates row-level security policy" aunque el
+          // INSERT en sí mismo fuera perfectamente válido. El id ya lo
+          // generamos nosotros, no hace falta que Postgres nos lo devuelva.
+          const { error: createTenantErr } = await supabase
             .from('tenants')
             .insert([{
               id: newTenantId,
@@ -132,27 +137,12 @@ export const AuthProvider = ({ children }) => {
               cuit: userCuit,
               trial_ends_at: trialEndsAtDate,
               is_active: true
-            }])
-            .select('id')
-            .maybeSingle();
+            }]);
 
-          if (newTenant?.id) {
-            assignedTenantId = newTenant.id;
-          } else if (createTenantErr) {
-            console.warn('Reintentando creación de tenant nuevo:', createTenantErr.message);
-            const { data: retryTenant } = await supabase
-              .from('tenants')
-              .insert([{
-                id: newTenantId,
-                nombre_comercio: nombreNuevoComercio,
-                cuit: userCuit
-              }])
-              .select('id')
-              .maybeSingle();
-
-            if (retryTenant?.id) {
-              assignedTenantId = retryTenant.id;
-            }
+          if (createTenantErr) {
+            console.error('Error al crear nuevo tenant en BD:', createTenantErr.message);
+          } else {
+            assignedTenantId = newTenantId;
           }
         } catch (errCreate) {
           console.warn('Excepción al intentar crear nuevo tenant en BD:', errCreate);
