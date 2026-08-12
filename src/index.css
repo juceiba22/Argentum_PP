@@ -1,76 +1,131 @@
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&display=swap');
-
 :root {
-  /* Fondo y Paneles */
-  --bg-color: #FAFAFA;
-  --panel-bg: #FFFFFF;
-  --glass-border: rgba(197, 160, 89, 0.25);
+  /* Nuevos Design Tokens (Argentum) */
+  --bg: #ffffff;
+  --text: #0a0a0a;
+  --muted: #6b6b6b;
+  --button-bg: #0a0a0a;
+  --button-text: #ffffff;
+  --border-soft: rgba(0, 0, 0, 0.08);
+  --green: #17c964;
+
+  /* Aliases para compatibilidad con código legado */
+  --bg-color: var(--bg);
+  --panel-bg: var(--bg);
+  --glass-border: var(--border-soft);
+  --text-primary: var(--text);
+  --text-secondary: var(--muted);
+  --text-inverse: var(--bg);
+  --accent-primary: var(--text);
+  --accent-hover: var(--muted);
+  --accent-gradient: var(--button-bg);
   
-  /* Textos */
-  --text-primary: #2C2C2C;
-  --text-secondary: #6B6B6B;
-  --text-inverse: #FFFFFF; /* Para botones oscuros/dorados */
-  
-  /* Acentos (Dorado / Champagne) */
-  --accent-primary: #C5A059;
-  --accent-hover: #A68343;
-  --accent-gradient: linear-gradient(135deg, #D4AF37, #B8860B);
-  
-  /* Estados Desaturados y Elegantes */
-  --danger: #B74134;
-  --success: #4A7C59;
-  --warning: #D28E3D;
-  
-  /* Fondos secundarios para tarjetas y códigos */
-  --card-bg: #F5F5F5;
-  --code-bg: #EAEAEA;
+  --danger: #e3342f;
+  --success: var(--green);
+  --warning: #f59e0b;
+  --card-bg: #f9f9f9;
+  --code-bg: #f3f4f6;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Lato', sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
   line-height: 1.6;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Mesh Gradient Global */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: 
+    radial-gradient(circle at 0% 40%, rgba(14, 165, 233, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 100% 60%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 50% 100%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Noise Overlay Textura */
+body::after {
+  content: "";
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  z-index: -1;
+  pointer-events: none;
+  mix-blend-mode: multiply;
 }
 
 h1, h2, h3, h4, h5, h6, .brand-title {
-  font-family: 'Playfair Display', serif;
-  color: var(--text-primary);
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: -0.04em;
 }
 
-/* Rediseño de Glass Panel a Panel Minimalista de Lujo */
-.glass-panel {
-  background: var(--panel-bg);
-  border: 1px solid var(--glass-border);
-  border-radius: 8px; /* Bordes menos redondeados, más sobrios */
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+/* Utilidades Tipográficas Extremas */
+.serif { font-family: 'Source Serif 4', serif !important; letter-spacing: -0.07em !important; }
+.italic { font-style: italic !important; }
+/* Compatibilidad con clases antiguas */
+.font-serif { font-family: 'Source Serif 4', serif !important; }
+.font-sans { font-family: 'Inter', sans-serif !important; }
+
+/* Paneles minimalistas / Tarjetas Flotantes */
+.glass-panel, .card-dark, .solucion-card, .rubro-card-page {
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03) !important;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.glass-panel:hover, .solucion-card:hover, .rubro-card-page:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
 }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  padding: 10px 24px; border-radius: 4px; /* Botones más rectos */
-  font-family: 'Lato', sans-serif; font-weight: 600; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px;
-  cursor: pointer; transition: all 0.3s ease; border: none; outline: none;
+  font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.3s ease; border: none; outline: none;
 }
+
 .btn-primary { 
-  background: var(--accent-gradient); color: var(--text-inverse); 
-  box-shadow: 0 4px 15px rgba(197, 160, 89, 0.2); 
+  background: var(--button-bg); 
+  color: var(--button-text); 
+  height: 56px;
+  padding: 0 32px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
 }
+
 .btn-primary:hover { 
-  transform: translateY(-1px); box-shadow: 0 6px 20px rgba(197, 160, 89, 0.3); filter: brightness(1.05); 
+  transform: translateY(-2px); 
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
+
 .btn-secondary { 
-  background: transparent; color: var(--text-primary); 
-  border: 1px solid var(--accent-primary); 
+  background: transparent; color: var(--text); 
+  border: 1px solid var(--border-soft); 
+  border-radius: 9999px;
+  height: 56px;
+  padding: 18px 30px;
+  font-weight: 600;
 }
 .btn-secondary:hover { 
-  background: rgba(197, 160, 89, 0.05); 
+  background: rgba(0, 0, 0, 0.03); 
 }
 
 .input-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; }
