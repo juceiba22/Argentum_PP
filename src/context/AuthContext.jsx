@@ -178,6 +178,14 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
+      // FIX: estas dos variables faltaban y provocaban un ReferenceError
+      // silencioso (atrapado más abajo por el catch), que hacía que
+      // setLicenseInfo nunca se llamara y la app quedara pegada en el
+      // estado inicial por defecto: trial activo de 15 días para TODOS
+      // los usuarios, tuvieran o no una licencia paga vigente.
+      const email = sessionUser.email?.toLowerCase() || '';
+      const now = new Date();
+
       // 1. Consultar si posee una Licencia Activa Paga en 'licencias_activas' vinculada por Email
       let isLicenseActive = false;
       let licenseState = null;
@@ -367,3 +375,6 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
+
+
