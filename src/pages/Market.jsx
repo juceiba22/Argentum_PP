@@ -47,7 +47,8 @@ export default function Market() {
   const [creandoCliente, setCreandoCliente] = useState(false);
 
   // Estados de Caja y Ruteo
-  const { user, tenantId } = useAuth();
+  const { user, tenantId: contextTenantId } = useAuth();
+  const tenantId = contextTenantId || user?.user_metadata?.tenant_id || localStorage.getItem('argentum_current_tenant_id');
   const location = useLocation();
   const [cajaAbierta, setCajaAbierta] = useState(true); // Asumimos abierta hasta chequear para evitar bloqueos falsos
   const [isAbrirCajaModalOpen, setIsAbrirCajaModalOpen] = useState(false);

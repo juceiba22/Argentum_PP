@@ -19,7 +19,15 @@ export const cobrarConPoint = async (total, pedidoId, mesa, tenantId) => {
       })
     });
 
-    const data = await response.json();
+    let data;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      const textErr = await response.text();
+      console.warn('[MercadoPagoApi] Respuesta no-JSON del servidor:', textErr);
+      data = { success: false, error: 'El servidor de cobro retorno una respuesta no valida. Verifica las credenciales de MP.' };
+    }
 
     if (!response.ok || !data.success) {
       throw new Error(data.error || 'Fallo al iniciar cobro en la terminal Mercado Pago Point.');
@@ -39,7 +47,14 @@ export const getPaymentIntentStatus = async (paymentIntentId, tenantId) => {
 
   try {
     const response = await fetch(`/api/mercadopago/get-payment-intent?payment_intent_id=${encodeURIComponent(paymentIntentId)}&tenantId=${encodeURIComponent(tenantId)}`);
-    const data = await response.json();
+    
+    let data;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = { success: false, error: 'Respuesta no valida al consultar estado de pago.' };
+    }
 
     if (!response.ok || !data.success) {
       throw new Error(data.error || 'Fallo al consultar el estado del pago en la terminal.');
@@ -65,7 +80,14 @@ export const cancelarPointPayment = async (paymentIntentId, tenantId) => {
       },
       body: JSON.stringify({ payment_intent_id: paymentIntentId, tenantId })
     });
-    const data = await response.json();
+    
+    let data;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = { success: true };
+    }
     return data;
   } catch (error) {
     console.error("Error al cancelar en servicio mercadoPagoApi:", error);

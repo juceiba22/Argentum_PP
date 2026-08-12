@@ -85,6 +85,9 @@ export const AuthProvider = ({ children }) => {
       if (data && data.tenant_id) {
         setTenantId(data.tenant_id);
         setRole(data.role || defaultRole);
+        try { localStorage.setItem('argentum_current_tenant_id', data.tenant_id); } catch (e) {}
+        resolvedUserIdRef.current = sessionUser.id;
+        await checkTrialAndLicense(sessionUser, data.tenant_id);
         return;
       }
 
@@ -155,6 +158,12 @@ export const AuthProvider = ({ children }) => {
           console.warn('Excepción al intentar crear nuevo tenant en BD:', errCreate);
         }
       }
+
+      // 4. Asignar tenantId y guardar en localStorage
+      setTenantId(assignedTenantId);
+      setRole(defaultRole);
+      try { localStorage.setItem('argentum_current_tenant_id', assignedTenantId); } catch (e) {}
+      resolvedUserIdRef.current = sessionUser.id;
 
       // 5. Verificar estado de Trial de 15 días y Licencias activas por Email
       await checkTrialAndLicense(sessionUser, assignedTenantId);
@@ -350,7 +359,6 @@ export const AuthProvider = ({ children }) => {
         const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'usuario');
         if (isMounted) {
           setRole(defaultRole);
-          setTenantId(currentUser.user_metadata?.tenant_id || null);
         }
         await fetchTenantAndRole(currentUser);
         resolvedUserIdRef.current = currentUser.id;

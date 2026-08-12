@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     }
   } catch (err) {
     console.error('[MP Central Router] Error general en el manejador:', err);
-    return res.status(500).json({ success: false, error: err.message || 'Error interno en servidor MP.' });
+    return res.status(200).json({ success: false, error: err.message || 'Error interno en servidor MP.' });
   }
 }
 
@@ -115,12 +115,20 @@ async function handleCreatePointPayment(req, res) {
     description: `Cobro POS - Pedido #${String(pedidoId).substring(0, 8)}`
   };
 
-  const response = await order.create({ body, requestOptions });
+  try {
+    const response = await order.create({ body, requestOptions });
 
-  return res.status(200).json({
-    success: true,
-    paymentIntent: response
-  });
+    return res.status(200).json({
+      success: true,
+      paymentIntent: response
+    });
+  } catch (err) {
+    console.error('[MP Point] Error al crear orden:', err);
+    return res.status(200).json({
+      success: false,
+      error: err.message || 'Error al comunicarse con Mercado Pago Point.'
+    });
+  }
 }
 
 // -----------------------------------------------------------------------------
