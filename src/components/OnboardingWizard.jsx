@@ -6,6 +6,16 @@ import {
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
+// Helper para normalizar strings (pasa a minúsculas, elimina tildes y espacios extra)
+const normalizeString = (str) => {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+};
+
 const RUBROS_CATALOGO = [
   { value: 'Carnicería', label: '🥩 Carnicería' },
   { value: 'Petshop', label: '🐶 Petshop' },
@@ -21,85 +31,86 @@ const RUBROS_CATALOGO = [
   { value: 'General / Otro', label: '🏪 General / Otro' }
 ];
 
+// Diccionario de Productos Iniciales con claves normalizadas (minúsculas sin tildes)
 const STARTER_PRODUCTS_BY_RUBRO = {
-  'Carnicería': [
+  'carniceria': [
     { nombre: 'Asado de Tira', cantidad: 10, unidad_medida: 'kg', precio_unitario: 9500, categoria: 'Cortes Vacunos' },
     { nombre: 'Milanesa de Peceto', cantidad: 15, unidad_medida: 'kg', precio_unitario: 11200, categoria: 'Elaborados' },
     { nombre: 'Chorizo Bombón', cantidad: 8, unidad_medida: 'kg', precio_unitario: 6800, categoria: 'Embutidos' },
     { nombre: 'Bife de Chorizo', cantidad: 12, unidad_medida: 'kg', precio_unitario: 12500, categoria: 'Cortes Vacunos' },
     { nombre: 'Carne Picada Especial', cantidad: 20, unidad_medida: 'kg', precio_unitario: 6200, categoria: 'Picadas' }
   ],
-  'Petshop': [
+  'petshop': [
     { nombre: 'Alimento Perro Adulto 15kg', cantidad: 10, unidad_medida: 'unidades', precio_unitario: 32000, categoria: 'Alimentos Perro' },
     { nombre: 'Alimento Gato Cachorro 3kg', cantidad: 15, unidad_medida: 'unidades', precio_unitario: 14500, categoria: 'Alimentos Gato' },
     { nombre: 'Piedras Sanitarias Gato', cantidad: 20, unidad_medida: 'paquetes', precio_unitario: 4800, categoria: 'Higiene' },
     { nombre: 'Comedero Acero Inoxidable', cantidad: 12, unidad_medida: 'unidades', precio_unitario: 3500, categoria: 'Accesorios' },
     { nombre: 'Pipeta Pulguicida Perro', cantidad: 25, unidad_medida: 'unidades', precio_unitario: 5200, categoria: 'Salud' }
   ],
-  'Minimercado': [
+  'minimercado': [
     { nombre: 'Leche Entera 1L', cantidad: 30, unidad_medida: 'unidades', precio_unitario: 1400, categoria: 'Lácteos' },
     { nombre: 'Galletitas Dulces 300g', cantidad: 40, unidad_medida: 'paquetes', precio_unitario: 1200, categoria: 'Almacén' },
     { nombre: 'Gaseosa Cola 2.25L', cantidad: 24, unidad_medida: 'unidades', precio_unitario: 2800, categoria: 'Bebidas' },
     { nombre: 'Aceite de Girasol 900ml', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 2100, categoria: 'Almacén' },
     { nombre: 'Yerba Mate 500g', cantidad: 30, unidad_medida: 'paquetes', precio_unitario: 2600, categoria: 'Infusiones' }
   ],
-  'Librería': [
+  'libreria': [
     { nombre: 'Cuaderno A4 Espiralado 80h', cantidad: 15, unidad_medida: 'unidades', precio_unitario: 3800, categoria: 'Cuadernos y Hojas' },
     { nombre: 'Birome Azul x10', cantidad: 20, unidad_medida: 'paquetes', precio_unitario: 2400, categoria: 'Escritura' },
     { nombre: 'Resma de Papel A4 75g 500h', cantidad: 10, unidad_medida: 'paquetes', precio_unitario: 8500, categoria: 'Papelería' },
     { nombre: 'Set de Resaltadores Pastel x4', cantidad: 12, unidad_medida: 'paquetes', precio_unitario: 4200, categoria: 'Escritura' },
     { nombre: 'Mochila Escolar Reforzada', cantidad: 8, unidad_medida: 'unidades', precio_unitario: 24500, categoria: 'Mochilas' }
   ],
-  'Dietética': [
+  'dietetica': [
     { nombre: 'Mix de Frutos Secos', cantidad: 10, unidad_medida: 'kg', precio_unitario: 14000, categoria: 'Frutos Secos' },
     { nombre: 'Granola Crocante con Miel', cantidad: 15, unidad_medida: 'kg', precio_unitario: 7500, categoria: 'Cereales' },
     { nombre: 'Harina de Almendras', cantidad: 8, unidad_medida: 'kg', precio_unitario: 12800, categoria: 'Harinas Especiales' },
     { nombre: 'Semillas de Chía', cantidad: 12, unidad_medida: 'kg', precio_unitario: 5400, categoria: 'Semillas' },
     { nombre: 'Miel Pura de Abejas 1kg', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 6200, categoria: 'Endulzantes' }
   ],
-  'Fiambrería': [
+  'fiambreria': [
     { nombre: 'Jamón Cocido Especial', cantidad: 8, unidad_medida: 'kg', precio_unitario: 12500, categoria: 'Fiambres' },
     { nombre: 'Queso Tybo Feteado', cantidad: 10, unidad_medida: 'kg', precio_unitario: 10800, categoria: 'Quesos' },
     { nombre: 'Salame Tandilero', cantidad: 6, unidad_medida: 'kg', precio_unitario: 14200, categoria: 'Embutidos' },
     { nombre: 'Aceitunas Verdes Rellenas', cantidad: 15, unidad_medida: 'kg', precio_unitario: 6500, categoria: 'Encurtidos' },
     { nombre: 'Queso Reggianito Horma', cantidad: 5, unidad_medida: 'kg', precio_unitario: 16000, categoria: 'Quesos duros' }
   ],
-  'Verdulería': [
+  'verduleria': [
     { nombre: 'Tomate Perita', cantidad: 25, unidad_medida: 'kg', precio_unitario: 2200, categoria: 'Verduras' },
     { nombre: 'Papa Negra Especial', cantidad: 40, unidad_medida: 'kg', precio_unitario: 950, categoria: 'Verduras' },
     { nombre: 'Banana Ecuador', cantidad: 30, unidad_medida: 'kg', precio_unitario: 2400, categoria: 'Frutas' },
     { nombre: 'Palta Hass Premium', cantidad: 15, unidad_medida: 'kg', precio_unitario: 5800, categoria: 'Frutas' },
     { nombre: 'Manzana Red Delicious', cantidad: 20, unidad_medida: 'kg', precio_unitario: 1900, categoria: 'Frutas' }
   ],
-  'Ferretería': [
+  'ferreteria': [
     { nombre: 'Cinta Aisladora Negra', cantidad: 30, unidad_medida: 'unidades', precio_unitario: 1100, categoria: 'Electricidad' },
     { nombre: 'Martillo Galponero 500g', cantidad: 10, unidad_medida: 'unidades', precio_unitario: 9500, categoria: 'Herramientas' },
     { nombre: 'Set Destornilladores x6', cantidad: 8, unidad_medida: 'paquetes', precio_unitario: 14000, categoria: 'Herramientas' },
     { nombre: 'Taquetes Fisher 8mm x100', cantidad: 15, unidad_medida: 'paquetes', precio_unitario: 3200, categoria: 'Fijaciones' },
     { nombre: 'Lubricante Aerosol 300ml', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 4800, categoria: 'Químicos' }
   ],
-  'Cervecería': [
+  'cerveceria': [
     { nombre: 'Cerveza IPA Artesanal 500ml', cantidad: 48, unidad_medida: 'unidades', precio_unitario: 2800, categoria: 'Cervezas' },
     { nombre: 'Cerveza Honey 500ml', cantidad: 48, unidad_medida: 'unidades', precio_unitario: 2700, categoria: 'Cervezas' },
     { nombre: 'Cerveza Stout 500ml', cantidad: 36, unidad_medida: 'unidades', precio_unitario: 2900, categoria: 'Cervezas' },
     { nombre: 'Papas Fritas Rústicas', cantidad: 20, unidad_medida: 'paquetes', precio_unitario: 3500, categoria: 'Snacks' },
     { nombre: 'Maní Salado Tostado', cantidad: 15, unidad_medida: 'kg', precio_unitario: 4200, categoria: 'Snacks' }
   ],
-  'Cafetería': [
+  'cafeteria': [
     { nombre: 'Café en Grano Tostado 1kg', cantidad: 10, unidad_medida: 'paquetes', precio_unitario: 28000, categoria: 'Cafetería' },
     { nombre: 'Medialunas de Manteca', cantidad: 60, unidad_medida: 'unidades', precio_unitario: 650, categoria: 'Panadería' },
     { nombre: 'Tostado Jamón y Queso', cantidad: 30, unidad_medida: 'unidades', precio_unitario: 3800, categoria: 'Comidas' },
     { nombre: 'Jugo Naranja Exprimido 500ml', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 2200, categoria: 'Bebidas' },
     { nombre: 'Capuchino Especial', cantidad: 25, unidad_medida: 'unidades', precio_unitario: 3200, categoria: 'Cafetería' }
   ],
-  'Artículos de Limpieza': [
+  'articulos de limpieza': [
     { nombre: 'Lavandina Concentrada 2L', cantidad: 30, unidad_medida: 'unidades', precio_unitario: 1800, categoria: 'Limpieza del hogar' },
     { nombre: 'Detergente Lavavajillas 750ml', cantidad: 25, unidad_medida: 'unidades', precio_unitario: 2400, categoria: 'Cocina' },
     { nombre: 'Jabón Líquido Para Ropa 3L', cantidad: 15, unidad_medida: 'unidades', precio_unitario: 7800, categoria: 'Ropa' },
     { nombre: 'Rollos de Cocina x3', cantidad: 20, unidad_medida: 'paquetes', precio_unitario: 2600, categoria: 'Papelería' },
     { nombre: 'Limpiador Multiuso Aerosol', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 3100, categoria: 'Superficies' }
   ],
-  'General / Otro': [
+  'general / otro': [
     { nombre: 'Producto Ejemplo A', cantidad: 10, unidad_medida: 'unidades', precio_unitario: 1500, categoria: 'General' },
     { nombre: 'Producto Ejemplo B', cantidad: 20, unidad_medida: 'unidades', precio_unitario: 2500, categoria: 'General' },
     { nombre: 'Producto Ejemplo C', cantidad: 15, unidad_medida: 'unidades', precio_unitario: 3000, categoria: 'General' }
@@ -201,22 +212,48 @@ export default function OnboardingWizard({ onBackToLogin }) {
     setPaso(prev => Math.max(1, prev - 1));
   };
 
-  // Carga de productos por defecto en el inventario del nuevo tenant (Ejecutado con usuario autenticado)
+  // Carga de productos por defecto en el inventario del nuevo tenant (Ejecutado con cliente autenticado de Supabase)
   const seedProductosIniciales = async (tenantId, rubroElegido) => {
-    const items = STARTER_PRODUCTS_BY_RUBRO[rubroElegido] || STARTER_PRODUCTS_BY_RUBRO['General / Otro'];
+    console.log(`[Seed Inventario] Iniciando precarga para tenantId: ${tenantId}, rubro: '${rubroElegido}'`);
+
+    if (!tenantId) {
+      console.error('[Seed Inventario ERROR] No se proporcionó un tenantId válido.');
+      return;
+    }
+
+    const rubroKey = normalizeString(rubroElegido);
+    const items = STARTER_PRODUCTS_BY_RUBRO[rubroKey] || STARTER_PRODUCTS_BY_RUBRO['general / otro'] || [];
+
+    if (items.length === 0) {
+      console.warn(`[Seed Inventario WARN] No se encontraron productos iniciales para el rubro normalizado: '${rubroKey}'`);
+      return;
+    }
+
+    // Mapeo estricto con campos válidos de la tabla 'inventario'
     const payload = items.map(item => ({
-      ...item,
-      precio: item.precio_unitario, // Sincronizar tanto precio como precio_unitario
-      tenant_id: tenantId
+      tenant_id: tenantId,
+      nombre: item.nombre,
+      cantidad: Number(item.cantidad || 0),
+      unidad_medida: item.unidad_medida || 'unidades',
+      precio_unitario: Number(item.precio_unitario || 0),
+      categoria: item.categoria || 'General'
     }));
 
     try {
-      const { error } = await supabase.from('inventario').insert(payload);
+      console.log(`[Seed Inventario] Insertando ${payload.length} productos en la tabla 'inventario'...`, payload);
+      
+      const { data, error } = await supabase
+        .from('inventario')
+        .insert(payload)
+        .select();
+
       if (error) {
-        console.error('Error insertando productos iniciales:', error.message || error);
+        console.error('[Seed Inventario ERROR] Fallo de Supabase/RLS insertando productos iniciales:', error.message || error, error);
+      } else {
+        console.log('[Seed Inventario ÉXITO] Productos iniciales insertados correctamente:', data);
       }
     } catch (e) {
-      console.error('Excepción insertando productos iniciales:', e);
+      console.error('[Seed Inventario EXCEPCIÓN] Error inesperado o de red insertando en inventario:', e);
     }
   };
 
@@ -304,7 +341,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
         console.warn('Advertencia en tenant_users:', linkError.message);
       }
 
-      // 6. Poblar catálogo inicial de productos por defecto en inventario (Cliente ya autenticado con RLS válido)
+      // 6. Poblar catálogo inicial de productos por defecto en inventario (Cliente autenticado)
       await seedProductosIniciales(newTenantId, formData.rubro);
 
       // Marcar registro exitoso para mostrar pantalla final de éxito

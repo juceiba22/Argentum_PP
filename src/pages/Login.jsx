@@ -173,7 +173,7 @@ export default function Login() {
               onClick={() => setModo('registro')} 
               style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
             >
-              Registrate en 6 pasos
+              Dá de alta tu comercio en 4 pasos
             </button>
           </div>
         </div>
