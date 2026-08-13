@@ -308,7 +308,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
                 ))}
               </select>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
-                Cargaremos automáticamente un catálogo inicial de 5 productos de {formData.rubro} para que pruebes el sistema de inmediato.
+                Cargaremos automáticamente un catálogo inicial de 15 productos de {formData.rubro} para que pruebes el sistema de inmediato.
               </span>
             </div>
 
