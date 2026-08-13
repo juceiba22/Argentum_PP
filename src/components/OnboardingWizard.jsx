@@ -239,22 +239,21 @@ export default function OnboardingWizard({ onBackToLogin }) {
       categoria: item.categoria || 'General'
     }));
 
-    try {
-      console.log(`[Seed Inventario] Insertando ${payload.length} productos en la tabla 'inventario'...`, payload);
-      
-      const { data, error } = await supabase
-        .from('inventario')
-        .insert(payload)
-        .select();
+    console.log(`[Seed Inventario] Insertando ${payload.length} productos en la tabla 'inventario'...`, payload);
 
-      if (error) {
-        console.error('[Seed Inventario ERROR] Fallo de Supabase/RLS insertando productos iniciales:', error.message || error, error);
-      } else {
-        console.log('[Seed Inventario ÉXITO] Productos iniciales insertados correctamente:', data);
-      }
-    } catch (e) {
-      console.error('[Seed Inventario EXCEPCIÓN] Error inesperado o de red insertando en inventario:', e);
+    const { data, error } = await supabase
+      .from('inventario')
+      .insert(payload)
+      .select();
+
+    if (error) {
+      // No tragar el error: si esto falla, el registro queda a medias
+      // (comercio sin catálogo inicial) y el usuario nunca se entera si
+      // solo lo logueamos. Que lo maneje el catch de handleFinalizarRegistro.
+      throw new Error(`No se pudieron cargar los productos iniciales: ${error.message}`);
     }
+
+    console.log('[Seed Inventario ÉXITO] Productos iniciales insertados correctamente:', data);
   };
 
   // Finalizar Registro y Guardar en Supabase al completar el Paso 4
@@ -296,11 +295,16 @@ export default function OnboardingWizard({ onBackToLogin }) {
       const newTenantId = crypto.randomUUID();
 
       // 4. Crear el nuevo Tenant en la tabla 'tenants' (Cliente ya autenticado)
+      // OJO: la tabla no tiene columna "nombre", solo "nombre_comercio". Antes
+      // se mandaban las dos, PostgREST rechazaba el INSERT entero por la
+      // columna inexistente, y como el error solo se logueaba (ver más abajo)
+      // el registro seguía como si nada: sin tenant, sin rubro guardado, sin
+      // vínculo en tenant_users y sin productos iniciales, pero mostrando la
+      // pantalla de "Registro Exitoso" igual.
       const { error: tenantError } = await supabase
         .from('tenants')
         .insert([{
           id: newTenantId,
-          nombre: formData.nombre_comercio,
           nombre_comercio: formData.nombre_comercio,
           razon_social: formData.razon_social || formData.nombre_comercio,
           rubro: formData.rubro,
@@ -322,7 +326,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
         }]);
 
       if (tenantError) {
-        console.warn('Advertencia creando tenant:', tenantError.message);
+        throw new Error(`No se pudo crear el comercio: ${tenantError.message}`);
       }
 
       // 5. Vincular el usuario en 'tenant_users'
@@ -338,7 +342,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
         }]);
 
       if (linkError) {
-        console.warn('Advertencia en tenant_users:', linkError.message);
+        throw new Error(`No se pudo vincular tu usuario al comercio: ${linkError.message}`);
       }
 
       // 6. Poblar catálogo inicial de productos por defecto en inventario (Cliente autenticado)
