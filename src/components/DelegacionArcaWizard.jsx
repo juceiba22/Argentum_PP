@@ -7,7 +7,7 @@ import {
 /**
  * CUIT de la Plataforma Administradora (Fácilmente editable)
  */
-export const PLATFORM_CUIT = '20-00000000-0';
+export const PLATFORM_CUIT = '20354807409';
 export const PLATFORM_NOMBRE = 'Empresa Plataforma S.A.';
 
 export default function DelegacionArcaWizard({ onClose }) {

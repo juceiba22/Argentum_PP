@@ -199,7 +199,7 @@ export default function ConfiguracionMercadoPago() {
         <div>
           <h1 style={{ fontSize: '2rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <CreditCard size={32} style={{ color: 'var(--accent-primary)' }} />
-            Configuración Mercado Pago Point
+            Configuración Posnet de Mercado Pago
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
             Conecta la terminal física Point de tu comercio para procesar cobros de tarjetas en el POS.

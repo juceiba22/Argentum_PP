@@ -357,20 +357,18 @@ export default function ConfiguracionFiscal() {
             <button
               type="button"
               onClick={() => setShowInstructivo(true)}
+              className="btn btn-primary"
               style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--accent-primary)',
-                fontWeight: 600,
-                cursor: 'pointer',
+                padding: '14px 26px',
+                fontSize: '1.05rem',
+                fontWeight: 700,
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
-                fontSize: '0.9rem',
-                textDecoration: 'underline'
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)'
               }}
             >
-              <HelpCircle size={16} /> Ver instructivo paso a paso
+              <HelpCircle size={22} /> Ver instructivo paso a paso
             </button>
 
             <button
@@ -435,28 +433,28 @@ export default function ConfiguracionFiscal() {
           Nuestro equipo de soporte técnico te guiará paso a paso para completar la configuración de tu comercio.
         </p>
         <a
-          href="https://wa.me/5491178270751?text=Hola%20Soporte%20Argentum,%20necesito%20asistencia%20con%20la%20configuraci%C3%B3n%20fiscal%20de%20ARCA."
+          href="https://wa.me/5491178270751?text=Necesito%20ayuda%20con%20la%20configuraci%C3%B3n%20de%20ARCA%20para%20emitir%20factura%20electr%C3%B3nica"
           target="_blank"
           rel="noopener noreferrer"
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            justify: 'center',
+            justifyContent: 'center',
             gap: '12px',
             backgroundColor: '#25D366',
             color: '#FFFFFF',
-            padding: '14px 28px',
+            padding: '16px 28px',
             borderRadius: '10px',
             fontWeight: 800,
             fontSize: '1.05rem',
             textDecoration: 'none',
             boxShadow: '0 4px 14px rgba(37, 211, 102, 0.35)',
             transition: 'all 0.2s ease-in-out',
-            maxWidth: '450px',
+            maxWidth: '650px',
             width: '100%'
           }}
         >
-          <MessageCircle size={24} /> Contactar con Soporte de Argentum
+          <MessageCircle size={24} /> Necesito ayuda con la configuración de ARCA para emitir factura electrónica
         </a>
       </div>
 
