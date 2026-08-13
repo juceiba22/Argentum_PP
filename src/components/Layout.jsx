@@ -18,7 +18,7 @@ export default function Layout() {
     }));
   };
 
-  const { role, isTrialActive, isLicenseActive, daysRemainingTrial } = useAuth();
+  const { role, isTrialActive, isLicenseActive, daysRemainingTrial, tenantInfo } = useAuth();
 
   const navItems = [
     // Suelta fuera de grupos
@@ -117,6 +117,33 @@ export default function Layout() {
         <div className="sidebar-header">
           <h2 className="brand-title">Argentum</h2>
           <p className="brand-subtitle">Gestión Interna</p>
+
+          {tenantInfo && (
+            <Link
+              to="/mi-comercio"
+              onClick={() => setMobileMenuOpen(false)}
+              style={{
+                display: 'block',
+                marginTop: '14px',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1px solid rgba(0,0,0,0.08)',
+                textDecoration: 'none',
+                color: 'inherit'
+              }}
+              title="Ver perfil del comercio"
+            >
+              <div style={{ fontWeight: 700, fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {tenantInfo.nombre_comercio || 'Mi comercio'}
+              </div>
+              {tenantInfo.rubro && (
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  {tenantInfo.rubro}
+                </div>
+              )}
+            </Link>
+          )}
+
           {isTrialActive && !isLicenseActive && (
             <div style={{
               marginTop: '10px',

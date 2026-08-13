@@ -26,6 +26,9 @@ export const AuthProvider = ({ children }) => {
     trialEndsAt: null,
     licenseState: null
   });
+  // Datos completos del comercio (para la tarjeta de perfil). Se completa en
+  // checkTrialAndLicense, que ya consulta tenants por otros motivos.
+  const [tenantInfo, setTenantInfo] = useState(null);
 
   // Evita que StrictMode (doble invocación de efectos en dev) dispare dos
   // inicializaciones de sesión en paralelo, compitiendo por el mismo estado.
@@ -43,6 +46,7 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setTenantId(null);
     setRole(null);
+    setTenantInfo(null);
     setLoading(false);
     resolvedUserIdRef.current = null;
 
@@ -196,6 +200,7 @@ export const AuthProvider = ({ children }) => {
         trialEndsAt: null,
         licenseState: null
       });
+      setTenantInfo(null);
       return;
     }
 
@@ -229,16 +234,20 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // 2. Consultar fecha de trial (trial_ends_at) e is_active en la tabla tenants
+      // 2. Consultar datos completos del tenant: trial_ends_at/is_active para
+      // decidir el acceso, y el resto (nombre, rubro, cuit, domicilio, etc.)
+      // para exponerlos como tenantInfo (tarjeta de perfil del comercio).
       let trialEndsAt = null;
       let tenantActive = true;
 
       if (resolvedTenantId) {
         const { data: tenantData } = await supabase
           .from('tenants')
-          .select('trial_ends_at, is_active')
+          .select('id, nombre_comercio, razon_social, rubro, cuit, condicion_fiscal, domicilio_fiscal, provincia, localidad, codigo_postal, trial_ends_at, is_active, afip_delegacion_verificada, mp_integracion_verificada, created_at')
           .eq('id', resolvedTenantId)
           .maybeSingle();
+
+        setTenantInfo(tenantData || null);
 
         if (tenantData) {
           trialEndsAt = tenantData.trial_ends_at ? new Date(tenantData.trial_ends_at) : null;
@@ -246,6 +255,8 @@ export const AuthProvider = ({ children }) => {
             tenantActive = tenantData.is_active;
           }
         }
+      } else {
+        setTenantInfo(null);
       }
 
       // 3. Calcular si el Trial de 15 días sigue vigente
@@ -325,6 +336,7 @@ export const AuthProvider = ({ children }) => {
           if (isMounted) {
             setTenantId(null);
             setRole(null);
+            setTenantInfo(null);
           }
           resolvedUserIdRef.current = null;
         }
@@ -354,6 +366,7 @@ export const AuthProvider = ({ children }) => {
         if (isMounted) {
           setTenantId(null);
           setRole(null);
+          setTenantInfo(null);
         }
         return;
       }
@@ -389,7 +402,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, tenantId, role, loading, licenseInfo, ...licenseInfo }}>
+    <AuthContext.Provider value={{ user, tenantId, role, loading, licenseInfo, tenantInfo, ...licenseInfo }}>
       {children}
     </AuthContext.Provider>
   );

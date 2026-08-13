@@ -18,6 +18,7 @@ import Facturacion from './pages/Facturacion';
 import ConfiguracionFiscal from './pages/ConfiguracionFiscal';
 import ConfiguracionMercadoPago from './pages/ConfiguracionMercadoPago';
 import Importaciones from './pages/Importaciones';
+import PerfilComercio from './pages/PerfilComercio';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
@@ -100,6 +101,7 @@ function App() {
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
               <Route path="/facturacion" element={<ProtectedRoute allowedRoles={['admin']}><Facturacion /></ProtectedRoute>} />
+              <Route path="/mi-comercio" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><PerfilComercio /></ProtectedRoute>} />
               <Route path="/configuracion-fiscal" element={<ProtectedRoute allowedRoles={['admin']}><ConfiguracionFiscal /></ProtectedRoute>} />
               <Route path="/configuracion-mercadopago" element={<ProtectedRoute allowedRoles={['admin']}><ConfiguracionMercadoPago /></ProtectedRoute>} />
               <Route path="/importaciones" element={<ProtectedRoute allowedRoles={['admin']}><Importaciones /></ProtectedRoute>} />
