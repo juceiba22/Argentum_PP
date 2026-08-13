@@ -678,8 +678,8 @@ export default function Market() {
       {isMobile && isCartModalOpen && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'flex-end',
-          zIndex: 100, backdropFilter: 'blur(5px)'
+          backgroundColor: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'flex-end',
+          zIndex: 100
         }}>
           <div className="animate-fade-in" style={{ width: '100%', background: 'var(--bg-color)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '24px' }}>
              <button onClick={() => setIsCartModalOpen(false)} style={{ display: 'block', margin: '0 auto 16px', background: 'var(--text-secondary)', border: 'none', width: '40px', height: '6px', borderRadius: '4px', opacity: 0.5, cursor: 'pointer' }}></button>
@@ -693,12 +693,11 @@ export default function Market() {
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)',
+          backgroundColor: 'rgba(0,0,0,0.65)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
-          backdropFilter: 'blur(5px)'
+          zIndex: 1000
         }}>
           <div className="glass-panel animate-fade-in" style={{ width: '90%', maxWidth: '400px', padding: '32px', position: 'relative' }}>
             <button
@@ -784,12 +783,11 @@ export default function Market() {
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)',
+          backgroundColor: 'rgba(0,0,0,0.65)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
-          backdropFilter: 'blur(5px)'
+          zIndex: 1000
         }}>
           <div className="glass-panel animate-fade-in" style={{ width: '90%', maxWidth: '550px', padding: '32px', position: 'relative' }}>
             <button
@@ -986,12 +984,11 @@ export default function Market() {
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)',
+          backgroundColor: 'rgba(0,0,0,0.65)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          zIndex: 1000,
-          backdropFilter: 'blur(5px)'
+          zIndex: 1000
         }}>
           <div className="glass-panel animate-fade-in" style={{ width: '90%', maxWidth: '400px', padding: '32px', position: 'relative' }}>
             <button
@@ -1055,8 +1052,8 @@ export default function Market() {
       {isAbrirCajaModalOpen && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center',
-          justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(5px)'
+          backgroundColor: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center',
+          justifyContent: 'center', zIndex: 1000
         }}>
           <div className="glass-panel animate-fade-in" style={{ width: '90%', maxWidth: '400px', padding: '32px', textAlign: 'center', position: 'relative' }}>
             <button onClick={() => setIsAbrirCajaModalOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
