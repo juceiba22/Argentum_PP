@@ -9,7 +9,59 @@ import { getCajaAbierta, abrirCaja } from '../services/cajasApi';
 import { useAuth } from '../context/AuthContext';
 import { useLocation, Link } from 'react-router-dom';
 
+// Configura el modal de "agregar al carrito" según la unidad de medida real
+// del producto (catálogo fijo: kg, gramos, unidades, paquetes, litros -- ver
+// UNIDADES_MEDIDA en Inventario.jsx). Antes el modal siempre pedía "peso en
+// balanza" sin importar la unidad, así que un producto vendido por unidades
+// (ej: un libro) quedaba con un formulario pensado para pesar en kg.
+const getUnidadConfig = (unidadMedidaRaw) => {
+  const u = (unidadMedidaRaw || '').toLowerCase().trim();
 
+  if (u === 'kg') {
+    return {
+      label: `Peso real en balanza (${unidadMedidaRaw})`,
+      step: '0.001', min: '0.001', decimals: 3,
+      placeholder: 'Ej: 1.250',
+      quickValues: [0.5, 1, 1.25, 1.5, 1.75, 2, 2.5, 3],
+      quickSuffix: 'kg'
+    };
+  }
+  if (u === 'gramos') {
+    return {
+      label: `Peso real en balanza (${unidadMedidaRaw})`,
+      step: '1', min: '1', decimals: 0,
+      placeholder: 'Ej: 250',
+      quickValues: [100, 200, 250, 500, 750, 1000],
+      quickSuffix: 'g'
+    };
+  }
+  if (u === 'litros') {
+    return {
+      label: `Cantidad (${unidadMedidaRaw})`,
+      step: '0.001', min: '0.001', decimals: 3,
+      placeholder: 'Ej: 1.500',
+      quickValues: [0.5, 1, 1.5, 2, 2.5, 3],
+      quickSuffix: 'L'
+    };
+  }
+  if (u === 'paquetes') {
+    return {
+      label: `Cantidad (${unidadMedidaRaw})`,
+      step: '1', min: '1', decimals: 0,
+      placeholder: 'Ej: 2',
+      quickValues: [1, 2, 3, 4, 5, 6],
+      quickSuffix: unidadMedidaRaw
+    };
+  }
+  // 'unidades' y cualquier valor no contemplado: cantidad entera genérica
+  return {
+    label: `Cantidad (${unidadMedidaRaw || 'unidades'})`,
+    step: '1', min: '1', decimals: 0,
+    placeholder: 'Ej: 3',
+    quickValues: [1, 2, 3, 4, 5, 6, 10, 12],
+    quickSuffix: unidadMedidaRaw || 'u.'
+  };
+};
 
 export default function Market() {
   const [productos, setProductos] = useState([]);
@@ -487,9 +539,11 @@ export default function Market() {
     </div>
   );
 
+  const unidadConfig = selectedProduct ? getUnidadConfig(selectedProduct.unidad_medida) : null;
+
   return (
     <div className="animate-fade-in" style={{ paddingBottom: isMobile && carrito.length > 0 ? '100px' : '40px', display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
-      
+
       {/* COLUMNA IZQUIERDA: PRODUCTOS Y PROMOCIONES */}
       <div style={{ flex: isMobile ? '1 1 100%' : '1 1 60%' }}>
         <header style={{ marginBottom: '32px' }}>
@@ -715,39 +769,39 @@ export default function Market() {
             <form onSubmit={handleAddToCart}>
               <div className="input-group" style={{ marginBottom: '24px' }}>
                 <label className="input-label">
-                  Peso real en balanza ({selectedProduct.unidad_medida})
+                  {unidadConfig.label}
                 </label>
                 <input
                   type="number"
-                  step="0.001"
-                  min="0.001"
+                  step={unidadConfig.step}
+                  min={unidadConfig.min}
                   className="input-field"
                   value={cantidadToAdd}
                   onChange={(e) => setCantidadToAdd(e.target.value)}
-                  placeholder="Ej: 3.150"
+                  placeholder={unidadConfig.placeholder}
                   style={{ fontSize: '1.2rem', padding: '12px' }}
                   autoFocus
                 />
-                
-                {/* Botones de peso fraccionado rápido (1kg, 1.25kg, 1.5kg, 2kg, etc) */}
+
+                {/* Atajos rápidos según la unidad -- no reemplazan la carga manual, que admite cualquier valor con hasta 3 decimales (ver step) */}
                 <div style={{ display: 'flex', gap: '6px', marginTop: '10px', flexWrap: 'wrap' }}>
-                  {[1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 3].map(kgVal => (
+                  {unidadConfig.quickValues.map(val => (
                     <button
                       type="button"
-                      key={kgVal}
-                      onClick={() => setCantidadToAdd(String(kgVal))}
+                      key={val}
+                      onClick={() => setCantidadToAdd(String(val))}
                       style={{
                         padding: '4px 10px',
                         fontSize: '0.8rem',
-                        fontWeight: String(cantidadToAdd) === String(kgVal) ? 700 : 500,
+                        fontWeight: String(cantidadToAdd) === String(val) ? 700 : 500,
                         borderRadius: '6px',
-                        border: String(cantidadToAdd) === String(kgVal) ? '1px solid var(--accent-primary)' : '1px solid var(--glass-border)',
-                        background: String(cantidadToAdd) === String(kgVal) ? 'rgba(236, 72, 153, 0.25)' : 'rgba(255,255,255,0.05)',
-                        color: String(cantidadToAdd) === String(kgVal) ? 'var(--accent-primary)' : 'var(--text-primary)',
+                        border: String(cantidadToAdd) === String(val) ? '1px solid var(--accent-primary)' : '1px solid var(--glass-border)',
+                        background: String(cantidadToAdd) === String(val) ? 'rgba(236, 72, 153, 0.25)' : 'rgba(255,255,255,0.05)',
+                        color: String(cantidadToAdd) === String(val) ? 'var(--accent-primary)' : 'var(--text-primary)',
                         cursor: 'pointer'
                       }}
                     >
-                      {kgVal.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} Kg
+                      {val.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: unidadConfig.decimals })} {unidadConfig.quickSuffix}
                     </button>
                   ))}
                 </div>
