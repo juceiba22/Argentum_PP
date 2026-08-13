@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { seedProductosIniciales } from '../utils/starterProducts';
 
 const AuthContext = createContext();
 
@@ -117,13 +118,22 @@ export const AuthProvider = ({ children }) => {
       }
 
       // 3. Cualquier otro usuario sin tenant asignado (todos, salvo el admin
-      // principal) SIEMPRE recibe un tenant nuevo, aislado y único.
+      // principal) SIEMPRE recibe un tenant nuevo, aislado y único. Si viene
+      // de OnboardingWizard (confirmó su email y este es su primer login),
+      // user_metadata trae todos los datos que cargó en el wizard (rubro,
+      // CUIT, domicilio, etc.) -- si no vienen (ej: usuario creado por otra
+      // vía), se usan valores mínimos por defecto.
+      let isNewTenant = false;
+      let rubroParaSeed = null;
+
       if (!assignedTenantId) {
         const newTenantId = crypto.randomUUID();
+        const meta = sessionUser.user_metadata || {};
         const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'comercio';
-        const nombreNuevoComercio = sessionUser.user_metadata?.nombre_comercio || `Comercio (${userSlug})`;
+        const nombreNuevoComercio = meta.nombre_comercio || `Comercio (${userSlug})`;
         const trialEndsAtDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
-        const userCuit = sessionUser.user_metadata?.cuit || '00-00000000-0';
+        const userCuit = meta.cuit || '00-00000000-0';
+        rubroParaSeed = meta.rubro || null;
 
         try {
           // OJO: sin .select() a propósito. La policy de SELECT de tenants
@@ -138,15 +148,28 @@ export const AuthProvider = ({ children }) => {
             .insert([{
               id: newTenantId,
               nombre_comercio: nombreNuevoComercio,
+              razon_social: meta.razon_social || nombreNuevoComercio,
+              rubro: rubroParaSeed,
               cuit: userCuit,
+              afip_cuit_delegado: userCuit,
+              condicion_fiscal: meta.condicion_fiscal || 'Monotributista',
+              domicilio_fiscal: meta.domicilio_fiscal || null,
+              provincia: meta.provincia || null,
+              localidad: meta.localidad || null,
+              codigo_postal: meta.codigo_postal || null,
+              afip_punto_de_venta: Number(meta.afip_punto_de_venta || 1),
+              necesita_crear_pto_venta: Boolean(meta.necesita_crear_pto_venta),
               trial_ends_at: trialEndsAtDate,
-              is_active: true
+              is_active: true,
+              onboarding_completado: Boolean(rubroParaSeed),
+              onboarding_paso_actual: rubroParaSeed ? 4 : 1
             }]);
 
           if (createTenantErr) {
             console.error('Error al crear nuevo tenant en BD:', createTenantErr.message);
           } else {
             assignedTenantId = newTenantId;
+            isNewTenant = true;
           }
         } catch (errCreate) {
           console.warn('Excepción al intentar crear nuevo tenant en BD:', errCreate);
@@ -173,6 +196,16 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (errLink) {
           console.warn('Excepción al vincular usuario a tenant_users:', errLink);
+        }
+
+        // 3.6 Poblar catálogo inicial de productos por defecto. Solo para un
+        // tenant recién creado (no para el admin recuperando el historico).
+        if (isNewTenant) {
+          try {
+            await seedProductosIniciales(assignedTenantId, rubroParaSeed);
+          } catch (errSeed) {
+            console.warn('No se pudieron cargar los productos iniciales:', errSeed);
+          }
         }
       }
 

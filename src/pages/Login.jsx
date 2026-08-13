@@ -49,7 +49,12 @@ export default function Login() {
       }
     } catch (error) {
       console.error(error);
-      setErrorAuth(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+      const msg = (error.message || '').toLowerCase();
+      if (error.code === 'email_not_confirmed' || msg.includes('not confirmed')) {
+        setErrorAuth('Todavía no confirmaste tu email. Revisá tu casilla (y la carpeta de spam) y hacé clic en el enlace de confirmación antes de iniciar sesión.');
+      } else {
+        setErrorAuth(error.message || 'Error al iniciar sesión. Verifica tus credenciales.');
+      }
     } finally {
       setLoading(false);
     }
