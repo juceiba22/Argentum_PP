@@ -281,9 +281,18 @@ async function handleVerifyPointIntegration(req, res) {
     const device = devices.find((d) => d.id === cleanDeviceId);
 
     if (!device) {
+      // El device_id real de la API (ej. "NEWLAND_N950__N950NCCB05395080")
+      // no es el mismo string que el S/N que la app de Mercado Pago le
+      // muestra al comerciante en la pantalla del dispositivo, así que es
+      // un campo casi imposible de tipear bien a mano. Devolvemos la lista
+      // real de dispositivos de la cuenta para que el frontend deje
+      // elegir en vez de adivinar.
       return res.status(200).json({
         success: false,
-        error: `El Access Token es válido, pero no se encontró ningún dispositivo con Device ID "${cleanDeviceId}" en esa cuenta de Mercado Pago. Revisá que el Device ID esté bien copiado y que la terminal física esté vinculada a la MISMA cuenta que generó este Access Token (no a otra sucursal o usuario).`
+        error: devices.length
+          ? `El Access Token es válido, pero no se encontró ningún dispositivo con Device ID "${cleanDeviceId}" en esa cuenta de Mercado Pago. Elegí tu terminal de la lista de dispositivos detectados debajo.`
+          : `El Access Token es válido, pero esa cuenta de Mercado Pago no tiene ninguna terminal Point vinculada. Verificá que el Access Token pertenezca a la MISMA cuenta que tiene la terminal física asociada.`,
+        availableDevices: devices.map((d) => ({ id: d.id, operating_mode: d.operating_mode }))
       });
     }
 

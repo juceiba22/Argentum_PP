@@ -74,6 +74,11 @@ export default function ConfiguracionMercadoPago() {
     }));
   };
 
+  const handleUsarDeviceDetectado = (deviceId) => {
+    setFormData(prev => ({ ...prev, mp_point_device_id: deviceId }));
+    setResultadoVerificacion(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!tenantId) {
@@ -150,7 +155,13 @@ export default function ConfiguracionMercadoPago() {
       // está en modo PDV (integrado), no Standalone.
       const resultado = await verificarIntegracionPoint(token, device, tenantId);
       if (!resultado.success) {
-        throw new Error(resultado.error || 'No se pudo verificar la integración con Mercado Pago Point.');
+        setResultadoVerificacion({
+          success: false,
+          message: resultado.error || 'No se pudo verificar la integración con Mercado Pago Point.',
+          availableDevices: resultado.availableDevices || []
+        });
+        setFormData(prev => ({ ...prev, mp_integracion_verificada: false }));
+        return;
       }
 
       const nowISO = new Date().toISOString();
@@ -382,16 +393,58 @@ export default function ConfiguracionMercadoPago() {
               padding: '14px 20px',
               borderRadius: '8px',
               marginTop: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
               backgroundColor: resultadoVerificacion.success ? 'rgba(74, 124, 89, 0.12)' : 'rgba(183, 65, 52, 0.12)',
               border: `1px solid ${resultadoVerificacion.success ? 'var(--success)' : 'var(--danger)'}`,
               color: resultadoVerificacion.success ? 'var(--success)' : 'var(--danger)',
               fontWeight: 600
             }}>
-              {resultadoVerificacion.success ? <span>✅</span> : <span>❌</span>}
-              <span style={{ flex: 1 }}>{resultadoVerificacion.message}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {resultadoVerificacion.success ? <span>✅</span> : <span>❌</span>}
+                <span style={{ flex: 1 }}>{resultadoVerificacion.message}</span>
+              </div>
+
+              {!resultadoVerificacion.success && resultadoVerificacion.availableDevices?.length > 0 && (
+                <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(183, 65, 52, 0.25)' }}>
+                  <p style={{ fontWeight: 700, marginBottom: '10px', fontSize: '0.85rem' }}>
+                    Terminales detectadas en esa cuenta de Mercado Pago (elegí la tuya):
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {resultadoVerificacion.availableDevices.map((d) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => handleUsarDeviceDetectado(d.id)}
+                        className="btn btn-secondary"
+                        style={{
+                          fontFamily: 'monospace',
+                          fontSize: '0.85rem',
+                          textAlign: 'left',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '12px',
+                          fontWeight: 500
+                        }}
+                      >
+                        <span>{d.id}</span>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '10px',
+                          backgroundColor: d.operating_mode === 'PDV' ? 'rgba(74, 124, 89, 0.15)' : 'rgba(210, 142, 61, 0.15)',
+                          color: d.operating_mode === 'PDV' ? 'var(--success)' : 'var(--warning)'
+                        }}>
+                          {d.operating_mode || 'modo desconocido'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  <p style={{ fontSize: '0.75rem', marginTop: '10px', fontWeight: 400 }}>
+                    Al elegir una, se completa el Device ID automáticamente. Después presioná "Verificar Integración" de nuevo.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
