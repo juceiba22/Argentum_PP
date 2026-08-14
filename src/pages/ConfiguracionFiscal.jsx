@@ -148,6 +148,22 @@ export default function ConfiguracionFiscal() {
     setResultadoVerificacion(null);
 
     try {
+      // Guardar cambios primero: el backend relee afip_cuit_delegado /
+      // afip_punto_de_venta / afip_env de la base por tenantId, no de lo
+      // que haya tipeado en pantalla. Sin este guardado, "Verificar
+      // delegación" podía fallar con "El comercio no tiene configurado un
+      // CUIT delegado" aunque el campo se viera completo en el formulario.
+      const { error: saveErr } = await supabase
+        .from('tenants')
+        .update({
+          afip_cuit_delegado: cuitLimpio,
+          afip_punto_de_venta: parseInt(formData.afip_punto_de_venta, 10) || 1,
+          afip_env: formData.afip_env
+        })
+        .eq('id', tenantId);
+
+      if (saveErr) throw saveErr;
+
       const res = await fetch('/api/arca/verificar-delegacion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await getAuthHeaders()) },
