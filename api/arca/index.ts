@@ -13,6 +13,27 @@ const supabaseKey =
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
+ * El AdminClient interno de @afipsdk/afip.js (ver node_modules/@afipsdk/afip.js/src/Afip.js)
+ * envuelve cualquier error HTTP como `new Error(error.message)` -que para
+ * un fallo axios es el texto generico "Request failed with status code
+ * XXX"- y cuelga el cuerpo real de la respuesta de AfipSDK/AFIP (con el
+ * codigo de error puntual, ej. "(11002) El punto de venta no se encuentra
+ * habilitado...") en `.data`, no en `.message`. Leer solo `.message`
+ * muestra el codigo HTTP pero esconde la causa real.
+ */
+function extractAfipErrorMessage(err: any, fallback: string): string {
+  if (!err) return fallback;
+  const data = err.data;
+  if (data) {
+    if (typeof data === 'string' && data.trim()) return data;
+    if (typeof data.message === 'string' && data.message.trim()) return data.message;
+    if (typeof data.error === 'string' && data.error.trim()) return data.error;
+  }
+  if (typeof err.message === 'string' && err.message.trim()) return err.message;
+  return fallback;
+}
+
+/**
  * Enrutador Central de ARCA / AFIP para Vercel Serverless Functions
  */
 export default async function handler(req: any, res: any) {
@@ -50,7 +71,7 @@ export default async function handler(req: any, res: any) {
     }
   } catch (err: any) {
     console.error('[ARCA Central Router] Error general en el manejador:', err);
-    return res.status(500).json({ success: false, error: err.message || 'Error interno en servidor ARCA.' });
+    return res.status(500).json({ success: false, error: extractAfipErrorMessage(err, 'Error interno en servidor ARCA.') });
   }
 }
 
@@ -137,8 +158,8 @@ async function handleEmitir(req: any, res: any) {
       throw new Error('ARCA / AFIP no devolvió un número de CAE válido para la operación.');
     }
   } catch (afipErr: any) {
-    console.error('Error al emitir factura en AFIP:', afipErr);
-    const errorMsg = afipErr.message || String(afipErr);
+    console.error('Error al emitir factura en AFIP:', JSON.stringify(afipErr, Object.getOwnPropertyNames(afipErr)));
+    const errorMsg = extractAfipErrorMessage(afipErr, String(afipErr));
     return res.status(200).json({
       success: false,
       error: `Error AFIP / ARCA: ${errorMsg}`
@@ -223,8 +244,24 @@ async function handleStatus(req: any, res: any) {
   }
 
   const { afip } = afipClientInfo;
-  const serverStatus = await afip.ElectronicBilling.getServerStatus();
-  
+
+  let serverStatus: any;
+  try {
+    serverStatus = await afip.ElectronicBilling.getServerStatus();
+  } catch (afipErr: any) {
+    console.error('Error al consultar estado de servidores AFIP:', JSON.stringify(afipErr, Object.getOwnPropertyNames(afipErr)));
+    return res.status(200).json({
+      success: false,
+      configured: true,
+      isMock: false,
+      tenantId: tenantId ?? null,
+      status: {
+        ok: false,
+        error: extractAfipErrorMessage(afipErr, 'No se pudo consultar el estado de los servidores de AFIP / ARCA.')
+      }
+    });
+  }
+
   const status: ARCAServerStatus = {
     ok:
       serverStatus.AppServer === 'OK' &&
@@ -279,7 +316,8 @@ async function handleVerificarDelegacion(req: any, res: any) {
   try {
     await afip.ElectronicBilling.getLastVoucher(ptoVta, 11);
   } catch (afipErr: any) {
-    const errorMsg = afipErr.message || String(afipErr);
+    console.error('Error al verificar delegación en AFIP:', JSON.stringify(afipErr, Object.getOwnPropertyNames(afipErr)));
+    const errorMsg = extractAfipErrorMessage(afipErr, String(afipErr));
     return res.status(200).json({
       success: false,
       error: `No se pudo verificar la delegación en AFIP / ARCA: ${errorMsg}`
