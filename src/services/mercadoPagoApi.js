@@ -71,6 +71,32 @@ export const getPaymentIntentStatus = async (paymentIntentId, tenantId) => {
   }
 };
 
+export const verificarIntegracionPoint = async (accessToken, deviceId, tenantId) => {
+  try {
+    const response = await fetch('/api/mercadopago/verify-point-integration', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(await getAuthHeaders())
+      },
+      body: JSON.stringify({ accessToken, deviceId, tenantId })
+    });
+
+    let data;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = { success: false, error: 'Respuesta no válida al verificar la integración.' };
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error al verificar integración Point:", error);
+    return { success: false, error: error.message || 'No se pudo contactar al servidor para verificar la integración.' };
+  }
+};
+
 export const cancelarPointPayment = async (paymentIntentId, tenantId) => {
   if (!tenantId) {
     throw new Error('Tenant ID no especificado.');

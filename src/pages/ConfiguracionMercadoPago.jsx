@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { verificarIntegracionPoint } from '../services/mercadoPagoApi';
 import { 
   CreditCard, Smartphone, Key, Save, Loader2, AlertCircle, 
   CheckCircle2, Info, ExternalLink, HelpCircle, RefreshCw, Clock,
@@ -138,11 +139,18 @@ export default function ConfiguracionMercadoPago() {
         mp_point_device_id: device
       }).eq('id', tenantId);
 
-      // Validar formato del token (APP_USR-... o TEST-...)
+      // Validación de formato básica antes de gastar una llamada a MP
       const esTokenValido = token.startsWith('APP_USR-') || token.startsWith('TEST-');
-
       if (!esTokenValido && token.length < 20) {
         throw new Error('El Access Token debe ser una credencial válida de Mercado Pago (comienza con APP_USR- o TEST-).');
+      }
+
+      // Verificación real contra Mercado Pago: confirma que el token es
+      // válido, que el Device ID existe en esa cuenta y que la terminal
+      // está en modo PDV (integrado), no Standalone.
+      const resultado = await verificarIntegracionPoint(token, device, tenantId);
+      if (!resultado.success) {
+        throw new Error(resultado.error || 'No se pudo verificar la integración con Mercado Pago Point.');
       }
 
       const nowISO = new Date().toISOString();

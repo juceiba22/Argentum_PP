@@ -1,7 +1,30 @@
-import { Order } from 'mercadopago';
+import { Order, Point, MercadoPagoConfig } from 'mercadopago';
 import crypto from 'crypto';
 import { getMercadoPagoCredentialsForTenant } from './mp-client.js';
 import { verifyTenantAccess } from '../_shared/verifyTenantAuth.js';
+
+/**
+ * El SDK de Mercado Pago no lanza instancias de Error: en un fetch no-2xx
+ * hace `throw await response.json()` (ver utils/restClient), así que
+ * `err.message` casi siempre viene undefined y el catch caía en un mensaje
+ * genérico ("Error al comunicarse con Mercado Pago Point") que no decía
+ * nada sobre la causa real (token sin permisos, device_id inexistente,
+ * terminal en modo standalone, etc). Esta función rescata el detalle real
+ * del cuerpo de error que MP sí devuelve.
+ */
+function extractMpErrorMessage(err, fallback) {
+  if (!err) return fallback;
+  if (typeof err.message === 'string' && err.message.trim()) return err.message;
+  if (typeof err.error === 'string' && err.error.trim()) return err.error;
+  if (Array.isArray(err.cause) && err.cause.length) {
+    const parts = err.cause.map((c) => c?.description || c?.code).filter(Boolean);
+    if (parts.length) return parts.join(' | ');
+  }
+  if (err.status === 401 || err.status === 403) {
+    return 'Mercado Pago rechazó el Access Token (no autorizado). Verificá que sea el token correcto, que no haya expirado y que tenga permisos de Point.';
+  }
+  return fallback;
+}
 
 /**
  * Enrutador Central de Mercado Pago para Vercel Serverless Functions
@@ -50,6 +73,8 @@ export default async function handler(req, res) {
         return await handleGetPaymentIntent(req, res);
       case 'cancel-point-payment':
         return await handleCancelPointPayment(req, res);
+      case 'verify-point-integration':
+        return await handleVerifyPointIntegration(req, res);
       default:
         // create-preference/webhook de licencias viven solo en Argentum-Comercios.
         return res.status(404).json({ success: false, error: `Ruta no encontrada: ${route || '(vacía)'}` });
@@ -120,10 +145,10 @@ async function handleCreatePointPayment(req, res) {
       paymentIntent: response
     });
   } catch (err) {
-    console.error('[MP Point] Error al crear orden:', err);
+    console.error('[MP Point] Error al crear orden:', JSON.stringify(err));
     return res.status(200).json({
       success: false,
-      error: err.message || 'Error al comunicarse con Mercado Pago Point.'
+      error: extractMpErrorMessage(err, 'Error al comunicarse con Mercado Pago Point.')
     });
   }
 }
@@ -212,5 +237,70 @@ async function handleCancelPointPayment(req, res) {
   }
 
   return res.status(200).json({ success: true });
+}
+
+// -----------------------------------------------------------------------------
+// 4. HANDLER: verify-point-integration
+// -----------------------------------------------------------------------------
+// La verificación anterior (en el frontend) solo chequeaba que el Access
+// Token empezara con "APP_USR-"/"TEST-" — nunca confirmaba contra Mercado
+// Pago que el token fuera válido ni que el Device ID existiera y perteneciera
+// a esa misma cuenta. Eso permitía marcar la integración como "verificada"
+// con datos que después fallaban al cobrar. Acá sí se llama a la API real
+// de Point (GET /point/integration-api/devices) para validar ambas cosas,
+// y además se chequea el operating_mode: si la terminal está en modo
+// "STANDALONE" (operación manual) en vez de "PDV" (integrado), Mercado
+// Pago rechaza la creación de la orden con el mismo error genérico que
+// reportó el cliente.
+async function handleVerifyPointIntegration(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Método no permitido (solo POST).' });
+  }
+
+  const { tenantId, accessToken, deviceId } = req.body || {};
+
+  if (!accessToken || !deviceId) {
+    return res.status(400).json({ success: false, error: 'Faltan accessToken y/o deviceId.' });
+  }
+
+  try {
+    await verifyTenantAccess(req, tenantId);
+  } catch (authErr) {
+    return res.status(401).json({ success: false, error: authErr.message });
+  }
+
+  const cleanToken = String(accessToken).trim();
+  const cleanDeviceId = String(deviceId).trim();
+
+  try {
+    const client = new MercadoPagoConfig({ accessToken: cleanToken });
+    const point = new Point(client);
+    const response = await point.getDevices({});
+    const devices = response?.devices || [];
+
+    const device = devices.find((d) => d.id === cleanDeviceId);
+
+    if (!device) {
+      return res.status(200).json({
+        success: false,
+        error: `El Access Token es válido, pero no se encontró ningún dispositivo con Device ID "${cleanDeviceId}" en esa cuenta de Mercado Pago. Revisá que el Device ID esté bien copiado y que la terminal física esté vinculada a la MISMA cuenta que generó este Access Token (no a otra sucursal o usuario).`
+      });
+    }
+
+    if (device.operating_mode && device.operating_mode !== 'PDV') {
+      return res.status(200).json({
+        success: false,
+        error: `La terminal "${cleanDeviceId}" está en modo "${device.operating_mode}" (operación manual/Standalone). Para recibir cobros desde el POS, en la terminal física andá a Menú › Ajustes › Modo de operación y elegí "Integrado con POS" / "PDV".`
+      });
+    }
+
+    return res.status(200).json({ success: true, device });
+  } catch (err) {
+    console.error('[MP Point] Error al verificar integración:', JSON.stringify(err));
+    return res.status(200).json({
+      success: false,
+      error: extractMpErrorMessage(err, 'No se pudo validar el Access Token contra Mercado Pago. Verificá que sea correcto y tenga permisos de Point.')
+    });
+  }
 }
 
