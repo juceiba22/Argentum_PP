@@ -94,6 +94,16 @@ export async function getAfipClientForTenant(tenantId?: string, skipDelegationCh
     throw new Error('Faltan configurar los certificados de la plataforma (PLATFORM_AFIP_CERT y PLATFORM_AFIP_KEY).');
   }
 
+  // @afipsdk/afip.js v1.x ya no habla directo con los Web Services SOAP de
+  // AFIP: internamente reenvia todo (incluida la firma CMS del TRA) a la
+  // nube de AfipSDK (app.afipsdk.com) y exige un access_token en cada
+  // instancia de Afip(), incluso usando certificado propio. Sin este token,
+  // AfipSDK devuelve 401 antes de siquiera intentar autenticar contra AFIP.
+  const accessToken = process.env.AFIPSDK_ACCESS_TOKEN;
+  if (!accessToken) {
+    throw new Error('Falta configurar AFIPSDK_ACCESS_TOKEN (se obtiene en https://app.afipsdk.com/).');
+  }
+
   const isDev = env === 'development';
 
   try {
@@ -101,6 +111,7 @@ export async function getAfipClientForTenant(tenantId?: string, skipDelegationCh
       CUIT: cuitNumber,
       cert: cert,
       key: key,
+      access_token: accessToken,
       production: !isDev,
     });
 
