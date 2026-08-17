@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare, ShieldCheck, CreditCard } from 'lucide-react';
+import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare, ShieldCheck, CreditCard, Building2 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -30,6 +30,7 @@ export default function Layout() {
       icon: <Store size={20} />, 
       allowed: ['admin', 'ventas'],
       subItems: [
+        { path: '/mi-comercio', label: 'Mi Comercio / Perfil', icon: <Building2 size={20} />, allowed: ['admin', 'ventas'] },
         { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
         { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
         { path: '/market', label: 'POS / Terminal', icon: <Store size={20} />, allowed: ['admin', 'ventas'] },

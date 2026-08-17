@@ -435,7 +435,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, tenantId, role, loading, licenseInfo, tenantInfo, ...licenseInfo }}>
+    <AuthContext.Provider value={{ user, tenantId, role, loading, licenseInfo, tenantInfo, refetchTenantInfo: () => fetchTenantAndRole(user), ...licenseInfo }}>
       {children}
     </AuthContext.Provider>
   );
