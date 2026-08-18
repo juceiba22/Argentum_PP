@@ -146,7 +146,7 @@ export default function PerfilComercio() {
 
       // 2. Actualizar vínculo en 'tenant_users'
       if (user?.id) {
-        await supabase
+        const { error: tuErr } = await supabase
           .from('tenant_users')
           .update({
             nombre: formData.nombre,
@@ -154,18 +154,19 @@ export default function PerfilComercio() {
             telefono: formData.telefono
           })
           .eq('user_id', user.id)
-          .eq('tenant_id', tenantId)
-          .catch(() => {});
+          .eq('tenant_id', tenantId);
+        if (tuErr) console.warn('Error al actualizar tenant_users:', tuErr);
       }
 
       // 3. Actualizar metadata del usuario en Supabase Auth
-      await supabase.auth.updateUser({
+      const { error: authErr } = await supabase.auth.updateUser({
         data: {
           nombre: formData.nombre,
           apellido: formData.apellido,
           nombre_comercio: formData.nombre_comercio
         }
-      }).catch(() => {});
+      });
+      if (authErr) console.warn('Error al actualizar metadata de auth:', authErr);
 
       // 4. Refrescar el estado de tenantInfo en la aplicación
       if (refetchTenantInfo) {
