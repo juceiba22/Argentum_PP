@@ -498,6 +498,11 @@ export default function OnboardingWizard({ onBackToLogin }) {
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '6px', maxWidth: '480px', margin: '6px auto 0 auto' }}>
                 Te mandamos un email de confirmación a <strong>{formData.email}</strong>. Hacé clic en el enlace (revisá también spam) para activar tu cuenta. Una vez que confirmes e inicies sesión por primera vez, vamos a crear automáticamente tu comercio <strong>{formData.nombre_comercio}</strong> (Rubro: <strong>{formData.rubro}</strong>) con 15 productos iniciales cargados.
               </p>
+              <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'rgba(210, 142, 61, 0.1)', borderRadius: '8px', border: '1px solid rgba(210, 142, 61, 0.3)' }}>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  <strong>¿No te llega el email?</strong> Si intentaste registrarte con Google anteriormente, tu email ya está verificado en el sistema y no recibirás este correo. Volvé a la pantalla principal e intentá hacer clic en <strong>"Continuar con Google"</strong>.
+                </p>
+              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'center' }}>
