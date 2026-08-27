@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { PackageSearch, Plus, Trash2, Edit2, Check, X, AlertCircle, TrendingUp } from 'lucide-react';
+import { PackageSearch, Plus, Trash2, Edit2, Check, X, AlertCircle, TrendingUp, UploadCloud } from 'lucide-react';
 import { getInventario, addMercaderia, updateMercaderia, deleteMercaderia, uploadImage } from '../services/inventarioApi';
 import { useAuth } from '../context/AuthContext';
+import ImportadorInventario from '../components/ImportadorInventario';
 
 const UNIDADES_MEDIDA = ['kg', 'gramos', 'unidades', 'paquetes', 'litros'];
 
@@ -9,6 +10,7 @@ export default function Inventario() {
   const { tenantId } = useAuth();
   const [inventario, setInventario] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [mostrarImportador, setMostrarImportador] = useState(false);
   
   // Estados para nuevo insumo
   const [nuevoNombre, setNuevoNombre] = useState('');
@@ -140,19 +142,41 @@ export default function Inventario() {
 
   return (
     <div className="animate-fade-in">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Control de Inventario</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Gestión de mercadería, stock y costos</p>
         </div>
-        <div className="glass-panel" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid var(--success)' }}>
-          <TrendingUp color="var(--success)" size={24} />
-          <div>
-            <p style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600 }}>Valor Inmovilizado</p>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)' }}>${calcularValorTotal().toLocaleString()}</h2>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => setMostrarImportador(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', height: '100%' }}
+          >
+            <UploadCloud size={20} />
+            Importar Excel/CSV
+          </button>
+          <div className="glass-panel" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid var(--success)' }}>
+            <TrendingUp color="var(--success)" size={24} />
+            <div>
+              <p style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600 }}>Valor Inmovilizado</p>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)' }}>${calcularValorTotal().toLocaleString()}</h2>
+            </div>
           </div>
         </div>
       </header>
+
+      {mostrarImportador && (
+        <ImportadorInventario 
+          tenantId={tenantId} 
+          onClose={() => setMostrarImportador(false)} 
+          onImportSuccess={(count) => {
+            alert(`¡Se importaron ${count} productos con éxito!`);
+            setMostrarImportador(false);
+            cargarInventario();
+          }} 
+        />
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '32px' }}>
         
