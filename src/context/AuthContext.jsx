@@ -81,18 +81,24 @@ export const AuthProvider = ({ children }) => {
       // 1. Intentar obtener asignación existente en tenant_users.
       // Esta es la ÚNICA fuente de verdad sobre a qué tenant pertenece un
       // usuario ya vinculado anteriormente.
-      const { data } = await supabase
+      const { data, error: tenantUserErr } = await supabase
         .from('tenant_users')
         .select('tenant_id, role')
         .eq('user_id', sessionUser.id)
-        .maybeSingle();
+        .order('created_at', { ascending: true })
+        .limit(1);
 
-      if (data && data.tenant_id) {
-        setTenantId(data.tenant_id);
-        setRole(data.role || defaultRole);
-        try { localStorage.setItem('argentum_current_tenant_id', data.tenant_id); } catch (e) {}
+      if (tenantUserErr) {
+        console.warn('Error al buscar tenant_users:', tenantUserErr);
+      }
+
+      if (data && data.length > 0 && data[0].tenant_id) {
+        const tenantRow = data[0];
+        setTenantId(tenantRow.tenant_id);
+        setRole(tenantRow.role || defaultRole);
+        try { localStorage.setItem('argentum_current_tenant_id', tenantRow.tenant_id); } catch (e) {}
         resolvedUserIdRef.current = sessionUser.id;
-        await checkTrialAndLicense(sessionUser, data.tenant_id);
+        await checkTrialAndLicense(sessionUser, tenantRow.tenant_id);
         return;
       }
 
