@@ -1,8 +1,36 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Mail, AlertCircle, UserPlus, LogIn } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import OnboardingWizard from '../components/OnboardingWizard';
+
+// Cuando Supabase no puede completar el login con Google (redirect URL no
+// autorizada en el proveedor, cuenta ya existente sin auto-linking habilitado,
+// usuario cancela el consentimiento, etc.) no lanza una excepción en
+// signInWithOAuth: redirige de vuelta a la app con error/error_description en
+// el hash o en la query string de la URL. Sin leer esto, el usuario cae de
+// nuevo en la pantalla de login sin ningún mensaje -- lo único que percibe es
+// "me autentiqué con Google y no pude entrar", sin pista de qué pasó.
+function leerErrorOAuthDeUrl() {
+  const hash = window.location.hash?.startsWith('#') ? window.location.hash.slice(1) : '';
+  const search = window.location.search?.startsWith('?') ? window.location.search.slice(1) : '';
+  const params = new URLSearchParams(hash || search);
+  const errorDescription = params.get('error_description');
+  const errorCode = params.get('error_code') || params.get('error');
+
+  if (!errorDescription && !errorCode) return null;
+
+  // Limpiamos la URL para no reprocesar el mismo error en cada render/recarga.
+  window.history.replaceState(null, '', window.location.pathname);
+
+  const descripcionLegible = (errorDescription || '').replace(/\+/g, ' ');
+
+  if (errorCode === 'identity_already_registered' || /already registered|already exists/i.test(descripcionLegible)) {
+    return 'Ese email ya tiene una cuenta creada con contraseña en Argentum. Iniciá sesión con tu email y contraseña, o contactá a soporte para vincular tu cuenta de Google.';
+  }
+
+  return descripcionLegible || 'No se pudo completar el inicio de sesión con Google. Intentá nuevamente.';
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,6 +39,11 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [errorAuth, setErrorAuth] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const oauthError = leerErrorOAuthDeUrl();
+    if (oauthError) setErrorAuth(oauthError);
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();

@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 
-const RUBROS_CATALOGO = [
+export const RUBROS_CATALOGO = [
   { value: 'Carnicería', label: '🥩 Carnicería' },
   { value: 'Petshop', label: '🐶 Petshop' },
   { value: 'Minimercado', label: '🛒 Minimercado' },

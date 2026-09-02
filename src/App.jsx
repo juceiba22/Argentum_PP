@@ -25,10 +25,11 @@ import './index.css';
 
 
 import PaywallScreen from './components/PaywallScreen';
+import RubroGate from './components/RubroGate';
 
 // Componente para proteger y redirigir rutas
 const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, role, loading, hasValidAccess } = useAuth();
+  const { user, role, loading, hasValidAccess, tenantId, tenantInfo } = useAuth();
 
   if (loading) {
     return (
@@ -45,6 +46,14 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   // Validación Centralizada: Si el trial de 15 días expiró y no tiene licencia activa, desplegar Paywall
   if (hasValidAccess === false) {
     return <PaywallScreen />;
+  }
+
+  // Un alta por "Continuar con Google" nunca pasa por OnboardingWizard, así
+  // que nadie le pidió el rubro de su comercio: tenants.rubro queda en null
+  // y el catálogo inicial de productos nunca se siembra (ver AuthContext,
+  // paso 3.6). Bloqueamos el resto de la app hasta que lo elija.
+  if (tenantId && tenantInfo && !tenantInfo.rubro) {
+    return <RubroGate />;
   }
 
   // Fallback seguro de rol si el rol aún es nulo o se está resolviendo

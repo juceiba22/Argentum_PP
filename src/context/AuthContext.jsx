@@ -42,6 +42,23 @@ export const AuthProvider = ({ children }) => {
   // datos en las páginas (Market, GestionPromociones, etc.).
   const resolvedUserIdRef = useRef(null);
 
+  // BUG (productos que desaparecen en el próximo login): initSession() llama
+  // a fetchTenantAndRole() directamente, y el listener de onAuthStateChange
+  // (evento SIGNED_IN, que Supabase dispara al detectar el token en la URL
+  // tras confirmar el email o volver del redirect de Google) puede disparar
+  // OTRA llamada a fetchTenantAndRole() para el MISMO usuario mientras la
+  // primera todavía está en vuelo (resolvedUserIdRef recién se setea DESPUÉS
+  // de terminar, así que no alcanza a frenar la segunda). Para un usuario
+  // nuevo (sin fila todavía en tenant_users) ambas llamadas ven "no tiene
+  // tenant" al mismo tiempo y cada una crea+siembra su propio tenant nuevo:
+  // quedan dos tenants para el mismo usuario, y en el próximo login siempre
+  // gana el más viejo (tenant_users ordena por created_at) aunque el usuario
+  // haya estado cargando productos en el otro durante toda la sesión -- ahí
+  // "desaparecen". Este ref deduplica: si ya hay una resolución en curso
+  // para este mismo user_id, todos los llamadores esperan la MISMA promesa
+  // en vez de arrancar una segunda.
+  const fetchInFlightRef = useRef(null); // { userId, promise } | null
+
   // Función de purga dura para limpiar tokens o estados corruptos en localStorage sin bloquear la UI
   const hardClearSession = () => {
     setUser(null);
@@ -103,110 +120,82 @@ export const AuthProvider = ({ children }) => {
       }
 
       let assignedTenantId = null;
-
-      // 2. Solo el Administrador Principal (whitelist exacta por email, NO
-      // por substring ni por el role que haya en user_metadata) recupera el
-      // tenant histórico original.
-      if (emailLower === ADMIN_PRINCIPAL_EMAIL) {
-        try {
-          const { data: primaryTenants } = await supabase
-            .from('tenants')
-            .select('id')
-            .order('created_at', { ascending: true })
-            .limit(1);
-
-          if (primaryTenants && primaryTenants.length > 0) {
-            assignedTenantId = primaryTenants[0].id;
-          }
-        } catch (errPrimary) {
-          console.warn('Error recuperando tenant histórico del admin:', errPrimary);
-        }
-      }
-
-      // 3. Cualquier otro usuario sin tenant asignado (todos, salvo el admin
-      // principal) SIEMPRE recibe un tenant nuevo, aislado y único. Si viene
-      // de OnboardingWizard (confirmó su email y este es su primer login),
-      // user_metadata trae todos los datos que cargó en el wizard (rubro,
-      // CUIT, domicilio, etc.) -- si no vienen (ej: usuario creado por otra
-      // vía), se usan valores mínimos por defecto.
       let isNewTenant = false;
       let rubroParaSeed = null;
 
-      if (!assignedTenantId) {
-        const newTenantId = crypto.randomUUID();
-        const meta = sessionUser.user_metadata || {};
-        const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'comercio';
-        const nombreNuevoComercio = meta.nombre_comercio || `Comercio (${userSlug})`;
-        const trialEndsAtDate = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
-        const userCuit = meta.cuit || '00-00000000-0';
-        rubroParaSeed = meta.rubro || null;
+      // 2/3/3.5. Alta de tenant + vínculo en tenant_users, atómicos en el
+      // servidor (función SECURITY DEFINER "provision_tenant_for_current_user",
+      // ver migración 20260901000000_secure_tenant_provisioning.sql).
+      //
+      // ANTES esto eran 3 pasos separados hechos desde el cliente: SELECT
+      // (¿es el admin?) -> INSERT en tenants (con un tenant_id generado acá,
+      // client-side) -> INSERT en tenant_users. Dos problemas serios con eso:
+      //
+      //  1. Cualquier usuario autenticado podía, llamando directo al REST
+      //     API (sin pasar por esta UI), insertar en tenant_users un
+      //     {user_id: <el suyo>, tenant_id: <de OTRO comercio, adivinado o
+      //     filtrado>} -- la policy de INSERT solo validaba el user_id,
+      //     nunca el tenant_id. Eso le daba lectura/escritura completa sobre
+      //     los datos de ese comercio ajeno. La función server-side ya no
+      //     acepta un tenant_id arbitrario del cliente: SIEMPRE genera uno
+      //     nuevo o resuelve el propio, nunca uno que el cliente le pase.
+      //
+      //  2. Dos llamadas concurrentes a este método para el mismo usuario
+      //     nuevo (ver fetchInFlightRef más arriba) podían pasar el chequeo
+      //     "¿tiene tenant?" al mismo tiempo y crear dos tenants duplicados.
+      //     La función usa un advisory lock por usuario dentro de la misma
+      //     transacción de Postgres, así que ninguna carrera -- ni siquiera
+      //     entre pestañas o dispositivos distintos -- puede duplicarlo.
+      const meta = sessionUser.user_metadata || {};
+      const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'comercio';
+      const nombreNuevoComercio = meta.nombre_comercio || `Comercio (${userSlug})`;
+      const userCuit = meta.cuit || '00-00000000-0';
+      rubroParaSeed = meta.rubro || null;
 
-        try {
-          // OJO: sin .select() a propósito. La policy de SELECT de tenants
-          // exige un vínculo en tenant_users que todavía no existe en este
-          // punto (se crea recién en el paso 3.5, siguiente), así que pedir
-          // la fila de vuelta con RETURNING hacía fallar el INSERT entero
-          // con "new row violates row-level security policy" aunque el
-          // INSERT en sí mismo fuera perfectamente válido. El id ya lo
-          // generamos nosotros, no hace falta que Postgres nos lo devuelva.
-          const { error: createTenantErr } = await supabase
-            .from('tenants')
-            .insert([{
-              id: newTenantId,
-              nombre_comercio: nombreNuevoComercio,
-              razon_social: meta.razon_social || nombreNuevoComercio,
-              rubro: rubroParaSeed,
-              cuit: userCuit,
-              afip_cuit_delegado: userCuit,
-              condicion_fiscal: meta.condicion_fiscal || 'Monotributista',
-              domicilio_fiscal: meta.domicilio_fiscal || null,
-              provincia: meta.provincia || null,
-              localidad: meta.localidad || null,
-              codigo_postal: meta.codigo_postal || null,
-              afip_punto_de_venta: Number(meta.afip_punto_de_venta || 1),
-              necesita_crear_pto_venta: Boolean(meta.necesita_crear_pto_venta),
-              trial_ends_at: trialEndsAtDate,
-              is_active: true,
-              onboarding_completado: Boolean(rubroParaSeed),
-              onboarding_paso_actual: rubroParaSeed ? 4 : 1
-            }]);
-
-          if (createTenantErr) {
-            console.error('Error al crear nuevo tenant en BD:', createTenantErr.message);
-          } else {
-            assignedTenantId = newTenantId;
-            isNewTenant = true;
+      try {
+        const { data: provisionData, error: provisionErr } = await supabase.rpc(
+          'provision_tenant_for_current_user',
+          {
+            p_nombre_comercio: nombreNuevoComercio,
+            p_razon_social: meta.razon_social || nombreNuevoComercio,
+            p_rubro: rubroParaSeed,
+            p_cuit: userCuit,
+            p_condicion_fiscal: meta.condicion_fiscal || 'Monotributista',
+            p_domicilio_fiscal: meta.domicilio_fiscal || null,
+            p_provincia: meta.provincia || null,
+            p_localidad: meta.localidad || null,
+            p_codigo_postal: meta.codigo_postal || null,
+            p_afip_punto_de_venta: Number(meta.afip_punto_de_venta || 1),
+            p_necesita_crear_pto_venta: Boolean(meta.necesita_crear_pto_venta),
+            p_role: defaultRole
           }
-        } catch (errCreate) {
-          console.warn('Excepción al intentar crear nuevo tenant en BD:', errCreate);
+        );
+
+        if (provisionErr) {
+          console.error('Error al aprovisionar tenant vía RPC:', provisionErr.message);
+        } else {
+          const row = Array.isArray(provisionData) ? provisionData[0] : provisionData;
+          if (row?.tenant_id) {
+            assignedTenantId = row.tenant_id;
+            isNewTenant = Boolean(row.is_new_tenant);
+          }
         }
+      } catch (errProvision) {
+        console.warn('Excepción al aprovisionar tenant vía RPC:', errProvision);
       }
 
-      // 3.5 Vincular el usuario a su tenant en tenant_users. Sin esto, el
-      // usuario nunca "recuerda" su tenant entre sesiones (cada login volvía
-      // a crear uno nuevo, huérfano) y, como tenants tiene RLS restringido a
-      // tenant_users, tampoco puede leer ni actualizar su propio tenant
-      // (incluido trial_ends_at) — quedaba bloqueado por el paywall aunque
-      // el trial fuera válido.
       if (assignedTenantId) {
-        try {
-          const { error: linkError } = await supabase
-            .from('tenant_users')
-            .insert([{
-              tenant_id: assignedTenantId,
-              user_id: sessionUser.id,
-              role: defaultRole
-            }]);
-          if (linkError) {
-            console.warn('No se pudo vincular el usuario a su tenant en tenant_users:', linkError.message);
-          }
-        } catch (errLink) {
-          console.warn('Excepción al vincular usuario a tenant_users:', errLink);
-        }
-
         // 3.6 Poblar catálogo inicial de productos por defecto. Solo para un
-        // tenant recién creado (no para el admin recuperando el historico).
-        if (isNewTenant) {
+        // tenant recién creado (no para el admin recuperando el historico) Y
+        // que ya trae un rubro elegido (viene de OnboardingWizard). Un alta
+        // por Google nunca pasa por el wizard -- user_metadata no tiene
+        // "rubro" -- así que antes esto sembraba el catálogo genérico
+        // "general / otro" y el tenant quedaba con rubro=null para siempre
+        // (nada en la app volvía a pedírselo). Ahora, si no hay rubro, se
+        // deja sin sembrar: RubroGate (ver App.jsx) obliga a elegir un rubro
+        // en el primer uso y ahí sí siembra el catálogo correcto una única
+        // vez, ya con el rubro real guardado en tenants.rubro.
+        if (isNewTenant && rubroParaSeed) {
           try {
             await seedProductosIniciales(assignedTenantId, rubroParaSeed);
           } catch (errSeed) {
@@ -227,6 +216,26 @@ export const AuthProvider = ({ children }) => {
       console.error('Excepción al resolver el tenant:', err);
       setRole(defaultRole);
     }
+  };
+
+  // Punto único de entrada a fetchTenantAndRole: si ya hay una resolución en
+  // curso para este user_id, reutiliza esa promesa en vez de lanzar una
+  // segunda ejecución concurrente (ver comentario en fetchInFlightRef).
+  const fetchTenantAndRoleOnce = (sessionUser) => {
+    if (!sessionUser) return fetchTenantAndRole(sessionUser);
+
+    if (fetchInFlightRef.current && fetchInFlightRef.current.userId === sessionUser.id) {
+      return fetchInFlightRef.current.promise;
+    }
+
+    const promise = fetchTenantAndRole(sessionUser).finally(() => {
+      if (fetchInFlightRef.current?.promise === promise) {
+        fetchInFlightRef.current = null;
+      }
+    });
+
+    fetchInFlightRef.current = { userId: sessionUser.id, promise };
+    return promise;
   };
 
   const checkTrialAndLicense = async (sessionUser, resolvedTenantId) => {
@@ -369,7 +378,7 @@ export const AuthProvider = ({ children }) => {
             setRole(defaultRole);
             setTenantId(currentUser.user_metadata?.tenant_id || null);
           }
-          await fetchTenantAndRole(currentUser);
+          await fetchTenantAndRoleOnce(currentUser);
           resolvedUserIdRef.current = currentUser.id;
         } else {
           if (isMounted) {
@@ -425,7 +434,7 @@ export const AuthProvider = ({ children }) => {
         if (isMounted) {
           setRole(defaultRole);
         }
-        await fetchTenantAndRole(currentUser);
+        await fetchTenantAndRoleOnce(currentUser);
         resolvedUserIdRef.current = currentUser.id;
       } catch (err) {
         console.error('Error en el listener de auth:', err);
