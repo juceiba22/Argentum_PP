@@ -107,12 +107,25 @@
   display: flex; align-items: center;
   padding: 120px 0 80px;
   color: #fff;
-  background:
-    linear-gradient(90deg, rgba(18, 12, 10, 0.88) 0%, rgba(18, 12, 10, 0.62) 50%, rgba(18, 12, 10, 0.35) 100%),
-    url("/landing/mostrador.jpg") center / cover no-repeat,
-    #1b1513;
+  background: #1b1513;
+  overflow: hidden;
 }
-.lp-hero-content { max-width: 1140px; }
+/* Foto de la carnicería en la mitad derecha, fundida hacia el texto. Va en
+   una capa aparte (y no estirada a todo el ancho) porque la foto es chica. */
+.lp-hero::before {
+  content: "";
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: min(66%, 1100px);
+  background: url("/landing/carniceria.jpg") center 40% / cover no-repeat;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 38%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 38%);
+}
+.lp-hero::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgba(27, 21, 19, 0.92) 0%, rgba(27, 21, 19, 0.55) 45%, rgba(27, 21, 19, 0.15) 100%);
+}
+.lp-hero-content { position: relative; z-index: 1; max-width: 1140px; }
 .lp-hero .lp-h1 { color: #fff; max-width: 13em; font-size: clamp(2.8rem, 7vw, 5.2rem); }
 .lp-hero .lp-h1 em { color: #f0a090; }
 .lp-hero .lp-lead { color: rgba(255, 255, 255, 0.86); max-width: 36em; }
@@ -240,8 +253,6 @@
 }
 .lp-whatsapp:hover { transform: scale(1.06); }
 
-.lp-credito { font-weight: 400 !important; color: var(--lp-muted) !important; font-size: 0.78rem; }
-
 /* Footer */
 .lp-footer { padding: 32px 0; border-top: 1px solid var(--lp-line); font-size: 0.88rem; color: var(--lp-muted); }
 .lp-footer-inner { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -268,12 +279,15 @@
   .lp-nav-links.open { display: flex; }
   .lp-nav-links a:not(.lp-btn) { padding: 10px 0; }
   .lp-nav-links .lp-btn { margin-top: 8px; }
-  .lp-hero {
-    padding: 104px 0 56px;
-    background:
-      linear-gradient(180deg, rgba(18, 12, 10, 0.7) 0%, rgba(18, 12, 10, 0.86) 100%),
-      url("/landing/mostrador.jpg") 60% center / cover no-repeat,
-      #1b1513;
+  .lp-hero { padding: 104px 0 56px; }
+  .lp-hero::before {
+    width: 100%;
+    background-position: 70% center;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .lp-hero::after {
+    background: linear-gradient(180deg, rgba(27, 21, 19, 0.5) 0%, rgba(27, 21, 19, 0.62) 45%, rgba(27, 21, 19, 0.85) 100%);
   }
   .lp-whatsapp { width: 54px; height: 54px; right: 16px; bottom: 16px; }
   .lp-section { padding: 64px 0; }

@@ -83,7 +83,7 @@ const PREGUNTAS = [
   },
   {
     q: '¿Qué pasa cuando terminan los 15 días de prueba?',
-    a: 'Tus datos quedan guardados. Para seguir operando activás la Licencia Pro y continuás exactamente donde estabas.'
+    a: 'Tus datos quedan guardados. Para seguir operando activás la licencia anual (pagando online o con un código) y continuás exactamente donde estabas.'
   },
   {
     q: '¿Puedo usarlo desde el celular o la tablet?',
@@ -339,7 +339,6 @@ export default function Landing() {
         <div className="lp-container lp-footer-inner">
           <span className="lp-logo lp-logo-sm">Argentum<span>.</span></span>
           <span>Software de gestión para carnicerías · Hecho en Argentina</span>
-          <a className="lp-credito" href="https://unsplash.com/photos/qgfjZUXup1M" target="_blank" rel="noopener noreferrer">Foto: Kyle Mackie / Unsplash (editada)</a>
           <Link to="/login">Ingresar</Link>
         </div>
       </footer>
