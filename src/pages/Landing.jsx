@@ -339,7 +339,7 @@ export default function Landing() {
         <div className="lp-container lp-footer-inner">
           <span className="lp-logo lp-logo-sm">Argentum<span>.</span></span>
           <span>Software de gestión para carnicerías · Hecho en Argentina</span>
-          <a className="lp-credito" href="https://unsplash.com/photos/qgfjZUXup1M" target="_blank" rel="noopener noreferrer">Foto: Kyle Mackie / Unsplash</a>
+          <a className="lp-credito" href="https://unsplash.com/photos/qgfjZUXup1M" target="_blank" rel="noopener noreferrer">Foto: Kyle Mackie / Unsplash (editada)</a>
           <Link to="/login">Ingresar</Link>
         </div>
       </footer>

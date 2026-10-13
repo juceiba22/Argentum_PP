@@ -109,7 +109,7 @@
   color: #fff;
   background:
     linear-gradient(90deg, rgba(18, 12, 10, 0.88) 0%, rgba(18, 12, 10, 0.62) 50%, rgba(18, 12, 10, 0.35) 100%),
-    url("https://images.unsplash.com/photo-1597417321971-45e034f7a993?fm=jpg&q=70&w=2400&auto=format&fit=crop") center / cover no-repeat,
+    url("/landing/mostrador.jpg") center / cover no-repeat,
     #1b1513;
 }
 .lp-hero-content { max-width: 1140px; }
@@ -272,7 +272,7 @@
     padding: 104px 0 56px;
     background:
       linear-gradient(180deg, rgba(18, 12, 10, 0.7) 0%, rgba(18, 12, 10, 0.86) 100%),
-      url("https://images.unsplash.com/photo-1597417321971-45e034f7a993?fm=jpg&q=70&w=2400&auto=format&fit=crop") 60% center / cover no-repeat,
+      url("/landing/mostrador.jpg") 60% center / cover no-repeat,
       #1b1513;
   }
   .lp-whatsapp { width: 54px; height: 54px; right: 16px; bottom: 16px; }
