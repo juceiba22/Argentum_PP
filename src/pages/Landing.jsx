@@ -27,8 +27,8 @@ const FUNCIONES = [
   },
   {
     icon: Beef,
-    titulo: 'Stock de cortes en kg',
-    texto: 'Sabé cuántos kilos de vacío, bondiola o chorizo te quedan y cuánta plata tenés inmovilizada en la cámara.'
+    titulo: 'Desposte de media res',
+    texto: 'Cargás los kilos de la media res y el sistema calcula cuánto sale de cada corte (vacío, asado, nalga, bife) y lo suma al stock.'
   },
   {
     icon: Truck,
@@ -169,27 +169,38 @@ export default function Landing() {
 
       <main>
         <section className="lp-hero">
-          <div className="lp-container lp-hero-grid">
+          <div className="lp-container lp-hero-content">
+            <p className="lp-eyebrow lp-eyebrow-light">Software de gestión para carnicerías</p>
+            <h1 className="lp-h1">
+              Tu carnicería, <em>al kilo</em> y en orden.
+            </h1>
+            <p className="lp-lead">
+              Vendé por peso, despostá la media res, facturá con ARCA, cobrá con Mercado Pago Point
+              y sabé cuánto te cuesta de verdad cada kilo que sale del mostrador.
+            </p>
+            <div className="lp-cta-row">
+              <Link to="/login?registro=1" className="lp-btn lp-btn-primary">
+                Probar 15 días gratis <ArrowRight size={18} />
+              </Link>
+              <Link to="/login" className="lp-btn lp-btn-glass">Ya tengo cuenta</Link>
+            </div>
+            <ul className="lp-checks">
+              <li><Check size={16} /> Sin tarjeta de crédito</li>
+              <li><Check size={16} /> {CORTES_INICIALES} cortes precargados</li>
+              <li><Check size={16} /> Listo en 5 minutos</li>
+            </ul>
+          </div>
+        </section>
+
+        <section className="lp-section lp-section-demo">
+          <div className="lp-container lp-split">
             <div>
-              <p className="lp-eyebrow">Software de gestión para carnicerías</p>
-              <h1 className="lp-h1">
-                Tu carnicería, <em>al kilo</em> y en orden.
-              </h1>
-              <p className="lp-lead">
-                Vendé por peso, facturá con ARCA, cobrá con Mercado Pago Point y sabé
-                cuánto te cuesta de verdad cada kilo que sale del mostrador.
+              <p className="lp-eyebrow">Así se ve una venta</p>
+              <h2 className="lp-h2">Del mostrador a la factura en segundos.</h2>
+              <p className="lp-sub">
+                Elegís el corte, cargás el peso de la balanza y cobrás: el ticket, el cobro con Point y la
+                factura electrónica salen de la misma pantalla, y el stock se descuenta solo.
               </p>
-              <div className="lp-cta-row">
-                <Link to="/login?registro=1" className="lp-btn lp-btn-primary">
-                  Probar 15 días gratis <ArrowRight size={18} />
-                </Link>
-                <Link to="/login" className="lp-btn lp-btn-ghost">Ya tengo cuenta</Link>
-              </div>
-              <ul className="lp-checks">
-                <li><Check size={16} /> Sin tarjeta de crédito</li>
-                <li><Check size={16} /> {CORTES_INICIALES} cortes precargados</li>
-                <li><Check size={16} /> Listo en 5 minutos</li>
-              </ul>
             </div>
             <TicketDemo />
           </div>
@@ -220,8 +231,12 @@ export default function Landing() {
         <section id="costos" className="lp-section lp-section-dark">
           <div className="lp-container lp-split">
             <div>
-              <p className="lp-eyebrow lp-eyebrow-light">Costo real por kilo</p>
+              <p className="lp-eyebrow lp-eyebrow-light">Desposte y costo real por kilo</p>
               <h2 className="lp-h2">¿Ganás plata con el vacío, o solo lo vendés?</h2>
+              <p className="lp-sub lp-sub-light">
+                Cargás la media res que te mandó el frigorífico y Argentum calcula cuántos kilos vas a
+                sacar de cada corte, con su desperdicio, y los suma al stock.
+              </p>
               <p className="lp-sub lp-sub-light">
                 El precio del frigorífico es solo una parte. Argentum suma lo que te cuesta tener
                 la persiana levantada (alquiler, luz, sueldos, la cámara que se amortiza) y lo reparte
@@ -308,10 +323,23 @@ export default function Landing() {
         </section>
       </main>
 
+      <a
+        className="lp-whatsapp"
+        href="https://wa.me/5491178270751?text=Hola%2C%20quiero%20saber%20m%C3%A1s%20sobre%20Argentum%20para%20mi%20carnicer%C3%ADa"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Escribinos por WhatsApp"
+      >
+        <svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">
+          <path fill="currentColor" d="M16.04 3C9.4 3 4 8.38 4 15c0 2.12.56 4.19 1.62 6.02L4 29l8.2-1.58A12.1 12.1 0 0 0 16.04 27C22.66 27 28 21.62 28 15S22.66 3 16.04 3Zm0 21.8c-1.8 0-3.56-.48-5.1-1.4l-.37-.22-4.87.94.97-4.73-.24-.38A9.7 9.7 0 0 1 6.3 15c0-5.38 4.37-9.76 9.74-9.76 5.37 0 9.74 4.38 9.74 9.76s-4.37 9.8-9.74 9.8Zm5.35-7.3c-.29-.15-1.73-.85-2-.95-.27-.1-.46-.15-.66.15-.19.29-.76.95-.93 1.14-.17.2-.34.22-.63.08-.29-.15-1.23-.45-2.35-1.45-.87-.77-1.45-1.73-1.62-2.02-.17-.29-.02-.45.13-.6.13-.13.29-.34.44-.51.15-.17.2-.29.29-.49.1-.2.05-.37-.02-.51-.08-.15-.66-1.58-.9-2.17-.24-.57-.48-.49-.66-.5h-.56c-.2 0-.51.07-.78.37-.27.29-1.02 1-1.02 2.43 0 1.43 1.05 2.82 1.2 3.01.14.2 2.06 3.14 4.98 4.4.7.3 1.24.48 1.67.61.7.22 1.33.19 1.83.12.56-.08 1.73-.7 1.97-1.39.24-.68.24-1.27.17-1.39-.07-.12-.27-.2-.56-.34Z"/>
+        </svg>
+      </a>
+
       <footer className="lp-footer">
         <div className="lp-container lp-footer-inner">
           <span className="lp-logo lp-logo-sm">Argentum<span>.</span></span>
           <span>Software de gestión para carnicerías · Hecho en Argentina</span>
+          <a className="lp-credito" href="https://unsplash.com/photos/qgfjZUXup1M" target="_blank" rel="noopener noreferrer">Foto: Kyle Mackie / Unsplash</a>
           <Link to="/login">Ingresar</Link>
         </div>
       </footer>
