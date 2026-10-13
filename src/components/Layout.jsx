@@ -40,7 +40,8 @@ export default function Layout() {
       icon: <Store size={20} />, 
       allowed: ['admin', 'ventas'],
       subItems: [
-        { path: '/mi-comercio', label: 'Mi Carnicería', icon: <Building2 size={20} />, allowed: ['admin', 'ventas'] },
+        { path: '/mi-comercio', label: 'Mi Carnicería', icon: <Building2 size={20} />, allowed: ['admin'] },
+        { path: '/equipo', label: 'Mi Equipo', icon: <Users size={20} />, allowed: ['admin'] },
         { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
         { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
         { path: '/market', label: 'Caja Mostrador (POS)', icon: <Store size={20} />, allowed: ['admin', 'ventas'] },
@@ -140,7 +141,7 @@ export default function Layout() {
 
           {tenantInfo && (
             <Link
-              to="/mi-comercio"
+              to={currentRole === 'ventas' ? '/ventas-home' : '/mi-comercio'}
               onClick={() => setMobileMenuOpen(false)}
               style={{
                 display: 'block',

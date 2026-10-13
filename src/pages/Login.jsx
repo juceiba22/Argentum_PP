@@ -4,6 +4,8 @@ import { Lock, Mail, AlertCircle, UserPlus, LogIn, ArrowLeft } from 'lucide-reac
 import { supabase } from '../services/supabaseClient';
 import OnboardingWizard from '../components/OnboardingWizard';
 import { marcarIntencionCompra } from '../utils/intencionCompra';
+import RegistroVendedor from '../components/RegistroVendedor';
+import { verInvitacion } from '../services/equipoApi';
 
 // Cuando Supabase no puede completar el login con Google (redirect URL no
 // autorizada en el proveedor, cuenta ya existente sin auto-linking habilitado,
@@ -39,6 +41,9 @@ export default function Login() {
   // La landing linkea "/login?registro=1" para abrir directo el alta.
   const [modo, setModo] = useState(searchParams.get('registro') ? 'registro' : 'login'); // 'login' | 'registro'
   const quiereComprar = searchParams.get('comprar') === '1';
+  // Link de invitación de un vendedor: /login?invitacion=<id>
+  const invitacionId = searchParams.get('invitacion');
+  const [invitacion, setInvitacion] = useState(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorAuth, setErrorAuth] = useState('');
@@ -47,6 +52,21 @@ export default function Login() {
   useEffect(() => {
     if (quiereComprar) marcarIntencionCompra();
   }, [quiereComprar]);
+
+  useEffect(() => {
+    if (!invitacionId) return;
+    let vigente = true;
+    verInvitacion(invitacionId).then(inv => {
+      if (!vigente) return;
+      if (inv) {
+        setInvitacion(inv);
+        setEmail(inv.email);
+      } else {
+        setErrorAuth('La invitación ya no está vigente. Pedile al dueño de la carnicería que te invite de nuevo.');
+      }
+    });
+    return () => { vigente = false; };
+  }, [invitacionId]);
 
   useEffect(() => {
     const oauthError = leerErrorOAuthDeUrl();
@@ -74,8 +94,6 @@ export default function Login() {
 
         if (normalizedEmail === 'admin@argentum.com' || normalizedEmail === 'juceiba22@gmail.com') {
           newRole = 'admin';
-        } else if (normalizedEmail.includes('ventas')) {
-          newRole = 'ventas';
         } else if (!newRole) {
           newRole = 'admin';
         }
@@ -130,7 +148,9 @@ export default function Login() {
       padding: '20px',
       background: 'radial-gradient(circle at top right, rgba(142, 27, 27, 0.05), transparent 50%), radial-gradient(circle at bottom left, rgba(142, 27, 27, 0.05), transparent 50%)'
     }}>
-      {modo === 'registro' ? (
+      {modo === 'registro' && invitacion ? (
+        <RegistroVendedor invitacion={invitacion} onBackToLogin={() => setModo('login')} />
+      ) : modo === 'registro' ? (
         <OnboardingWizard onBackToLogin={() => setModo('login')} quiereComprar={quiereComprar} />
       ) : (
         <div className="glass-panel animate-fade-in" style={{ padding: '40px', width: '100%', maxWidth: '440px' }}>
@@ -143,6 +163,13 @@ export default function Login() {
             </h1>
             <p style={{ color: 'var(--text-secondary)' }}>Sistema de gestión para carnicerías</p>
           </div>
+
+          {invitacion && (
+            <div style={{ marginBottom: '20px', padding: '14px 16px', borderRadius: '12px', background: 'var(--accent-soft)', border: '1px solid rgba(142, 27, 27, 0.25)', fontSize: '0.92rem' }}>
+              <strong>{invitacion.nombre_comercio}</strong> te invitó a sumarte como vendedor.
+              Entrá con <strong>{invitacion.email}</strong>: con Google, o tocá "Crear Cuenta" si todavía no tenés contraseña.
+            </div>
+          )}
 
           {/* Selector de Modo (Iniciar Sesión vs Crear Cuenta) */}
           <div style={{ display: 'flex', borderBottom: '1px solid rgba(0,0,0,0.08)', marginBottom: '24px' }}>

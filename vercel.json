@@ -9,6 +9,10 @@
       "destination": "/api/licencias/index.js"
     },
     {
+      "source": "/api/equipo/:path*",
+      "destination": "/api/equipo/index.js"
+    },
+    {
       "source": "/api/arca/:path*",
       "destination": "/api/arca/index.ts"
     },

@@ -7,6 +7,7 @@ import Inventario from './pages/Inventario';
 import DesposteMediaRes from './pages/DesposteMediaRes';
 import MiLicencia from './pages/MiLicencia';
 import AdminLicencias from './pages/AdminLicencias';
+import MiEquipo from './pages/MiEquipo';
 import Market from './pages/Market';
 import GestionPromociones from './pages/GestionPromociones';
 import PromocionesPublicas from './pages/PromocionesPublicas';
@@ -141,7 +142,8 @@ function App() {
             <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
               <Route path="/clientes" element={<ProtectedRoute allowedRoles={['admin']}><Clientes /></ProtectedRoute>} />
               <Route path="/facturacion" element={<ProtectedRoute allowedRoles={['admin']}><Facturacion /></ProtectedRoute>} />
-              <Route path="/mi-comercio" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><PerfilComercio /></ProtectedRoute>} />
+              <Route path="/mi-comercio" element={<ProtectedRoute allowedRoles={['admin']}><PerfilComercio /></ProtectedRoute>} />
+              <Route path="/equipo" element={<ProtectedRoute allowedRoles={['admin']}><MiEquipo /></ProtectedRoute>} />
               <Route path="/configuracion-fiscal" element={<ProtectedRoute allowedRoles={['admin']}><ConfiguracionFiscal /></ProtectedRoute>} />
               <Route path="/configuracion-mercadopago" element={<ProtectedRoute allowedRoles={['admin']}><ConfiguracionMercadoPago /></ProtectedRoute>} />
               <Route path="/importaciones" element={<ProtectedRoute allowedRoles={['admin']}><Importaciones /></ProtectedRoute>} />
