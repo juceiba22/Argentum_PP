@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare, ShieldCheck, CreditCard, Building2, Beef } from 'lucide-react';
+import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare, ShieldCheck, CreditCard, Building2, Beef, BadgeCheck, KeyRound } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { esAdminPlataforma } from '../services/licenciasApi';
 
 export default function Layout() {
   const location = useLocation();
@@ -18,7 +19,15 @@ export default function Layout() {
     }));
   };
 
-  const { role, isTrialActive, isLicenseActive, daysRemainingTrial, tenantInfo } = useAuth();
+  const { user, role, isTrialActive, isLicenseActive, daysRemainingTrial, tenantInfo } = useAuth();
+
+  // Solo el equipo de Argentum ve el panel de licencias (la base lo valida igual).
+  const [adminPlataforma, setAdminPlataforma] = useState(false);
+  useEffect(() => {
+    let vigente = true;
+    if (user) esAdminPlataforma().then(ok => { if (vigente) setAdminPlataforma(ok); });
+    return () => { vigente = false; };
+  }, [user]);
 
   const navItems = [
     // Suelta fuera de grupos
@@ -31,6 +40,7 @@ export default function Layout() {
       allowed: ['admin', 'ventas'],
       subItems: [
         { path: '/mi-comercio', label: 'Mi Carnicería', icon: <Building2 size={20} />, allowed: ['admin', 'ventas'] },
+        { path: '/licencia', label: 'Mi Licencia', icon: <BadgeCheck size={20} />, allowed: ['admin'] },
         { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
         { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
         { path: '/market', label: 'Caja Mostrador (POS)', icon: <Store size={20} />, allowed: ['admin', 'ventas'] },
@@ -75,7 +85,10 @@ export default function Layout() {
         { path: '/erp/dashboard-proveedores', label: 'Estadísticas de la Carnicería', icon: <BarChart2 size={20} />, allowed: ['admin'] },
         { path: '/erp/calculadora-costos', label: 'Costo Real por Kg', icon: <BarChart2 size={20} />, allowed: ['admin'] }
       ]
-    }
+    },
+    ...(adminPlataforma ? [
+      { path: '/admin/licencias', label: 'Licencias (Admin)', icon: <KeyRound size={20} />, allowed: ['admin', 'ventas'] }
+    ] : [])
   ];
 
   const currentRole = role || 'admin';
@@ -147,7 +160,8 @@ export default function Layout() {
           )}
 
           {isTrialActive && !isLicenseActive && (
-            <div style={{
+            <Link to="/licencia" onClick={() => setMobileMenuOpen(false)} title="Activar licencia" style={{
+              textDecoration: 'none',
               marginTop: '10px',
               padding: '6px 12px',
               borderRadius: '6px',
@@ -163,7 +177,7 @@ export default function Layout() {
               gap: '6px'
             }}>
               <span>⚡ Prueba: {daysRemainingTrial} días restantes</span>
-            </div>
+            </Link>
           )}
         </div>
 

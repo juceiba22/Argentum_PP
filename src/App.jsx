@@ -5,6 +5,8 @@ import Landing from './pages/Landing';
 import Clientes from './pages/Clientes';
 import Inventario from './pages/Inventario';
 import DesposteMediaRes from './pages/DesposteMediaRes';
+import MiLicencia from './pages/MiLicencia';
+import AdminLicencias from './pages/AdminLicencias';
 import Market from './pages/Market';
 import GestionPromociones from './pages/GestionPromociones';
 import PromocionesPublicas from './pages/PromocionesPublicas';
@@ -138,6 +140,8 @@ function App() {
               <Route path="/configuracion-mercadopago" element={<ProtectedRoute allowedRoles={['admin']}><ConfiguracionMercadoPago /></ProtectedRoute>} />
               <Route path="/importaciones" element={<ProtectedRoute allowedRoles={['admin']}><Importaciones /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
+              <Route path="/licencia" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><MiLicencia /></ProtectedRoute>} />
+              <Route path="/admin/licencias" element={<ProtectedRoute><AdminLicencias /></ProtectedRoute>} />
               <Route path="/desposte" element={<ProtectedRoute allowedRoles={['admin']}><DesposteMediaRes /></ProtectedRoute>} />
               <Route path="/market" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><Market /></ProtectedRoute>} />
               <Route path="/ventas-home" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><VentasHome /></ProtectedRoute>} />

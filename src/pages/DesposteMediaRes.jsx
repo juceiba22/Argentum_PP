@@ -27,7 +27,7 @@ export default function DesposteMediaRes() {
   const [kgMediaRes, setKgMediaRes] = useState('');
   const [precioKgMediaRes, setPrecioKgMediaRes] = useState('');
   const [rendimientoPct, setRendimientoPct] = useState((RENDIMIENTO_MEDIA_RES * 100).toFixed(2));
-  const [subgruposActivos, setSubgruposActivos] = useState(['bife-ancho']);
+  const [subgruposActivos, setSubgruposActivos] = useState(SUBGRUPOS_MEDIA_RES.filter(subgrupoConfigurado).map(sg => sg.id));
   const [excluidos, setExcluidos] = useState([]);
   const [preciosNuevos, setPreciosNuevos] = useState({});
 

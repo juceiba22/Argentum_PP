@@ -307,6 +307,26 @@ export const AuthProvider = ({ children }) => {
         setTenantInfo(null);
       }
 
+      // 2.5 Licencia anual por código de 16 dígitos (tabla licencias, por
+      // carnicería). Se suma a la licencia por email de licencias_activas.
+      let licenciaValidaHasta = null;
+      if (resolvedTenantId) {
+        const { data: licCodigo } = await supabase
+          .from('licencias')
+          .select('valida_hasta')
+          .eq('tenant_id', resolvedTenantId)
+          .eq('estado', 'activada')
+          .gte('valida_hasta', now.toISOString())
+          .order('valida_hasta', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (licCodigo?.valida_hasta) {
+          licenciaValidaHasta = new Date(licCodigo.valida_hasta);
+          isLicenseActive = true;
+        }
+      }
+
       // 3. Calcular si el Trial de 15 días sigue vigente
       let isTrialActive = false;
       let daysRemainingTrial = 0;
@@ -327,7 +347,8 @@ export const AuthProvider = ({ children }) => {
         daysRemainingTrial,
         hasValidAccess,
         trialEndsAt,
-        licenseState
+        licenseState,
+        licenciaValidaHasta
       });
     } catch (errLic) {
       console.warn('Error verificando prueba/licencia:', errLic);

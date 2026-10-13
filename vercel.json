@@ -5,6 +5,10 @@
       "destination": "/api/mercadopago/index.js"
     },
     {
+      "source": "/api/licencias/:path*",
+      "destination": "/api/licencias/index.js"
+    },
+    {
       "source": "/api/arca/:path*",
       "destination": "/api/arca/index.ts"
     },
