@@ -173,13 +173,13 @@ export default function Gastos() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>Costos Fijos (Mes)</p>
           <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--warning)' }}>${totalCostosFijos.toLocaleString()}</h3>
         </div>
-        <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #8b5cf6' }}>
+        <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid var(--chart-5)' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>Depreciación (Mes)</p>
-          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#8b5cf6' }}>${totalDepreciacion.toLocaleString()}</h3>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--chart-5)' }}>${totalDepreciacion.toLocaleString()}</h3>
         </div>
-        <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid #3b82f6' }}>
+        <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid var(--chart-4)' }}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: '8px' }}>Salarios/Ganancias (Mes)</p>
-          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#3b82f6' }}>${totalSalarios.toLocaleString()}</h3>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--chart-4)' }}>${totalSalarios.toLocaleString()}</h3>
         </div>
         <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid var(--danger)', background: 'rgba(239, 68, 68, 0.05)' }}>
           <p style={{ color: 'var(--danger)', fontSize: '0.85rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px' }}>Total Gastos (Mes)</p>
@@ -190,7 +190,7 @@ export default function Gastos() {
       {mensaje && (
         <div style={{
           padding: '16px', marginBottom: '24px', borderRadius: '8px',
-          backgroundColor: mensaje.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+          backgroundColor: mensaje.type === 'success' ? 'rgba(47, 122, 74, 0.1)' : 'rgba(239, 68, 68, 0.1)',
           color: mensaje.type === 'success' ? 'var(--success)' : 'var(--danger)',
           border: `1px solid ${mensaje.type === 'success' ? 'var(--success)' : 'var(--danger)'}`
         }}>

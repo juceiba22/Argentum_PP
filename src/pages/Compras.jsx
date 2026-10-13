@@ -112,7 +112,7 @@ export default function Compras() {
       {mensaje && (
         <div style={{
           padding: '16px', marginBottom: '24px', borderRadius: '8px',
-          backgroundColor: mensaje.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+          backgroundColor: mensaje.type === 'success' ? 'rgba(47, 122, 74, 0.1)' : 'rgba(239, 68, 68, 0.1)',
           color: mensaje.type === 'success' ? 'var(--success)' : 'var(--danger)',
           border: `1px solid ${mensaje.type === 'success' ? 'var(--success)' : 'var(--danger)'}`
         }}>

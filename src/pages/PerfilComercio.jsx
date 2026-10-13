@@ -13,7 +13,7 @@ const Badge = ({ ok, textOk, textNo }) => (
   <div style={{
     display: 'inline-flex', alignItems: 'center', gap: '6px',
     padding: '6px 14px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: 700,
-    backgroundColor: ok ? 'rgba(74, 124, 89, 0.12)' : 'rgba(210, 142, 61, 0.12)',
+    backgroundColor: ok ? 'rgba(47, 122, 74, 0.12)' : 'rgba(210, 142, 61, 0.12)',
     border: `1px solid ${ok ? 'var(--success)' : 'var(--warning)'}`,
     color: ok ? 'var(--success)' : 'var(--warning)'
   }}>
@@ -257,7 +257,7 @@ export default function PerfilComercio() {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          backgroundColor: feedback.type === 'success' ? 'rgba(74, 124, 89, 0.12)' : 'rgba(183, 65, 52, 0.12)',
+          backgroundColor: feedback.type === 'success' ? 'rgba(47, 122, 74, 0.12)' : 'rgba(183, 65, 52, 0.12)',
           border: `1px solid ${feedback.type === 'success' ? 'var(--success)' : 'var(--danger)'}`,
           color: feedback.type === 'success' ? 'var(--success)' : 'var(--danger)',
           fontWeight: 600
@@ -344,7 +344,7 @@ export default function PerfilComercio() {
                 <label key={cond} style={{
                   display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '8px',
                   border: `1px solid ${formData.condicion_fiscal === cond ? 'var(--accent-primary)' : 'rgba(0,0,0,0.1)'}`,
-                  backgroundColor: formData.condicion_fiscal === cond ? 'rgba(197, 160, 89, 0.08)' : 'var(--card-bg)',
+                  backgroundColor: formData.condicion_fiscal === cond ? 'rgba(142, 27, 27, 0.08)' : 'var(--card-bg)',
                   cursor: 'pointer', flex: 1, minWidth: '160px'
                 }}>
                   <input 

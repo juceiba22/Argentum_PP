@@ -156,7 +156,7 @@ export default function Inventario() {
             <UploadCloud size={20} />
             Importar Excel/CSV
           </button>
-          <div className="glass-panel" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid var(--success)' }}>
+          <div className="glass-panel" style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '16px', background: 'rgba(47, 122, 74, 0.05)', border: '1px solid var(--success)' }}>
             <TrendingUp color="var(--success)" size={24} />
             <div>
               <p style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-secondary)', fontWeight: 600 }}>Valor Inmovilizado</p>
@@ -273,7 +273,7 @@ export default function Inventario() {
                               </select>
                             </div>
                           ) : (
-                            <span style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px' }}>
+                            <span style={{ background: 'rgba(22, 18, 15, 0.035)', padding: '4px 8px', borderRadius: '4px' }}>
                               {Number(item.cantidad).toLocaleString()} {item.unidad_medida}
                             </span>
                           )}

@@ -37,7 +37,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: '#0f172a', color: '#f8fafc' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
         <p style={{ fontSize: '1.2rem', fontFamily: 'system-ui, sans-serif', fontWeight: 600 }}>Cargando sesión...</p>
       </div>
     );
@@ -76,7 +76,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 };
 
 const PantallaCargando = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: '#0f172a', color: '#f8fafc' }}>
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: 'var(--bg)', color: 'var(--text)' }}>
     <p style={{ fontSize: '1.2rem', fontFamily: 'system-ui, sans-serif', fontWeight: 600 }}>Cargando...</p>
   </div>
 );

@@ -12,7 +12,7 @@ export default function PromocionesPublicas() {
 
   const [promociones, setPromociones] = useState([]);
   const [inventario, setInventario] = useState([]);
-  const [nombreComercio, setNombreComercio] = useState('Lo De Cacho Carnes');
+  const [nombreComercio, setNombreComercio] = useState('');
   const [resolvedTenantId, setResolvedTenantId] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -370,36 +370,36 @@ export default function PromocionesPublicas() {
   })();
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', padding: '40px 20px 120px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg)', color: 'var(--text)', padding: '40px 20px 120px', fontFamily: 'inherit' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         
         {/* ENCABEZADO */}
         <header style={{ textAlign: 'center', marginBottom: '36px' }}>
-          <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '12px', background: 'linear-gradient(to right, #f87171, #fb923c)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            {nombreComercio}
+          <h1 style={{ fontSize: '3rem', fontWeight: 900, marginBottom: '12px', background: 'linear-gradient(to right, var(--accent), var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            {nombreComercio || 'Ofertas de la carnicería'}
           </h1>
-          <p style={{ fontSize: '1.1rem', color: '#94a3b8' }}>Catálogo online de ofertas y cortes seleccionados</p>
+          <p style={{ fontSize: '1.1rem', color: 'var(--muted)' }}>Catálogo online de ofertas y cortes seleccionados</p>
         </header>
 
         {/* FILTROS: BARRA DEL BUSCADOR (ARRIBA) + BARRA DE AGRUPAMIENTO DE CATEGORÍAS (ABAJO) */}
         <div 
           style={{
-            background: 'rgba(30, 41, 59, 0.7)',
+            background: 'var(--surface)',
             backdropFilter: 'blur(16px)',
             borderRadius: '24px',
             padding: '24px',
-            border: '1px solid rgba(255,255,255,0.08)',
-            boxShadow: '0 12px 32px rgba(0,0,0,0.3)',
+            border: '1px solid rgba(22, 18, 15, 0.056)',
+            boxShadow: '0 12px 32px rgba(60, 20, 10, 0.12)',
             marginBottom: '36px'
           }}
         >
           {/* 1. BARRA DEL BUSCADOR (ARRIBA) */}
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               🔍 Buscar producto o corte 
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <Search size={20} color="#f97316" style={{ position: 'absolute', left: '16px', pointerEvents: 'none' }} />
+              <Search size={20} color="var(--accent-primary)" style={{ position: 'absolute', left: '16px', pointerEvents: 'none' }} />
               <input
                 type="text"
                 value={busquedaText}
@@ -409,17 +409,17 @@ export default function PromocionesPublicas() {
                   width: '100%',
                   padding: '16px 48px 16px 48px',
                   borderRadius: '16px',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  background: '#0f172a',
-                  color: '#f8fafc',
+                  border: '1px solid rgba(22, 18, 15, 0.105)',
+                  background: 'var(--surface)',
+                  color: 'var(--text)',
                   fontSize: '1.05rem',
                   fontWeight: 500,
                   outline: 'none',
                   transition: 'all 0.2s ease',
-                  boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)'
+                  boxShadow: 'inset 0 2px 4px rgba(60, 20, 10, 0.12)'
                 }}
-                onFocus={(e) => e.target.style.borderColor = '#f97316'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
+                onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(22, 18, 15, 0.105)'}
               />
               {busquedaText && (
                 <button
@@ -427,7 +427,7 @@ export default function PromocionesPublicas() {
                   style={{
                     position: 'absolute',
                     right: '16px',
-                    background: 'rgba(255,255,255,0.15)',
+                    background: 'rgba(22, 18, 15, 0.105)',
                     border: 'none',
                     borderRadius: '50%',
                     width: '26px',
@@ -435,7 +435,7 @@ export default function PromocionesPublicas() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#cbd5e1',
+                    color: 'var(--muted)',
                     cursor: 'pointer'
                   }}
                   title="Limpiar búsqueda"
@@ -448,7 +448,7 @@ export default function PromocionesPublicas() {
 
           {/* 2. BARRA DE AGRUPAMIENTO / CATEGORÍAS (ABAJO DEL BUSCADOR) */}
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--muted)', marginBottom: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               Barra de Agrupamiento (Categorías)
             </label>
 
@@ -475,10 +475,10 @@ export default function PromocionesPublicas() {
                     }}
                     style={{
                       background: isActive 
-                        ? 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)' 
-                        : 'rgba(15, 23, 42, 0.8)',
-                      color: isActive ? '#ffffff' : '#cbd5e1',
-                      border: isActive ? '1px solid #f97316' : '1px solid rgba(255,255,255,0.1)',
+                        ? 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-hover) 100%)' 
+                        : 'var(--surface-muted)',
+                      color: isActive ? '#ffffff' : 'var(--muted)',
+                      border: isActive ? '1px solid var(--accent-primary)' : '1px solid rgba(22, 18, 15, 0.07)',
                       padding: '10px 18px',
                       borderRadius: '12px',
                       fontSize: '0.92rem',
@@ -488,13 +488,13 @@ export default function PromocionesPublicas() {
                       alignItems: 'center',
                       gap: '8px',
                       transition: 'all 0.2s ease',
-                      boxShadow: isActive ? '0 4px 12px rgba(249, 115, 22, 0.4)' : 'none'
+                      boxShadow: isActive ? '0 4px 12px rgba(142, 27, 27, 0.4)' : 'none'
                     }}
                   >
                     <span>{cat.label}</span>
                     <span 
                       style={{
-                        background: isActive ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.1)',
+                        background: isActive ? 'rgba(60, 20, 10, 0.1)' : 'rgba(22, 18, 15, 0.07)',
                         padding: '2px 8px',
                         borderRadius: '99px',
                         fontSize: '0.75rem',
@@ -510,13 +510,13 @@ export default function PromocionesPublicas() {
           </div>
 
           {/* INDICADOR DE RESUMEN DE FILTROS Y RESULTADOS */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap', gap: '12px' }}>
-            <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
-              Mostrando <strong style={{ color: '#f8fafc' }}>{listaActual.length}</strong> {listaActual.length === 1 ? 'resultado' : 'resultados'}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(22, 18, 15, 0.042)', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>
+              Mostrando <strong style={{ color: 'var(--text)' }}>{listaActual.length}</strong> {listaActual.length === 1 ? 'resultado' : 'resultados'}
               {busquedaText ? (
-                <span> buscando "<strong style={{ color: '#10b981' }}>{busquedaText}</strong>" (en todos por defecto)</span>
+                <span> buscando "<strong style={{ color: 'var(--success)' }}>{busquedaText}</strong>" (en todos por defecto)</span>
               ) : (
-                <span> en <strong style={{ color: '#f97316' }}>{CATEGORIAS.find(c => c.id === categoriaSeleccionada)?.label}</strong></span>
+                <span> en <strong style={{ color: 'var(--accent-primary)' }}>{CATEGORIAS.find(c => c.id === categoriaSeleccionada)?.label}</strong></span>
               )}
             </div>
 
@@ -527,9 +527,9 @@ export default function PromocionesPublicas() {
                   setBusquedaText('');
                 }}
                 style={{
-                  background: 'rgba(249, 115, 22, 0.15)',
-                  color: '#f97316',
-                  border: '1px solid rgba(249, 115, 22, 0.3)',
+                  background: 'rgba(142, 27, 27, 0.15)',
+                  color: 'var(--accent-primary)',
+                  border: '1px solid rgba(142, 27, 27, 0.3)',
                   padding: '6px 14px',
                   borderRadius: '99px',
                   fontSize: '0.8rem',
@@ -546,18 +546,18 @@ export default function PromocionesPublicas() {
 
         {/* LISTADO DE PRODUCTOS */}
         {loading ? (
-          <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '1.2rem', padding: '40px' }}>
+          <div style={{ textAlign: 'center', color: 'var(--muted)', fontSize: '1.2rem', padding: '40px' }}>
             Cargando catálogo...
           </div>
         ) : listaActual.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', background: 'rgba(30, 41, 59, 0.4)', borderRadius: '24px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-            <Tag size={64} color="#475569" style={{ margin: '0 auto 24px' }} />
-            <h2 style={{ fontSize: '1.5rem', color: '#e2e8f0', marginBottom: '8px' }}>
+          <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--surface)', borderRadius: '24px', border: '1px dashed rgba(22, 18, 15, 0.07)' }}>
+            <Tag size={64} color="var(--muted)" style={{ margin: '0 auto 24px' }} />
+            <h2 style={{ fontSize: '1.5rem', color: 'var(--text)', marginBottom: '8px' }}>
               {busquedaText 
                 ? `No se encontraron productos para "${busquedaText}"`
                 : 'No hay productos disponibles en esta categoría en este momento.'}
             </h2>
-            <p style={{ color: '#94a3b8', marginBottom: '20px' }}>
+            <p style={{ color: 'var(--muted)', marginBottom: '20px' }}>
               {busquedaText 
                 ? 'Intenta buscar con otra palabra clave o reseteá la búsqueda.' 
                 : '¡Probá seleccionando otra categoría en el menú desplegable arriba!'}
@@ -569,7 +569,7 @@ export default function PromocionesPublicas() {
                   setCategoriaSeleccionada('promociones');
                 }}
                 style={{
-                  background: '#f97316',
+                  background: 'var(--accent-primary)',
                   color: 'white',
                   border: 'none',
                   padding: '10px 24px',
@@ -594,16 +594,16 @@ export default function PromocionesPublicas() {
                 <div 
                   key={prod.id} 
                   style={{
-                    background: 'rgba(30, 41, 59, 0.7)',
+                    background: 'var(--surface)',
                     backdropFilter: 'blur(10px)',
                     borderRadius: '24px',
                     overflow: 'hidden',
-                    border: '1px solid rgba(255,255,255,0.05)',
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                    border: '1px solid rgba(22, 18, 15, 0.035)',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(60, 20, 10, 0.04)',
                     transition: 'transform 0.3s ease, box-shadow 0.3s ease'
                   }}
                 >
-                  <div style={{ height: '200px', backgroundColor: '#0f172a', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ height: '200px', backgroundColor: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
                     {prod.imagen_url ? (
                       <img 
                         src={prod.imagen_url} 
@@ -611,41 +611,41 @@ export default function PromocionesPublicas() {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(45deg, #1e293b, #0f172a)' }}>
-                        {esPromo ? <Tag size={64} color="#334155" /> : <Package size={64} color="#334155" />}
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(45deg, #efe7dc, #e4d8c8)' }}>
+                        {esPromo ? <Tag size={64} color="var(--border-soft)" /> : <Package size={64} color="var(--border-soft)" />}
                       </div>
                     )}
                     
                     {esPromo ? (
-                      <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#ef4444', color: 'white', padding: '6px 14px', borderRadius: '99px', fontWeight: 'bold', fontSize: '0.85rem', boxShadow: '0 4px 6px rgba(0,0,0,0.3)' }}>
+                      <div style={{ position: 'absolute', top: '16px', right: '16px', background: '#ef4444', color: 'white', padding: '6px 14px', borderRadius: '99px', fontWeight: 'bold', fontSize: '0.85rem', boxShadow: '0 4px 6px rgba(60, 20, 10, 0.12)' }}>
                         OFERTA
                       </div>
                     ) : (
-                      <div style={{ position: 'absolute', top: '16px', right: '16px', background: 'rgba(15, 23, 42, 0.8)', color: '#94a3b8', padding: '6px 12px', borderRadius: '99px', fontWeight: 'bold', fontSize: '0.85rem', border: '1px solid rgba(255,255,255,0.1)' }}>
+                      <div style={{ position: 'absolute', top: '16px', right: '16px', background: 'var(--surface-muted)', color: 'var(--muted)', padding: '6px 12px', borderRadius: '99px', fontWeight: 'bold', fontSize: '0.85rem', border: '1px solid rgba(22, 18, 15, 0.07)' }}>
                         {prod.unidad_medida || 'kg'}
                       </div>
                     )}
                   </div>
 
                   <div style={{ padding: '24px' }}>
-                    <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px', color: '#f8fafc' }}>
+                    <h3 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '8px', color: 'var(--text)' }}>
                       {nombre}
                     </h3>
                     
                     {esPromo ? (
-                      <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '8px', color: '#cbd5e1', fontWeight: 600, marginBottom: '16px' }}>
+                      <div style={{ display: 'inline-block', background: 'rgba(22, 18, 15, 0.07)', padding: '6px 12px', borderRadius: '8px', color: 'var(--muted)', fontWeight: 600, marginBottom: '16px' }}>
                         Llevá {prod.cantidad_kg} Kg
                       </div>
                     ) : (
-                      <div style={{ display: 'inline-block', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '8px', color: '#94a3b8', fontWeight: 500, marginBottom: '16px' }}>
+                      <div style={{ display: 'inline-block', background: 'rgba(22, 18, 15, 0.035)', padding: '6px 12px', borderRadius: '8px', color: 'var(--muted)', fontWeight: 500, marginBottom: '16px' }}>
                         Precio por {prod.unidad_medida || 'kg'}
                       </div>
                     )}
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '8px' }}>
                       <div>
-                        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '4px' }}>{esPromo ? 'Precio Especial' : 'Precio'}</p>
-                        <p style={{ fontSize: '2.2rem', fontWeight: 900, color: '#10b981', lineHeight: 1 }}>
+                        <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '4px' }}>{esPromo ? 'Precio Especial' : 'Precio'}</p>
+                        <p style={{ fontSize: '2.2rem', fontWeight: 900, color: 'var(--success)', lineHeight: 1 }}>
                           ${precio.toLocaleString()}
                         </p>
                       </div>
@@ -654,19 +654,19 @@ export default function PromocionesPublicas() {
                     {/* CONTROLES DE CANTIDAD (PASO DE 0.25 EN CORTES Y SELECCIÓN RÁPIDA DE PESOS) */}
                     {itemEnCarrito ? (
                       <div style={{ marginTop: '16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '8px', border: '1px solid rgba(249, 115, 22, 0.4)' }}>
-                          <button onClick={() => modificarCantidad(prod.id, -1)} style={{ background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Disminuir">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(22, 18, 15, 0.035)', borderRadius: '12px', padding: '8px', border: '1px solid rgba(142, 27, 27, 0.4)' }}>
+                          <button onClick={() => modificarCantidad(prod.id, -1)} style={{ background: 'rgba(22, 18, 15, 0.07)', color: 'var(--text)', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Disminuir">
                             <Minus size={18} />
                           </button>
                           <div style={{ textAlign: 'center' }}>
-                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: '#f8fafc', display: 'block' }}>
+                            <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text)', display: 'block' }}>
                               {formatCantidadLabel(itemEnCarrito.cantidad_carrito, itemEnCarrito.unidad_medida, itemEnCarrito.es_promocion)}
                             </span>
-                            <span style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 700 }}>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--success)', fontWeight: 700 }}>
                               Total: ${Math.round(precio * itemEnCarrito.cantidad_carrito).toLocaleString('es-AR')}
                             </span>
                           </div>
-                          <button onClick={() => modificarCantidad(prod.id, 1)} style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Aumentar">
+                          <button onClick={() => modificarCantidad(prod.id, 1)} style={{ background: 'rgba(47, 122, 74, 0.2)', color: 'var(--success)', border: 'none', width: '38px', height: '38px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Aumentar">
                             <Plus size={18} />
                           </button>
                         </div>
@@ -683,9 +683,9 @@ export default function PromocionesPublicas() {
                                   fontSize: '0.72rem',
                                   fontWeight: itemEnCarrito.cantidad_carrito === kgVal ? 800 : 600,
                                   borderRadius: '6px',
-                                  border: itemEnCarrito.cantidad_carrito === kgVal ? '1px solid #f97316' : '1px solid rgba(255,255,255,0.1)',
-                                  background: itemEnCarrito.cantidad_carrito === kgVal ? 'rgba(249, 115, 22, 0.3)' : 'rgba(15, 23, 42, 0.6)',
-                                  color: itemEnCarrito.cantidad_carrito === kgVal ? '#f97316' : '#94a3b8',
+                                  border: itemEnCarrito.cantidad_carrito === kgVal ? '1px solid var(--accent-primary)' : '1px solid rgba(22, 18, 15, 0.07)',
+                                  background: itemEnCarrito.cantidad_carrito === kgVal ? 'rgba(142, 27, 27, 0.3)' : 'var(--surface-muted)',
+                                  color: itemEnCarrito.cantidad_carrito === kgVal ? 'var(--accent-primary)' : 'var(--muted)',
                                   cursor: 'pointer'
                                 }}
                               >
@@ -700,7 +700,7 @@ export default function PromocionesPublicas() {
                         <button 
                           style={{
                             width: '100%',
-                            background: '#f97316',
+                            background: 'var(--accent-primary)',
                             color: 'white',
                             border: 'none',
                             padding: '14px',
@@ -714,8 +714,8 @@ export default function PromocionesPublicas() {
                             gap: '8px',
                             transition: 'background 0.2s'
                           }}
-                          onMouseOver={e => e.currentTarget.style.background = '#ea580c'}
-                          onMouseOut={e => e.currentTarget.style.background = '#f97316'}
+                          onMouseOver={e => e.currentTarget.style.background = 'var(--accent-hover)'}
+                          onMouseOut={e => e.currentTarget.style.background = 'var(--accent-primary)'}
                           onClick={() => agregarAlCarrito(prod, 1)}
                         >
                           <ShoppingCart size={18} /> Agregar al carrito
@@ -733,9 +733,9 @@ export default function PromocionesPublicas() {
                                   fontSize: '0.72rem',
                                   fontWeight: 600,
                                   borderRadius: '6px',
-                                  border: '1px solid rgba(255,255,255,0.1)',
-                                  background: 'rgba(15, 23, 42, 0.6)',
-                                  color: '#94a3b8',
+                                  border: '1px solid rgba(22, 18, 15, 0.07)',
+                                  background: 'var(--surface-muted)',
+                                  color: 'var(--muted)',
                                   cursor: 'pointer'
                                 }}
                                 title={`Agregar ${kgVal} Kg`}
@@ -759,30 +759,30 @@ export default function PromocionesPublicas() {
       {carrito.length > 0 && !isCartModalOpen && !isCheckoutModalOpen && (
         <div style={{
           position: 'fixed', bottom: '24px', right: '50%', transform: 'translateX(50%)',
-          background: 'rgba(30, 41, 59, 0.95)', padding: '12px 24px',
-          borderRadius: '32px', border: '1px solid #f97316', 
-          boxShadow: '0 8px 32px rgba(249, 115, 22, 0.4)',
+          background: 'var(--surface)', padding: '12px 24px',
+          borderRadius: '32px', border: '1px solid var(--accent-primary)', 
+          boxShadow: '0 8px 32px rgba(142, 27, 27, 0.4)',
           display: 'flex', gap: '24px', alignItems: 'center', zIndex: 90,
           backdropFilter: 'blur(10px)',
           width: '90%', maxWidth: '400px', justifyContent: 'space-between',
           animation: 'fadeInUp 0.3s ease-out'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ background: '#f97316', color: 'white', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--accent-primary)', color: 'white', borderRadius: '50%', width: '45px', height: '45px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ShoppingCart size={22} />
             </div>
             <div>
-              <span style={{ fontSize: '0.85rem', color: '#94a3b8', display: 'block', lineHeight: 1.2 }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--muted)', display: 'block', lineHeight: 1.2 }}>
                 Tu Pedido ({carrito.reduce((acc, item) => acc + item.cantidad_carrito, 0)})
               </span>
-              <div style={{ fontSize: '1.3rem', fontWeight: 900, color: '#10b981', lineHeight: 1.2 }}>
+              <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--success)', lineHeight: 1.2 }}>
                 ${totalCarrito.toLocaleString()}
               </div>
             </div>
           </div>
           <button 
             onClick={() => setIsCartModalOpen(true)} 
-            style={{ padding: '10px 20px', borderRadius: '24px', fontSize: '1rem', whiteSpace: 'nowrap', background: '#f97316', color: 'white', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
+            style={{ padding: '10px 20px', borderRadius: '24px', fontSize: '1rem', whiteSpace: 'nowrap', background: 'var(--accent-primary)', color: 'white', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}
           >
             Ver
           </button>
@@ -797,11 +797,11 @@ export default function PromocionesPublicas() {
           justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(5px)',
           padding: '20px'
         }}>
-          <div style={{ width: '100%', maxWidth: '500px', background: '#1e293b', borderRadius: '24px', padding: '24px', position: 'relative', border: '1px solid rgba(255,255,255,0.1)', animation: 'slideUp 0.3s ease-out' }}>
-            <button onClick={() => setIsCartModalOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+          <div style={{ width: '100%', maxWidth: '500px', background: 'var(--surface)', borderRadius: '24px', padding: '24px', position: 'relative', border: '1px solid rgba(22, 18, 15, 0.07)', animation: 'slideUp 0.3s ease-out' }}>
+            <button onClick={() => setIsCartModalOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
               <X size={24} />
             </button>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '24px', color: 'white', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '24px', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <ShoppingCart /> Mi Pedido
             </h2>
 
@@ -809,20 +809,20 @@ export default function PromocionesPublicas() {
               {carrito.map(item => {
                 const itemSubtotal = Math.round(item.precio * item.cantidad_carrito);
                 return (
-                  <div key={item.id} style={{ padding: '12px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div key={item.id} style={{ padding: '12px 0', borderBottom: '1px solid rgba(22, 18, 15, 0.056)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                       <div style={{ flex: 1 }}>
-                        <h4 style={{ color: 'white', margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>{item.nombre}</h4>
-                        <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
-                          ${item.precio.toLocaleString('es-AR')} c/u — Subtotal: <strong style={{ color: '#10b981' }}>${itemSubtotal.toLocaleString('es-AR')}</strong>
+                        <h4 style={{ color: 'var(--text)', margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>{item.nombre}</h4>
+                        <span style={{ color: 'var(--muted)', fontSize: '0.85rem' }}>
+                          ${item.precio.toLocaleString('es-AR')} c/u — Subtotal: <strong style={{ color: 'var(--success)' }}>${itemSubtotal.toLocaleString('es-AR')}</strong>
                         </span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '4px 10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        <button onClick={() => modificarCantidad(item.id, -1)} style={{ background: 'none', color: '#94a3b8', border: 'none', cursor: 'pointer', padding: '4px' }}><Minus size={16} /></button>
-                        <span style={{ color: 'white', fontWeight: 800, fontSize: '0.95rem', minWidth: '45px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(60, 20, 10, 0.12)', padding: '4px 10px', borderRadius: '10px', border: '1px solid rgba(22, 18, 15, 0.07)' }}>
+                        <button onClick={() => modificarCantidad(item.id, -1)} style={{ background: 'none', color: 'var(--muted)', border: 'none', cursor: 'pointer', padding: '4px' }}><Minus size={16} /></button>
+                        <span style={{ color: 'var(--text)', fontWeight: 800, fontSize: '0.95rem', minWidth: '45px', textAlign: 'center' }}>
                           {formatCantidadLabel(item.cantidad_carrito, item.unidad_medida, item.es_promocion)}
                         </span>
-                        <button onClick={() => modificarCantidad(item.id, 1)} style={{ background: 'none', color: '#10b981', border: 'none', cursor: 'pointer', padding: '4px' }}><Plus size={16} /></button>
+                        <button onClick={() => modificarCantidad(item.id, 1)} style={{ background: 'none', color: 'var(--success)', border: 'none', cursor: 'pointer', padding: '4px' }}><Plus size={16} /></button>
                       </div>
                     </div>
                     {/* Chips de peso directo dentro del modal del carrito para cortes */}
@@ -837,9 +837,9 @@ export default function PromocionesPublicas() {
                               fontSize: '0.7rem',
                               fontWeight: item.cantidad_carrito === kgVal ? 800 : 500,
                               borderRadius: '4px',
-                              border: item.cantidad_carrito === kgVal ? '1px solid #f97316' : '1px solid rgba(255,255,255,0.1)',
-                              background: item.cantidad_carrito === kgVal ? 'rgba(249, 115, 22, 0.3)' : 'rgba(0,0,0,0.2)',
-                              color: item.cantidad_carrito === kgVal ? '#f97316' : '#94a3b8',
+                              border: item.cantidad_carrito === kgVal ? '1px solid var(--accent-primary)' : '1px solid rgba(22, 18, 15, 0.07)',
+                              background: item.cantidad_carrito === kgVal ? 'rgba(142, 27, 27, 0.3)' : 'rgba(60, 20, 10, 0.08)',
+                              color: item.cantidad_carrito === kgVal ? 'var(--accent-primary)' : 'var(--muted)',
                               cursor: 'pointer'
                             }}
                           >
@@ -853,14 +853,14 @@ export default function PromocionesPublicas() {
               })}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
-              <span style={{ color: '#94a3b8', fontSize: '1.2rem' }}>Total</span>
-              <span style={{ fontSize: '2rem', fontWeight: 900, color: '#10b981' }}>${totalCarrito.toLocaleString('es-AR')}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderTop: '1px solid rgba(22, 18, 15, 0.07)', paddingTop: '16px' }}>
+              <span style={{ color: 'var(--muted)', fontSize: '1.2rem' }}>Total</span>
+              <span style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--success)' }}>${totalCarrito.toLocaleString('es-AR')}</span>
             </div>
 
             <button 
               onClick={() => setIsCheckoutModalOpen(true)}
-              style={{ width: '100%', padding: '16px', borderRadius: '12px', background: '#f97316', color: 'white', border: 'none', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
+              style={{ width: '100%', padding: '16px', borderRadius: '12px', background: 'var(--accent-primary)', color: 'white', border: 'none', fontSize: '1.1rem', fontWeight: 'bold', cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
             >
               Continuar <CheckCircle size={20} />
             </button>
@@ -876,24 +876,24 @@ export default function PromocionesPublicas() {
           justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(5px)',
           padding: '20px'
         }}>
-          <div style={{ width: '100%', maxWidth: '500px', background: '#1e293b', borderRadius: '24px', padding: '24px', position: 'relative', border: '1px solid rgba(255,255,255,0.1)', animation: 'slideUp 0.3s ease-out' }}>
-            <button onClick={() => setIsCheckoutModalOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer' }}>
+          <div style={{ width: '100%', maxWidth: '500px', background: 'var(--surface)', borderRadius: '24px', padding: '24px', position: 'relative', border: '1px solid rgba(22, 18, 15, 0.07)', animation: 'slideUp 0.3s ease-out' }}>
+            <button onClick={() => setIsCheckoutModalOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}>
               <X size={24} />
             </button>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '24px', color: 'white' }}>Confirmar Compra</h2>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '24px', color: 'var(--text)' }}>Confirmar Compra</h2>
 
             <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: '12px' }}>¿Cómo querés recibir tu pedido?</h3>
+              <h3 style={{ fontSize: '1.1rem', color: 'var(--muted)', marginBottom: '12px' }}>¿Cómo querés recibir tu pedido?</h3>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <div 
                   onClick={() => setDatosEntrega({ ...datosEntrega, metodo: 'retiro' })}
-                  style={{ flex: 1, padding: '16px', borderRadius: '12px', cursor: 'pointer', border: datosEntrega.metodo === 'retiro' ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.1)', background: datosEntrega.metodo === 'retiro' ? 'rgba(249, 115, 22, 0.1)' : 'rgba(0,0,0,0.2)', textAlign: 'center', color: 'white', fontWeight: 'bold' }}
+                  style={{ flex: 1, padding: '16px', borderRadius: '12px', cursor: 'pointer', border: datosEntrega.metodo === 'retiro' ? '2px solid var(--accent-primary)' : '1px solid rgba(22, 18, 15, 0.07)', background: datosEntrega.metodo === 'retiro' ? 'rgba(142, 27, 27, 0.1)' : 'rgba(60, 20, 10, 0.08)', textAlign: 'center', color: 'var(--text)', fontWeight: 'bold' }}
                 >
                   Retiro en el local
                 </div>
                 <div 
                   onClick={() => setDatosEntrega({ ...datosEntrega, metodo: 'domicilio' })}
-                  style={{ flex: 1, padding: '16px', borderRadius: '12px', cursor: 'pointer', border: datosEntrega.metodo === 'domicilio' ? '2px solid #f97316' : '1px solid rgba(255,255,255,0.1)', background: datosEntrega.metodo === 'domicilio' ? 'rgba(249, 115, 22, 0.1)' : 'rgba(0,0,0,0.2)', textAlign: 'center', color: 'white', fontWeight: 'bold' }}
+                  style={{ flex: 1, padding: '16px', borderRadius: '12px', cursor: 'pointer', border: datosEntrega.metodo === 'domicilio' ? '2px solid var(--accent-primary)' : '1px solid rgba(22, 18, 15, 0.07)', background: datosEntrega.metodo === 'domicilio' ? 'rgba(142, 27, 27, 0.1)' : 'rgba(60, 20, 10, 0.08)', textAlign: 'center', color: 'var(--text)', fontWeight: 'bold' }}
                 >
                   A domicilio
                 </div>
@@ -902,22 +902,22 @@ export default function PromocionesPublicas() {
 
             {datosEntrega.metodo === 'domicilio' && (
               <div style={{ marginBottom: '24px', animation: 'fadeInUp 0.3s ease-out' }}>
-                <label style={{ display: 'block', color: '#94a3b8', marginBottom: '8px', fontSize: '0.9rem' }}>Dirección de envío</label>
+                <label style={{ display: 'block', color: 'var(--muted)', marginBottom: '8px', fontSize: '0.9rem' }}>Dirección de envío</label>
                 <input 
                   type="text" 
                   value={datosEntrega.direccion}
                   onChange={(e) => setDatosEntrega({ ...datosEntrega, direccion: e.target.value })}
                   placeholder="Ej: Calle Falsa 123, Timbre 2"
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.2)', color: 'white', fontSize: '1rem', outline: 'none' }}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: '8px', border: '1px solid rgba(22, 18, 15, 0.12)', background: 'rgba(60, 20, 10, 0.08)', color: 'var(--text)', fontSize: '1rem', outline: 'none' }}
                 />
               </div>
             )}
 
             {/* Banner Informativo de Pago */}
-            <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-              <Info color="#3b82f6" style={{ flexShrink: 0 }} />
+            <div style={{ background: 'rgba(91, 107, 138, 0.1)', border: '1px solid rgba(91, 107, 138, 0.3)', borderRadius: '12px', padding: '16px', marginBottom: '24px', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+              <Info color="var(--chart-4)" style={{ flexShrink: 0 }} />
               <div>
-                <p style={{ color: '#e2e8f0', fontSize: '0.95rem', margin: 0, lineHeight: 1.4 }}>
+                <p style={{ color: 'var(--text)', fontSize: '0.95rem', margin: 0, lineHeight: 1.4 }}>
                   Recordá que los pedidos online se abonan en <strong>Efectivo</strong> o <strong>Transferencia</strong> al momento de la entrega/retiro.
                 </p>
               </div>
@@ -942,11 +942,11 @@ export default function PromocionesPublicas() {
           height: 6px;
         }
         .category-tabs-wrapper::-webkit-scrollbar-track {
-          background: rgba(30, 41, 59, 0.5);
+          background: var(--surface);
           border-radius: 999px;
         }
         .category-tabs-wrapper::-webkit-scrollbar-thumb {
-          background: #f97316;
+          background: var(--accent-primary);
           border-radius: 999px;
         }
 

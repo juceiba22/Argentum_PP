@@ -234,7 +234,7 @@ export default function ConfiguracionMercadoPago() {
           gap: '8px',
           fontSize: '0.85rem',
           fontWeight: 700,
-          backgroundColor: formData.mp_integracion_verificada ? 'rgba(74, 124, 89, 0.12)' : 'rgba(210, 142, 61, 0.12)',
+          backgroundColor: formData.mp_integracion_verificada ? 'rgba(47, 122, 74, 0.12)' : 'rgba(210, 142, 61, 0.12)',
           border: `1px solid ${formData.mp_integracion_verificada ? 'var(--success)' : 'var(--warning)'}`,
           color: formData.mp_integracion_verificada ? 'var(--success)' : 'var(--warning)'
         }}>
@@ -254,7 +254,7 @@ export default function ConfiguracionMercadoPago() {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          backgroundColor: feedback.type === 'success' ? 'rgba(74, 124, 89, 0.12)' : 'rgba(183, 65, 52, 0.12)',
+          backgroundColor: feedback.type === 'success' ? 'rgba(47, 122, 74, 0.12)' : 'rgba(183, 65, 52, 0.12)',
           border: `1px solid ${feedback.type === 'success' ? 'var(--success)' : 'var(--danger)'}`,
           color: feedback.type === 'success' ? 'var(--success)' : 'var(--danger)',
           fontWeight: 600
@@ -393,7 +393,7 @@ export default function ConfiguracionMercadoPago() {
               padding: '14px 20px',
               borderRadius: '8px',
               marginTop: '16px',
-              backgroundColor: resultadoVerificacion.success ? 'rgba(74, 124, 89, 0.12)' : 'rgba(183, 65, 52, 0.12)',
+              backgroundColor: resultadoVerificacion.success ? 'rgba(47, 122, 74, 0.12)' : 'rgba(183, 65, 52, 0.12)',
               border: `1px solid ${resultadoVerificacion.success ? 'var(--success)' : 'var(--danger)'}`,
               color: resultadoVerificacion.success ? 'var(--success)' : 'var(--danger)',
               fontWeight: 600
@@ -432,7 +432,7 @@ export default function ConfiguracionMercadoPago() {
                           fontWeight: 700,
                           padding: '2px 8px',
                           borderRadius: '10px',
-                          backgroundColor: d.operating_mode === 'PDV' ? 'rgba(74, 124, 89, 0.15)' : 'rgba(210, 142, 61, 0.15)',
+                          backgroundColor: d.operating_mode === 'PDV' ? 'rgba(47, 122, 74, 0.15)' : 'rgba(210, 142, 61, 0.15)',
                           color: d.operating_mode === 'PDV' ? 'var(--success)' : 'var(--warning)'
                         }}>
                           {d.operating_mode || 'modo desconocido'}

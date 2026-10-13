@@ -64,11 +64,11 @@ export default function DashboardProveedores() {
   // Datos procesados para el gráfico de Medios de Pago
   const totalMediosPago = Object.values(data.mediosPagoBreakdown).reduce((acc, curr) => acc + curr, 0) || 1;
   const mediosPagoConfig = [
-    { key: 'efectivo', label: 'Efectivo', color: '#10b981' },
-    { key: 'mercado_pago', label: 'Mercado Pago', color: '#38bdf8' },
-    { key: 'cuenta_dni', label: 'Cuenta DNI', color: '#22c55e' },
-    { key: 'transferencia', label: 'Transferencia', color: '#a855f7' },
-    { key: 'tarjeta', label: 'Tarjeta Crédito', color: '#f97316' }
+    { key: 'efectivo', label: 'Efectivo', color: 'var(--success)' },
+    { key: 'mercado_pago', label: 'Mercado Pago', color: 'var(--chart-3)' },
+    { key: 'cuenta_dni', label: 'Cuenta DNI', color: 'var(--success)' },
+    { key: 'transferencia', label: 'Transferencia', color: 'var(--chart-2)' },
+    { key: 'tarjeta', label: 'Tarjeta Crédito', color: 'var(--accent-primary)' }
   ];
 
   // Cálculo para SVG Donut Chart
@@ -127,7 +127,7 @@ export default function DashboardProveedores() {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Ventas Realizadas
                 </p>
-                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(197, 160, 89, 0.15)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(142, 27, 27, 0.15)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ShoppingCart size={22} />
                 </div>
               </div>
@@ -148,7 +148,7 @@ export default function DashboardProveedores() {
                 </p>
                 <div style={{ 
                   width: '40px', height: '40px', borderRadius: '10px', 
-                  background: data.margenNeto >= 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', 
+                  background: data.margenNeto >= 0 ? 'rgba(47, 122, 74, 0.15)' : 'rgba(239, 68, 68, 0.15)', 
                   color: data.margenNeto >= 0 ? 'var(--success)' : 'var(--danger)', 
                   display: 'flex', alignItems: 'center', justifyContent: 'center' 
                 }}>
@@ -161,7 +161,7 @@ export default function DashboardProveedores() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem' }}>
                 <span style={{
                   padding: '2px 8px', borderRadius: '12px', fontWeight: 700,
-                  background: data.porcentajeMargen >= 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                  background: data.porcentajeMargen >= 0 ? 'rgba(47, 122, 74, 0.15)' : 'rgba(239, 68, 68, 0.15)',
                   color: data.porcentajeMargen >= 0 ? 'var(--success)' : 'var(--danger)'
                 }}>
                   {data.porcentajeMargen >= 0 ? `+${data.porcentajeMargen}%` : `${data.porcentajeMargen}%`} Margen
@@ -171,12 +171,12 @@ export default function DashboardProveedores() {
             </div>
 
             {/* Card 3: Valorización de Stock */}
-            <div className="glass-panel" style={{ padding: '24px', borderLeft: '4px solid #8b5cf6', position: 'relative' }}>
+            <div className="glass-panel" style={{ padding: '24px', borderLeft: '4px solid var(--chart-5)', position: 'relative' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Valorización de Stock
                 </p>
-                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(154, 91, 138, 0.15)', color: 'var(--chart-5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Package size={22} />
                 </div>
               </div>
@@ -192,16 +192,16 @@ export default function DashboardProveedores() {
             </div>
 
             {/* Card 4: Salud de Inventario */}
-            <div className="glass-panel" style={{ padding: '24px', borderLeft: '4px solid #3b82f6', position: 'relative' }}>
+            <div className="glass-panel" style={{ padding: '24px', borderLeft: '4px solid var(--chart-4)', position: 'relative' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Salud de Inventario
                 </p>
-                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(91, 107, 138, 0.15)', color: 'var(--chart-4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Layers size={22} />
                 </div>
               </div>
-              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '6px', color: '#3b82f6' }}>
+              <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '6px', color: 'var(--chart-4)' }}>
                 {data.stockOptimoCount + data.stockBajoCount} <span style={{ fontSize: '1rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Productos</span>
               </h2>
               <div style={{ display: 'flex', gap: '12px', fontSize: '0.8rem', fontWeight: 600 }}>
@@ -295,7 +295,7 @@ export default function DashboardProveedores() {
                 {/* Resumen Margen Liquidez */}
                 <div style={{
                   padding: '14px', borderRadius: '8px', marginTop: '10px',
-                  backgroundColor: data.margenNeto >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  backgroundColor: data.margenNeto >= 0 ? 'rgba(47, 122, 74, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                   border: `1px solid ${data.margenNeto >= 0 ? 'var(--success)' : 'var(--danger)'}`,
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}>
@@ -349,7 +349,7 @@ export default function DashboardProveedores() {
             </div>
 
             {/* Tarjeta de Sugerencias Inteligentes de Negocio */}
-            <div className="glass-panel" style={{ padding: '28px', border: '1px solid rgba(197, 160, 89, 0.3)', background: 'linear-gradient(135deg, rgba(197, 160, 89, 0.05) 0%, rgba(0,0,0,0) 100%)' }}>
+            <div className="glass-panel" style={{ padding: '28px', border: '1px solid rgba(142, 27, 27, 0.3)', background: 'linear-gradient(135deg, rgba(142, 27, 27, 0.05) 0%, rgba(0,0,0,0) 100%)' }}>
               <h3 style={{ fontSize: '1.25rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-primary)' }}>
                 <Sparkles size={22} /> Recomendaciones Inteligentes del Negocio
               </h3>
@@ -408,7 +408,7 @@ export default function DashboardProveedores() {
                             Venta Directa
                           </td>
                           <td>
-                            <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700 }}>
+                            <span style={{ background: 'rgba(47, 122, 74, 0.1)', color: 'var(--success)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700 }}>
                               {ped.medio_pago || 'Efectivo'}
                             </span>
                           </td>

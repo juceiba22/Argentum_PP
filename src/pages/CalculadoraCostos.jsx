@@ -205,15 +205,15 @@ export default function CalculadoraCostos() {
                 <PieChart size={20} color="var(--accent-primary)" /> Base de Costos (Prorrateo Mensual)
               </h3>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(22, 18, 15, 0.035)' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Costos Fijos</span>
                 <span style={{ fontWeight: 600 }}>${costosMensuales.fijos.toLocaleString(undefined, {maximumFractionDigits:0})}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(22, 18, 15, 0.035)' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Depreciación Maquinaria</span>
                 <span style={{ fontWeight: 600 }}>${costosMensuales.depreciacion.toLocaleString(undefined, {maximumFractionDigits:0})}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid rgba(22, 18, 15, 0.035)' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Salarios y Ganancias</span>
                 <span style={{ fontWeight: 600 }}>${costosMensuales.salarios.toLocaleString(undefined, {maximumFractionDigits:0})}</span>
               </div>
@@ -226,21 +226,21 @@ export default function CalculadoraCostos() {
             {/* Proyección Temporal */}
             <div className="glass-panel" style={{ padding: '24px', background: 'linear-gradient(145deg, rgba(30,41,59,0.7) 0%, rgba(15,23,42,0.9) 100%)' }}>
               <h3 style={{ fontSize: '1.2rem', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Calendar size={20} color="#3b82f6" /> Costo Operativo en el Tiempo
+                <Calendar size={20} color="var(--chart-4)" /> Costo Operativo en el Tiempo
               </h3>
               
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', borderLeft: '4px solid var(--success)' }}>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '4px' }}>Costo Diario</p>
                   <p style={{ fontSize: '1.5rem', fontWeight: 800 }}>${costoDiario.toLocaleString(undefined, {maximumFractionDigits:0})}</p>
                 </div>
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', borderLeft: '4px solid var(--chart-4)' }}>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '4px' }}>Costo Semanal</p>
                   <p style={{ fontSize: '1.5rem', fontWeight: 800 }}>${costoSemanal.toLocaleString(undefined, {maximumFractionDigits:0})}</p>
                 </div>
               </div>
               
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', borderLeft: '4px solid #8b5cf6', marginBottom: '16px' }}>
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', borderLeft: '4px solid var(--chart-5)', marginBottom: '16px' }}>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '4px' }}>Costo Mensual</p>
                 <p style={{ fontSize: '1.5rem', fontWeight: 800 }}>${costosMensuales.total.toLocaleString(undefined, {maximumFractionDigits:0})}</p>
               </div>
@@ -260,7 +260,7 @@ export default function CalculadoraCostos() {
                 Compras a proveedores consolidadas en el mes en curso ({new Date().toLocaleString('es', { month: 'long' })}).
               </p>
               
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '150px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '150px', background: 'rgba(47, 122, 74, 0.05)', borderRadius: '12px', border: '1px solid rgba(47, 122, 74, 0.2)' }}>
                 <div style={{ textAlign: 'center' }}>
                   <p style={{ color: 'var(--success)', fontWeight: 600, textTransform: 'uppercase', fontSize: '0.85rem', marginBottom: '8px' }}>Compras del Mes</p>
                   <p style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--success)' }}>${totalComprasMes.toLocaleString(undefined, {maximumFractionDigits:0})}</p>
@@ -325,13 +325,13 @@ export default function CalculadoraCostos() {
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>Desglose de rentabilidad y costo real por Kilogramo.</p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '40px' }}>
-                  <div style={{ padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ padding: '20px', background: 'rgba(22, 18, 15, 0.021)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px', textTransform: 'uppercase' }}>Último Precio Compra</p>
                     <p style={{ fontSize: '1.8rem', fontWeight: 800 }}>${prodCalc.ultimoPrecioCompra.toLocaleString()}</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>Valor base pagado al proveedor</p>
                   </div>
                   
-                  <div style={{ padding: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ padding: '20px', background: 'rgba(22, 18, 15, 0.021)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '8px', textTransform: 'uppercase' }}>Costo Operativo (Overhead)</p>
                     <p style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--warning)' }}>+ ${prodCalc.overheadPorKg.toLocaleString(undefined, {maximumFractionDigits:2})}</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '8px' }}>Prorrateo de Fijos, Depreciación y Salarios</p>
@@ -358,7 +358,7 @@ export default function CalculadoraCostos() {
                     </thead>
                     <tbody>
                       {prodCalc.historialCompras.map((hc, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
+                        <tr key={idx} style={{ borderBottom: '1px solid rgba(22, 18, 15, 0.02)' }}>
                           <td style={{ padding: '12px 0' }}>{new Date(hc.compras?.fecha || hc.created_at).toLocaleDateString()}</td>
                           <td style={{ padding: '12px 0' }}>{hc.cantidad} kg</td>
                           <td style={{ padding: '12px 0', textAlign: 'right', fontWeight: 600 }}>${Number(hc.precio_unitario).toLocaleString()}</td>

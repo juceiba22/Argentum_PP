@@ -89,8 +89,8 @@ export default function RegistrosCaja() {
 
       {/* MÉTRICAS DE CIERRE */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-        <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderBottom: '4px solid #10b981' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderBottom: '4px solid var(--success)' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(47, 122, 74, 0.15)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <DollarSign size={24} />
           </div>
           <div>
@@ -109,8 +109,8 @@ export default function RegistrosCaja() {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderBottom: '4px solid #8b5cf6' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderBottom: '4px solid var(--chart-5)' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(154, 91, 138, 0.15)', color: 'var(--chart-5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Wallet size={24} />
           </div>
           <div>
@@ -120,7 +120,7 @@ export default function RegistrosCaja() {
         </div>
 
         <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderBottom: '4px solid var(--accent-primary)' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(197, 160, 89, 0.15)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(142, 27, 27, 0.15)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <FileText size={24} />
           </div>
           <div>
@@ -171,7 +171,7 @@ export default function RegistrosCaja() {
                           MP Point
                         </span>
                       ) : cobro.medio_pago ? (
-                        <span style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
+                        <span style={{ background: 'rgba(22, 18, 15, 0.035)', border: '1px solid var(--glass-border)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700 }}>
                           {cobro.medio_pago}
                         </span>
                       ) : (

@@ -9,7 +9,7 @@ export default function Caja() {
         <p style={{ color: 'var(--text-secondary)' }}>Módulo ERP: Gestión y registro del efectivo en caja.</p>
       </header>
 
-      <div style={{ padding: '24px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--glass-border)', borderRadius: '12px' }}>
+      <div style={{ padding: '24px', background: 'rgba(22, 18, 15, 0.02)', border: '1px solid var(--glass-border)', borderRadius: '12px' }}>
         <RegistrosCaja />
       </div>
     </div>

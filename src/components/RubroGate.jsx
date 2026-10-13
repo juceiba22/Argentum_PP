@@ -47,7 +47,7 @@ export default function RubroGate() {
       alignItems: 'center',
       justifyContent: 'center',
       padding: '20px',
-      background: 'radial-gradient(circle at top right, rgba(197, 160, 89, 0.05), transparent 50%), radial-gradient(circle at bottom left, rgba(197, 160, 89, 0.05), transparent 50%)'
+      background: 'radial-gradient(circle at top right, rgba(142, 27, 27, 0.05), transparent 50%), radial-gradient(circle at bottom left, rgba(142, 27, 27, 0.05), transparent 50%)'
     }}>
       <div className="glass-panel animate-fade-in" style={{ padding: '40px', width: '100%', maxWidth: '460px', textAlign: 'center' }}>
         <div style={{

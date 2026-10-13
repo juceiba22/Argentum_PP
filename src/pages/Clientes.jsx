@@ -161,7 +161,7 @@ export default function Clientes() {
             </div>
           )}
           {clienteCreadoId && (
-            <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', borderRadius: '8px', color: '#6ee7b7' }}>
+            <div style={{ marginTop: '16px', padding: '16px', background: 'rgba(47, 122, 74, 0.1)', border: '1px solid var(--success)', borderRadius: '8px', color: '#6ee7b7' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontWeight: 600 }}>
                 <CheckCircle2 size={20} /> ¡Cliente creado con éxito!
               </div>
@@ -220,7 +220,7 @@ export default function Clientes() {
                       {/* Fila Principal del Pedido */}
                       <div 
                         onClick={() => toggleRow(pedido.id)}
-                        style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: expandedRowId === pedido.id ? 'rgba(255,255,255,0.05)' : 'transparent', transition: 'background 0.2s' }}
+                        style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: expandedRowId === pedido.id ? 'rgba(22, 18, 15, 0.035)' : 'transparent', transition: 'background 0.2s' }}
                       >
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
@@ -246,7 +246,7 @@ export default function Clientes() {
                             <div className="table-responsive">
                               <table style={{ width: '100%', fontSize: '0.85rem', textAlign: 'left', borderCollapse: 'collapse' }}>
                                 <thead>
-                                  <tr style={{ color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                  <tr style={{ color: 'var(--text-secondary)', borderBottom: '1px solid rgba(22, 18, 15, 0.07)' }}>
                                     <th style={{ paddingBottom: '8px', fontWeight: 500 }}>Producto</th>
                                     <th style={{ paddingBottom: '8px', fontWeight: 500 }}>Cant.</th>
                                     <th style={{ paddingBottom: '8px', fontWeight: 500 }}>Precio U.</th>

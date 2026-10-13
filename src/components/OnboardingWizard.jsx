@@ -299,7 +299,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
                   <label key={cond} style={{
                     display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '6px',
                     border: `1px solid ${formData.condicion_fiscal === cond ? 'var(--accent-primary)' : 'rgba(0,0,0,0.1)'}`,
-                    backgroundColor: formData.condicion_fiscal === cond ? 'rgba(197, 160, 89, 0.08)' : 'var(--card-bg)',
+                    backgroundColor: formData.condicion_fiscal === cond ? 'rgba(142, 27, 27, 0.08)' : 'var(--card-bg)',
                     cursor: 'pointer'
                   }}>
                     <input 

@@ -466,10 +466,10 @@ export default function Market() {
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'space-between', 
-                background: item.itemNormalizado.es_promocion ? 'rgba(236, 72, 153, 0.1)' : (isMobile ? 'var(--panel-bg)' : 'rgba(255,255,255,0.02)'), 
+                background: item.itemNormalizado.es_promocion ? 'rgba(142, 27, 27, 0.1)' : (isMobile ? 'var(--panel-bg)' : 'rgba(22, 18, 15, 0.02)'), 
                 padding: '12px', 
                 borderRadius: '8px',
-                border: item.itemNormalizado.es_promocion ? '1px solid rgba(236, 72, 153, 0.3)' : '1px solid var(--glass-border)'
+                border: item.itemNormalizado.es_promocion ? '1px solid rgba(142, 27, 27, 0.3)' : '1px solid var(--glass-border)'
               }}>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontWeight: 600, fontSize: '0.95rem', marginBottom: '4px', color: item.itemNormalizado.es_promocion ? 'var(--accent-primary)' : 'var(--text-primary)' }}>
@@ -500,9 +500,9 @@ export default function Market() {
         {/* CLIENTE INFO / BUTTON */}
         <div style={{ marginBottom: '16px' }}>
           {clienteAsignado ? (
-            <div style={{ padding: '12px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid #38bdf8', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '12px', background: 'rgba(47, 111, 115, 0.1)', border: '1px solid var(--chart-3)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <p style={{ color: '#38bdf8', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '4px' }}>Cliente Asignado:</p>
+                <p style={{ color: 'var(--chart-3)', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '4px' }}>Cliente Asignado:</p>
                 <p style={{ fontWeight: 600 }}>{clienteAsignado.nombre}</p>
               </div>
               <button onClick={() => setClienteAsignado(null)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer' }} title="Remover Cliente">
@@ -512,7 +512,7 @@ export default function Market() {
           ) : (
             <button 
               onClick={() => setIsClienteModalOpen(true)}
-              style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px dashed var(--glass-border)', borderRadius: '8px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+              style={{ width: '100%', padding: '12px', background: 'rgba(22, 18, 15, 0.035)', border: '1px dashed var(--glass-border)', borderRadius: '8px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
               className="hover-scale"
             >
               <UserPlus size={20} /> Asignar Cliente (Opcional)
@@ -556,7 +556,7 @@ export default function Market() {
             padding: '16px 20px',
             marginBottom: '24px',
             borderRadius: '8px',
-            backgroundColor: mensaje.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+            backgroundColor: mensaje.type === 'success' ? 'rgba(47, 122, 74, 0.12)' : 'rgba(239, 68, 68, 0.12)',
             color: mensaje.type === 'success' ? 'var(--success)' : 'var(--danger)',
             border: `1px solid ${mensaje.type === 'success' ? 'var(--success)' : 'var(--danger)'}`,
             display: 'flex',
@@ -622,15 +622,15 @@ export default function Market() {
                         <img 
                           src={promo.imagen_url} 
                           alt={promo.nombre_producto} 
-                          style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '50%', marginBottom: '16px', marginTop: '24px', border: '3px solid rgba(255,255,255,0.1)' }} 
+                          style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '50%', marginBottom: '16px', marginTop: '24px', border: '3px solid rgba(22, 18, 15, 0.07)' }} 
                         />
                       ) : (
-                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '24px', borderRadius: '50%', marginBottom: '16px', marginTop: '24px' }}>
+                        <div style={{ background: 'rgba(22, 18, 15, 0.035)', padding: '24px', borderRadius: '50%', marginBottom: '16px', marginTop: '24px' }}>
                           <Tag size={40} color="var(--accent-primary)" />
                         </div>
                       )}
                       <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold', marginBottom: '4px' }}>{promo.nombre_producto}</h3>
-                      <p style={{ background: 'rgba(255,255,255,0.1)', padding: '4px 12px', borderRadius: '12px', fontWeight: 600, marginBottom: '8px' }}>
+                      <p style={{ background: 'rgba(22, 18, 15, 0.07)', padding: '4px 12px', borderRadius: '12px', fontWeight: 600, marginBottom: '8px' }}>
                         {promo.cantidad_kg} Kg x ${Number(promo.precio_promocional).toLocaleString()}
                       </p>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontSize: '0.9rem' }}>
@@ -668,10 +668,10 @@ export default function Market() {
                       <img 
                         src={producto.imagen_url} 
                         alt={producto.nombre} 
-                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '50%', marginBottom: '16px', border: '3px solid rgba(255,255,255,0.05)' }} 
+                        style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '50%', marginBottom: '16px', border: '3px solid rgba(22, 18, 15, 0.035)' }} 
                       />
                     ) : (
-                      <div style={{ background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '50%', marginBottom: '16px' }}>
+                      <div style={{ background: 'rgba(22, 18, 15, 0.035)', padding: '20px', borderRadius: '50%', marginBottom: '16px' }}>
                         <Tag size={40} color="var(--text-secondary)" />
                       </div>
                     )}
@@ -704,7 +704,7 @@ export default function Market() {
           position: 'fixed', bottom: '24px', right: '50%', transform: 'translateX(50%)',
           background: 'rgba(30, 41, 59, 0.95)', padding: '12px 24px',
           borderRadius: '32px', border: '1px solid var(--accent-primary)', 
-          boxShadow: '0 8px 32px rgba(236, 72, 153, 0.4)',
+          boxShadow: '0 8px 32px rgba(142, 27, 27, 0.4)',
           display: 'flex', gap: '24px', alignItems: 'center', zIndex: 90,
           backdropFilter: 'blur(10px)',
           width: '90%', maxWidth: '400px', justifyContent: 'space-between'
@@ -796,7 +796,7 @@ export default function Market() {
                         fontWeight: String(cantidadToAdd) === String(val) ? 700 : 500,
                         borderRadius: '6px',
                         border: String(cantidadToAdd) === String(val) ? '1px solid var(--accent-primary)' : '1px solid var(--glass-border)',
-                        background: String(cantidadToAdd) === String(val) ? 'rgba(236, 72, 153, 0.25)' : 'rgba(255,255,255,0.05)',
+                        background: String(cantidadToAdd) === String(val) ? 'rgba(142, 27, 27, 0.25)' : 'rgba(22, 18, 15, 0.035)',
                         color: String(cantidadToAdd) === String(val) ? 'var(--accent-primary)' : 'var(--text-primary)',
                         cursor: 'pointer'
                       }}
@@ -820,7 +820,7 @@ export default function Market() {
               </div>
 
               <div style={{ display: 'flex', gap: '16px' }}>
-                <button type="button" onClick={handleCloseProductModal} className="btn" style={{ flex: 1, padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+                <button type="button" onClick={handleCloseProductModal} className="btn" style={{ flex: 1, padding: '16px', background: 'rgba(22, 18, 15, 0.035)', border: '1px solid var(--glass-border)' }}>
                   Cancelar
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={!cantidadToAdd || Number(cantidadToAdd) <= 0} style={{ flex: 2, padding: '16px', fontSize: '1.1rem' }}>
@@ -876,23 +876,23 @@ export default function Market() {
               <div className="animate-fade-in">
                 <h3 style={{ marginBottom: '16px', fontSize: '1.2rem' }}>Seleccione medio de pago:</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                  <button onClick={() => seleccionarMetodo('efectivo')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', color: 'var(--success)' }}>
+                  <button onClick={() => seleccionarMetodo('efectivo')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(47, 122, 74, 0.1)', border: '1px solid var(--success)', color: 'var(--success)' }}>
                     <Banknote size={32} />
                     <span style={{ fontWeight: 'bold' }}>Efectivo</span>
                   </button>
-                  <button onClick={() => seleccionarMetodo('mercado_pago')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid #38bdf8', color: '#38bdf8' }}>
+                  <button onClick={() => seleccionarMetodo('mercado_pago')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(47, 111, 115, 0.1)', border: '1px solid var(--chart-3)', color: 'var(--chart-3)' }}>
                     <Smartphone size={32} />
                     <span style={{ fontWeight: 'bold' }}>Mercado Pago</span>
                   </button>
-                  <button onClick={() => seleccionarMetodo('cuenta_dni')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid #22c55e', color: '#22c55e' }}>
+                  <button onClick={() => seleccionarMetodo('cuenta_dni')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(47, 122, 74, 0.1)', border: '1px solid var(--success)', color: 'var(--success)' }}>
                     <QrCode size={32} />
                     <span style={{ fontWeight: 'bold' }}>Cuenta DNI</span>
                   </button>
-                  <button onClick={() => seleccionarMetodo('tarjeta')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(249, 115, 22, 0.1)', border: '1px solid #f97316', color: '#f97316' }}>
+                  <button onClick={() => seleccionarMetodo('tarjeta')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(142, 27, 27, 0.1)', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)' }}>
                     <CreditCard size={32} />
                     <span style={{ fontWeight: 'bold' }}>Tarjetas</span>
                   </button>
-                  <button onClick={() => seleccionarMetodo('transferencia')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(168, 85, 247, 0.1)', border: '1px solid #a855f7', color: '#a855f7', gridColumn: isMobile ? 'span 1' : 'span 2' }}>
+                  <button onClick={() => seleccionarMetodo('transferencia')} className="btn hover-scale" style={{ padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: 'rgba(183, 121, 31, 0.1)', border: '1px solid var(--chart-2)', color: 'var(--chart-2)', gridColumn: isMobile ? 'span 1' : 'span 2' }}>
                     <Building size={32} />
                     <span style={{ fontWeight: 'bold' }}>Transferencia Bancaria</span>
                   </button>
@@ -904,15 +904,15 @@ export default function Market() {
             {step === 'confirmacion' && (
               <div className="animate-fade-in" style={{ textAlign: 'center' }}>
                 {metodoPago === 'efectivo' && (
-                  <div style={{ padding: '20px', background: 'rgba(16, 185, 129, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
+                  <div style={{ padding: '20px', background: 'rgba(47, 122, 74, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
                     <Banknote size={48} color="var(--success)" style={{ margin: '0 auto 16px' }} />
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Cobro en Efectivo</h3>
                     <p style={{ color: 'var(--text-secondary)' }}>Recibe <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> en caja.</p>
                   </div>
                 )}
                 {metodoPago === 'mercado_pago' && (
-                  <div style={{ padding: '20px', background: 'rgba(56, 189, 248, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
-                    <Smartphone size={48} color="#38bdf8" style={{ margin: '0 auto 16px' }} />
+                  <div style={{ padding: '20px', background: 'rgba(47, 111, 115, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
+                    <Smartphone size={48} color="var(--chart-3)" style={{ margin: '0 auto 16px' }} />
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Mercado Pago Point</h3>
                     
                     {mensaje && mensaje.type === 'error' && (
@@ -972,7 +972,7 @@ export default function Market() {
 
                     {mpStatus === 'waiting' ? (
                        <div style={{ padding: '16px 0' }}>
-                          <Loader className="spin" size={32} color="#38bdf8" style={{ margin: '0 auto 16px', animation: 'spin 2s linear infinite' }} />
+                          <Loader className="spin" size={32} color="var(--chart-3)" style={{ margin: '0 auto 16px', animation: 'spin 2s linear infinite' }} />
                           <p style={{ color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '16px' }}>Esperando que el cliente pase la tarjeta o pague con QR en el dispositivo físico...</p>
                           <button onClick={handleCancelarMercadoPago} className="btn" style={{ padding: '10px 20px', border: '1px solid var(--danger)', color: 'var(--danger)', background: 'transparent' }}>
                             Cancelar Orden de Pago
@@ -984,22 +984,22 @@ export default function Market() {
                   </div>
                 )}
                 {metodoPago === 'cuenta_dni' && (
-                  <div style={{ padding: '20px', background: 'rgba(34, 197, 94, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
-                    <QrCode size={48} color="#22c55e" style={{ margin: '0 auto 16px' }} />
+                  <div style={{ padding: '20px', background: 'rgba(47, 122, 74, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
+                    <QrCode size={48} color="var(--success)" style={{ margin: '0 auto 16px' }} />
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Cuenta DNI</h3>
                     <p style={{ color: 'var(--text-secondary)' }}>Pide al cliente que escanee el cartón físico en tu mostrador por <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> y luego presiona confirmar.</p>
                   </div>
                 )}
                 {metodoPago === 'tarjeta' && (
-                  <div style={{ padding: '20px', background: 'rgba(249, 115, 22, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
-                    <CreditCard size={48} color="#f97316" style={{ margin: '0 auto 16px' }} />
+                  <div style={{ padding: '20px', background: 'rgba(142, 27, 27, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
+                    <CreditCard size={48} color="var(--accent-primary)" style={{ margin: '0 auto 16px' }} />
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Posnet / Terminal de Tarjetas</h3>
                     <p style={{ color: 'var(--text-secondary)' }}>Digita manualmente <strong>${totalCarrito.toLocaleString(undefined, {minimumFractionDigits:2})}</strong> en el dispositivo. Al aprobarse, presiona confirmar.</p>
                   </div>
                 )}
                 {metodoPago === 'transferencia' && (
-                  <div style={{ padding: '20px', background: 'rgba(168, 85, 247, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
-                    <Building size={48} color="#a855f7" style={{ margin: '0 auto 16px' }} />
+                  <div style={{ padding: '20px', background: 'rgba(183, 121, 31, 0.05)', borderRadius: '8px', marginBottom: '24px' }}>
+                    <Building size={48} color="var(--chart-2)" style={{ margin: '0 auto 16px' }} />
                     <h3 style={{ fontSize: '1.5rem', marginBottom: '8px' }}>Transferencia</h3>
                     <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '4px', fontFamily: 'monospace', margin: '16px 0', fontSize: '1.1rem' }}>
                       CBU: Configurar oportunamente
@@ -1090,7 +1090,7 @@ export default function Market() {
               </div>
 
               <div style={{ display: 'flex', gap: '16px' }}>
-                <button type="button" onClick={() => setIsClienteModalOpen(false)} className="btn" style={{ flex: 1, padding: '16px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+                <button type="button" onClick={() => setIsClienteModalOpen(false)} className="btn" style={{ flex: 1, padding: '16px', background: 'rgba(22, 18, 15, 0.035)', border: '1px solid var(--glass-border)' }}>
                   Cancelar
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={creandoCliente || !clienteForm.nombre} style={{ flex: 2, padding: '16px', fontSize: '1.1rem' }}>
@@ -1119,7 +1119,7 @@ export default function Market() {
               No puedes procesar pagos porque no has abierto tu caja de ventas. ¿Deseas abrirla ahora?
             </p>
             <div style={{ display: 'flex', gap: '16px' }}>
-              <button onClick={() => setIsAbrirCajaModalOpen(false)} className="btn" style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+              <button onClick={() => setIsAbrirCajaModalOpen(false)} className="btn" style={{ flex: 1, padding: '12px', background: 'rgba(22, 18, 15, 0.035)', border: '1px solid var(--glass-border)' }}>
                 Cancelar
               </button>
               <button onClick={handleQuickAbrirCaja} disabled={abriendoCaja} className="btn btn-primary" style={{ flex: 1, padding: '12px' }}>

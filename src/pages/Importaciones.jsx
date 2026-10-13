@@ -174,10 +174,10 @@ export default function Importaciones() {
 
       {success && (
         <div style={{
-          backgroundColor: 'rgba(74, 124, 89, 0.1)', color: 'var(--success)',
+          backgroundColor: 'rgba(47, 122, 74, 0.1)', color: 'var(--success)',
           padding: '16px', borderRadius: '4px', marginBottom: '24px',
           display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.95rem',
-          border: '1px solid rgba(74, 124, 89, 0.2)'
+          border: '1px solid rgba(47, 122, 74, 0.2)'
         }}>
           <CheckCircle size={20} />
           <span>{success}</span>
@@ -207,7 +207,7 @@ export default function Importaciones() {
             textAlign: 'center', 
             transition: 'all 0.3s ease',
             border: isDragging ? '2px dashed var(--accent-primary)' : '2px dashed var(--glass-border)',
-            backgroundColor: isDragging ? 'rgba(197, 160, 89, 0.03)' : 'var(--bg-color)',
+            backgroundColor: isDragging ? 'rgba(142, 27, 27, 0.03)' : 'var(--bg-color)',
             cursor: uploading ? 'default' : 'pointer',
             borderRadius: '8px'
           }}

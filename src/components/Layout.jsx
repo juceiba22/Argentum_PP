@@ -165,7 +165,7 @@ export default function Layout() {
               marginTop: '10px',
               padding: '6px 12px',
               borderRadius: '6px',
-              backgroundColor: 'rgba(197, 160, 89, 0.15)',
+              backgroundColor: 'rgba(142, 27, 27, 0.15)',
               border: '1px solid var(--accent-primary)',
               color: 'var(--accent-primary)',
               fontSize: '0.78rem',

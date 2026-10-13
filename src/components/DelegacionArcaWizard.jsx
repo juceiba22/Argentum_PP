@@ -89,7 +89,7 @@ export default function DelegacionArcaWizard({ onClose }) {
           width: '52px',
           height: '52px',
           borderRadius: '50%',
-          backgroundColor: 'rgba(197, 160, 89, 0.15)',
+          backgroundColor: 'rgba(142, 27, 27, 0.15)',
           border: '2px solid var(--accent-primary)',
           display: 'flex',
           alignItems: 'center',
@@ -111,7 +111,7 @@ export default function DelegacionArcaWizard({ onClose }) {
 
       {/* Caja Destacada con el CUIT de la Plataforma */}
       <div style={{
-        backgroundColor: 'rgba(197, 160, 89, 0.08)',
+        backgroundColor: 'rgba(142, 27, 27, 0.08)',
         border: '1px solid var(--glass-border)',
         borderRadius: '8px',
         padding: '16px 20px',
@@ -203,7 +203,7 @@ export default function DelegacionArcaWizard({ onClose }) {
       <div style={{
         padding: '16px 20px',
         borderRadius: '8px',
-        backgroundColor: 'rgba(74, 124, 89, 0.08)',
+        backgroundColor: 'rgba(47, 122, 74, 0.08)',
         border: '1px solid var(--success)',
         color: 'var(--text-primary)',
         fontSize: '0.85rem',

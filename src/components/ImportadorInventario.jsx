@@ -189,7 +189,7 @@ export default function ImportadorInventario({ tenantId, onImportSuccess, onClos
         borderRadius: '12px',
         padding: '40px',
         textAlign: 'center',
-        backgroundColor: 'rgba(197, 160, 89, 0.03)',
+        backgroundColor: 'rgba(142, 27, 27, 0.03)',
         cursor: 'pointer'
       }}
       onClick={() => fileInputRef.current.click()}
@@ -272,7 +272,7 @@ export default function ImportadorInventario({ tenantId, onImportSuccess, onClos
         </table>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(197, 160, 89, 0.1)', padding: '16px', borderRadius: '8px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(142, 27, 27, 0.1)', padding: '16px', borderRadius: '8px' }}>
         <div>
           <strong style={{ display: 'block', fontSize: '1.1rem' }}>Total a importar: {parsedData.length} productos</strong>
           <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Los productos se agregarán a tu inventario actual.</span>

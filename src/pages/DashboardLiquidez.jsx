@@ -54,7 +54,7 @@ export default function DashboardLiquidez() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', marginBottom: '32px' }}>
         
         <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderBottom: '4px solid var(--success)' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(47, 122, 74, 0.15)', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ArrowUpRight size={24} />
           </div>
           <div>
@@ -77,13 +77,13 @@ export default function DashboardLiquidez() {
           </div>
         </div>
 
-        <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderBottom: `4px solid ${liquidez.liquidez >= 0 ? '#3b82f6' : 'var(--warning)'}` }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `rgba(${liquidez.liquidez >= 0 ? '59, 130, 246' : '245, 158, 11'}, 0.15)`, color: liquidez.liquidez >= 0 ? '#3b82f6' : 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="glass-panel" style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderBottom: `4px solid ${liquidez.liquidez >= 0 ? 'var(--chart-4)' : 'var(--warning)'}` }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `rgba(${liquidez.liquidez >= 0 ? '59, 130, 246' : '245, 158, 11'}, 0.15)`, color: liquidez.liquidez >= 0 ? 'var(--chart-4)' : 'var(--warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Activity size={24} />
           </div>
           <div>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 500, marginBottom: '4px' }}>Liquidez Disponible (Caja)</p>
-            <h3 style={{ fontSize: '2rem', fontWeight: 900, color: liquidez.liquidez >= 0 ? '#f8fafc' : 'var(--warning)' }}>
+            <h3 style={{ fontSize: '2rem', fontWeight: 900, color: liquidez.liquidez >= 0 ? 'var(--text)' : 'var(--warning)' }}>
               ${loading ? '...' : liquidez.liquidez.toLocaleString()}
             </h3>
           </div>
@@ -122,7 +122,7 @@ export default function DashboardLiquidez() {
                     </td>
                     <td>
                       {mov.tipo === 'INGRESO' ? (
-                        <span style={{ background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ background: 'rgba(47, 122, 74, 0.1)', color: 'var(--success)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                           <ArrowUpRight size={14} /> INGRESO
                         </span>
                       ) : (

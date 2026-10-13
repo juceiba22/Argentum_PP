@@ -84,7 +84,7 @@ export default function VentasHome() {
         <button 
           onClick={() => navigate('/market?view=promociones')}
           className="glass-panel hover-scale"
-          style={{ flex: '1 1 300px', padding: '60px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', cursor: 'pointer', border: '2px solid var(--accent-primary)', background: 'rgba(236, 72, 153, 0.05)' }}
+          style={{ flex: '1 1 300px', padding: '60px 40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', cursor: 'pointer', border: '2px solid var(--accent-primary)', background: 'rgba(142, 27, 27, 0.05)' }}
         >
           <Megaphone size={80} color="var(--accent-primary)" />
           <h2 style={{ fontSize: '2rem', margin: 0 }}>Promociones</h2>
@@ -114,7 +114,7 @@ export default function VentasHome() {
             <button 
               onClick={() => setConfirmAbrirCaja(true)}
               className="btn hover-scale"
-              style={{ background: 'rgba(16, 185, 129, 0.1)', border: '2px solid var(--success)', color: 'var(--success)', padding: '20px 40px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 'bold' }}
+              style={{ background: 'rgba(47, 122, 74, 0.1)', border: '2px solid var(--success)', color: 'var(--success)', padding: '20px 40px', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 'bold' }}
             >
               <LockOpen size={24} />
               ABRIR CAJA
@@ -146,7 +146,7 @@ export default function VentasHome() {
               ¿Deseas abrir la caja para iniciar la jornada de ventas?
             </p>
             <div style={{ display: 'flex', gap: '16px' }}>
-              <button onClick={() => setConfirmAbrirCaja(false)} className="btn" style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+              <button onClick={() => setConfirmAbrirCaja(false)} className="btn" style={{ flex: 1, padding: '12px', background: 'rgba(22, 18, 15, 0.035)', border: '1px solid var(--glass-border)' }}>
                 Cancelar
               </button>
               <button onClick={handleAbrirCaja} disabled={procesando} className="btn" style={{ flex: 1, padding: '12px', background: 'var(--success)', color: 'white', border: 'none' }}>
@@ -171,7 +171,7 @@ export default function VentasHome() {
               ¿Estás seguro que deseas CERRAR la caja? No podrás registrar más ventas hasta abrirla de nuevo.
             </p>
             <div style={{ display: 'flex', gap: '16px' }}>
-              <button onClick={() => setConfirmCerrarCaja(false)} className="btn" style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)' }}>
+              <button onClick={() => setConfirmCerrarCaja(false)} className="btn" style={{ flex: 1, padding: '12px', background: 'rgba(22, 18, 15, 0.035)', border: '1px solid var(--glass-border)' }}>
                 Cancelar
               </button>
               <button onClick={handleCerrarCaja} disabled={procesando} className="btn" style={{ flex: 1, padding: '12px', background: 'var(--danger)', color: 'white', border: 'none' }}>

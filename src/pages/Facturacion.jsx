@@ -4,7 +4,7 @@ import { supabase } from '../services/supabaseClient';
 import { createCliente, getAllClientes } from '../services/clientesApi';
 import { getAuthHeaders } from '../services/authHeader';
 import { useAuth } from '../context/AuthContext';
-import FacturaPDF from '../components/FacturaPDF';
+import FacturaPDF, { emisorDesdeComercio } from '../components/FacturaPDF';
 import { PDFDownloadLink, PDFViewer } from '@react-pdf/renderer';
 import { 
   Receipt, Search, Calendar, CheckCircle2, AlertCircle, 
@@ -25,7 +25,8 @@ const DOC_TIPO_OPTIONS = [
 ];
 
 export default function Facturacion() {
-  const { tenantId } = useAuth();
+  const { tenantId, tenantInfo } = useAuth();
+  const emisor = emisorDesdeComercio(tenantInfo);
   const [pedidos, setPedidos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -280,7 +281,7 @@ export default function Facturacion() {
       {/* Tarjetas de Estadísticas */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '30px' }}>
         <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(74, 124, 89, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(47, 122, 74, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)' }}>
             <DollarSign size={24} />
           </div>
           <div>
@@ -294,7 +295,7 @@ export default function Facturacion() {
         </div>
 
         <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(197, 160, 89, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: 'rgba(142, 27, 27, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
             <Receipt size={24} />
           </div>
           <div>
@@ -389,7 +390,7 @@ export default function Facturacion() {
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
             <thead>
-              <tr style={{ borderBottom: '2px solid rgba(197, 160, 89, 0.15)', textAlign: 'left', fontWeight: 'bold' }}>
+              <tr style={{ borderBottom: '2px solid rgba(142, 27, 27, 0.15)', textAlign: 'left', fontWeight: 'bold' }}>
                 <th style={{ padding: '12px' }}>ID / Comprobante</th>
                 <th style={{ padding: '12px' }}>Fecha</th>
                 <th style={{ padding: '12px' }}>Cliente</th>
@@ -436,14 +437,14 @@ export default function Facturacion() {
                     {pedido.is_fiscal ? (
                       <span style={{
                         padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold',
-                        backgroundColor: 'rgba(74, 124, 89, 0.15)', color: 'var(--success)'
+                        backgroundColor: 'rgba(47, 122, 74, 0.15)', color: 'var(--success)'
                       }}>
                         EMITIDO (CAE)
                       </span>
                     ) : (
                       <span style={{
                         padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold',
-                        backgroundColor: 'rgba(197, 160, 89, 0.15)', color: 'var(--accent-hover)'
+                        backgroundColor: 'rgba(142, 27, 27, 0.15)', color: 'var(--accent-hover)'
                       }}>
                         PENDIENTE
                       </span>
@@ -525,7 +526,7 @@ export default function Facturacion() {
               </div>
             )}
 
-            <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(74, 124, 89, 0.1)', borderRadius: '4px', border: '1px solid rgba(74, 124, 89, 0.3)' }}>
+            <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'rgba(47, 122, 74, 0.1)', borderRadius: '4px', border: '1px solid rgba(47, 122, 74, 0.3)' }}>
               <strong style={{ color: 'var(--success)' }}>Régimen Simplificado (Monotributo)</strong>
               <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem' }}>Se emitirá una <b>Factura C</b> sin discriminación de IVA.</p>
             </div>
@@ -684,10 +685,10 @@ export default function Facturacion() {
               const { neto, iva, total } = getDesglose(selectedPedido.total);
               return (
                 <div style={{
-                  backgroundColor: 'rgba(197, 160, 89, 0.05)', border: '1px solid var(--accent-primary)',
+                  backgroundColor: 'rgba(142, 27, 27, 0.05)', border: '1px solid var(--accent-primary)',
                   padding: '16px', borderRadius: '4px', marginBottom: '24px'
                 }}>
-                  <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', borderBottom: '1px solid rgba(197, 160, 89, 0.2)', paddingBottom: '6px' }}>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '1rem', borderBottom: '1px solid rgba(142, 27, 27, 0.2)', paddingBottom: '6px' }}>
                     Desglose de Impuestos
                   </h4>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.9rem' }}>
@@ -759,7 +760,8 @@ export default function Facturacion() {
             <div style={{ flex: 1, border: '1px solid var(--glass-border)', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
               <PDFViewer style={{ width: '100%', height: '100%', border: 'none' }}>
                 <FacturaPDF 
-                  factura={pdfFacturaActiva} 
+                  factura={pdfFacturaActiva}
+                  emisor={emisor}
                   qrCodeBase64="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkAQAAAAD8ee4vAAAAU0lEQVR42mP4DwUMDP8P4A8E/gf4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4F8d2bHn/z0VpAAAAABJRU5ErkJggg==" 
                 />
               </PDFViewer>
@@ -769,7 +771,8 @@ export default function Facturacion() {
               <PDFDownloadLink
                 document={
                   <FacturaPDF 
-                    factura={pdfFacturaActiva} 
+                    factura={pdfFacturaActiva}
+                  emisor={emisor}
                     qrCodeBase64="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkAQAAAAD8ee4vAAAAU0lEQVR42mP4DwUMDP8P4A8E/gf4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4D/Af4F8d2bHn/z0VpAAAAABJRU5ErkJggg==" 
                   />
                 }

@@ -187,14 +187,14 @@ export default function GestionPromociones() {
                         {promo.imagen_url ? (
                           <img src={promo.imagen_url} alt={promo.nombre_producto} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
                         ) : (
-                          <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'rgba(22, 18, 15, 0.035)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Tag size={20} />
                           </div>
                         )}
                         <span style={{ fontWeight: 600 }}>{promo.nombre_producto}</span>
                       </td>
                       <td>
-                        <span style={{ background: 'rgba(255,255,255,0.05)', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                        <span style={{ background: 'rgba(22, 18, 15, 0.035)', padding: '4px 8px', borderRadius: '4px', fontWeight: 600 }}>
                           {promo.cantidad_kg} Kg
                         </span>
                       </td>

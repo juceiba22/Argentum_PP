@@ -235,7 +235,7 @@ export default function ConfiguracionFiscal() {
           gap: '8px',
           fontSize: '0.85rem',
           fontWeight: 700,
-          backgroundColor: formData.afip_delegacion_verificada ? 'rgba(74, 124, 89, 0.12)' : 'rgba(210, 142, 61, 0.12)',
+          backgroundColor: formData.afip_delegacion_verificada ? 'rgba(47, 122, 74, 0.12)' : 'rgba(210, 142, 61, 0.12)',
           border: `1px solid ${formData.afip_delegacion_verificada ? 'var(--success)' : 'var(--warning)'}`,
           color: formData.afip_delegacion_verificada ? 'var(--success)' : 'var(--warning)'
         }}>
@@ -255,7 +255,7 @@ export default function ConfiguracionFiscal() {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          backgroundColor: feedback.type === 'success' ? 'rgba(74, 124, 89, 0.12)' : 'rgba(183, 65, 52, 0.12)',
+          backgroundColor: feedback.type === 'success' ? 'rgba(47, 122, 74, 0.12)' : 'rgba(183, 65, 52, 0.12)',
           border: `1px solid ${feedback.type === 'success' ? 'var(--success)' : 'var(--danger)'}`,
           color: feedback.type === 'success' ? 'var(--success)' : 'var(--danger)',
           fontWeight: 600
@@ -408,7 +408,7 @@ export default function ConfiguracionFiscal() {
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              backgroundColor: resultadoVerificacion.success ? 'rgba(74, 124, 89, 0.12)' : 'rgba(183, 65, 52, 0.12)',
+              backgroundColor: resultadoVerificacion.success ? 'rgba(47, 122, 74, 0.12)' : 'rgba(183, 65, 52, 0.12)',
               border: `1px solid ${resultadoVerificacion.success ? 'var(--success)' : 'var(--danger)'}`,
               color: resultadoVerificacion.success ? 'var(--success)' : 'var(--danger)',
               fontWeight: 600

@@ -172,13 +172,35 @@ const CONDICION_IVA_LABELS = {
   13: 'Monotributista Social',
 };
 
+// Sin datos de la carnicería el comprobante sale en blanco, nunca con los
+// de otro comercio (antes acá había datos fijos de un cliente real y se
+// imprimían en las facturas de todos los comercios).
 const EMISOR_DEFAULT = {
-  nombre: 'Lo de Cacho Carnes ',
-  eslogan: 'CALIDAD PREMIUM',
-  domicilio: 'Tabare 6799',
-  cuit: '20325361892',
-  condicionIVA: 'Monotributo',
-  telefono: '11 4567-8901',
+  nombre: '',
+  eslogan: '',
+  domicilio: '',
+  cuit: '',
+  condicionIVA: '',
+  telefono: '',
+};
+
+// Arma el emisor del comprobante con los datos fiscales de la carnicería
+// (tenantInfo de AuthContext).
+export const emisorDesdeComercio = (tenantInfo) => {
+  if (!tenantInfo) return EMISOR_DEFAULT;
+  const domicilio = [tenantInfo.domicilio_fiscal, tenantInfo.localidad, tenantInfo.provincia]
+    .filter(Boolean)
+    .join(', ');
+  return {
+    nombre: tenantInfo.razon_social || tenantInfo.nombre_comercio || '',
+    eslogan: tenantInfo.razon_social && tenantInfo.nombre_comercio && tenantInfo.razon_social !== tenantInfo.nombre_comercio
+      ? tenantInfo.nombre_comercio
+      : '',
+    domicilio,
+    cuit: String(tenantInfo.cuit || '').replace(/\D/g, ''),
+    condicionIVA: tenantInfo.condicion_fiscal || '',
+    telefono: '',
+  };
 };
 
 export const FacturaPDF = ({
