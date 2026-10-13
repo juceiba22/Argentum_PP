@@ -381,7 +381,7 @@ export default function Landing() {
 
       <a
         className="lp-whatsapp"
-        href="https://wa.me/5491178270751?text=Hola%2C%20quiero%20saber%20m%C3%A1s%20sobre%20Argentum%20para%20mi%20carnicer%C3%ADa"
+        href="https://wa.me/5491166814208?text=Hola%2C%20quiero%20saber%20m%C3%A1s%20sobre%20Argentum%20para%20mi%20carnicer%C3%ADa"
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Escribinos por WhatsApp"

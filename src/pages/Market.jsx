@@ -946,7 +946,7 @@ export default function Market() {
                               {mensaje.linkText || 'Ir a Configuración'} →
                             </Link>
                             <a
-                              href="https://wa.me/5491178270751?text=Hola%20Soporte%20Argentum,%20necesito%20asistencia%20con%20el%20Punto%20de%20Venta%20POS%20y%20Mercado%20Pago%20Point."
+                              href="https://wa.me/5491166814208?text=Hola%20Soporte%20Argentum,%20necesito%20asistencia%20con%20el%20Punto%20de%20Venta%20POS%20y%20Mercado%20Pago%20Point."
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{

@@ -479,7 +479,7 @@ export default function ConfiguracionMercadoPago() {
           Hablá directamente con nuestro equipo de soporte técnico para asistirte con tus credenciales y dispositivo.
         </p>
         <a
-          href="https://wa.me/5491178270751?text=Hola%20Soporte%20Argentum,%20necesito%20asistencia%20con%20la%20configuraci%C3%B3n%20de%20Mercado%20Pago%20Point."
+          href="https://wa.me/5491166814208?text=Hola%20Soporte%20Argentum,%20necesito%20asistencia%20con%20la%20configuraci%C3%B3n%20de%20Mercado%20Pago%20Point."
           target="_blank"
           rel="noopener noreferrer"
           style={{

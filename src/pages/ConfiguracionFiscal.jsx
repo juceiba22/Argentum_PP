@@ -449,7 +449,7 @@ export default function ConfiguracionFiscal() {
           Nuestro equipo de soporte técnico te guiará paso a paso para completar la configuración de tu comercio.
         </p>
         <a
-          href="https://wa.me/5491178270751?text=Necesito%20ayuda%20con%20la%20configuraci%C3%B3n%20de%20ARCA%20para%20emitir%20factura%20electr%C3%B3nica"
+          href="https://wa.me/5491166814208?text=Necesito%20ayuda%20con%20la%20configuraci%C3%B3n%20de%20ARCA%20para%20emitir%20factura%20electr%C3%B3nica"
           target="_blank"
           rel="noopener noreferrer"
           style={{

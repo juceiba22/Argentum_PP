@@ -17,7 +17,7 @@ export default function PaywallScreen() {
 
   const handleContactarSoporte = () => {
     const text = encodeURIComponent(`Hola, quiero activar la licencia anual de Argentum para la cuenta: ${user?.email || ''}`);
-    window.open(`https://wa.me/5491178270751?text=${text}`, '_blank');
+    window.open(`https://wa.me/5491166814208?text=${text}`, '_blank');
   };
 
   const vencio = trialEndsAt
