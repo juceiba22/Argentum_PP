@@ -260,7 +260,7 @@ export default function DesposteMediaRes() {
                       {hayCosto && <td style={tdStyle}></td>}
                     </tr>,
                     ...(f.subcortes || []).map(s => renderFilaStock(s.nombre, s.kg, s.porcentajeMediaRes, { sangria: true })),
-                    ...(f.subcortes ? [
+                    ...(f.subcortes && f.perdidaKg > 0 ? [
                       <tr key={`${f.nombre}-perdida`} style={{ color: 'var(--danger)' }}>
                         <td style={tdStyle}><span style={{ paddingLeft: '50px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}><Trash2 size={14} /> Pérdida del subcorte</span></td>
                         <td style={tdStyle}></td>

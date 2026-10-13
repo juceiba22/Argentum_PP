@@ -68,7 +68,8 @@ export const SUBGRUPOS_MEDIA_RES = [
     origen: ['Nalga'],
     salidas: [
       { nombre: 'Tapa de nalga', factor: 0.25 },
-      { nombre: 'Nalga', factor: null }
+      // Lo que no es tapa sigue siendo nalga: sin segunda pérdida.
+      { nombre: 'Nalga', factor: 0.75 }
     ]
   },
   {
@@ -77,7 +78,8 @@ export const SUBGRUPOS_MEDIA_RES = [
     origen: ['Bife con lomo', 'Bife angosto'],
     salidas: [
       { nombre: 'Bife de chorizo', factor: 0.5623 },
-      { nombre: 'Lomo', factor: null }
+      // Lo que no es bife de chorizo sale como lomo: sin segunda pérdida.
+      { nombre: 'Lomo', factor: 0.4377 }
     ]
   }
 ];
