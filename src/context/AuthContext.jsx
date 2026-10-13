@@ -14,6 +14,9 @@ const SESSION_TIMEOUT_MS = 8000;
 // user_metadata, SIEMPRE arranca con su propio tenant aislado.
 const ADMIN_PRINCIPAL_EMAIL = 'admin@argentum.com';
 
+// Roles que entiende la app (ver allowedRoles en App.jsx y Layout.jsx).
+const ROLES_VALIDOS = ['admin', 'ventas'];
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [tenantId, setTenantId] = useState(null);
@@ -92,7 +95,9 @@ export const AuthProvider = ({ children }) => {
     const isVentas = emailLower.includes('ventas');
     // El rol mostrado en la UI puede venir de user_metadata (es solo display),
     // pero NUNCA se usa para decidir a qué tenant se conecta el usuario.
-    const defaultRole = isVentas ? 'ventas' : (sessionUser.user_metadata?.role || 'usuario');
+    // Sin rol en metadata (alta por Google, que no pasa por OnboardingWizard)
+    // es el dueño que crea su carnicería: admin.
+    const defaultRole = isVentas ? 'ventas' : (sessionUser.user_metadata?.role || 'admin');
 
     try {
       // 1. Intentar obtener asignación existente en tenant_users.
@@ -112,7 +117,10 @@ export const AuthProvider = ({ children }) => {
       if (data && data.length > 0 && data[0].tenant_id) {
         const tenantRow = data[0];
         setTenantId(tenantRow.tenant_id);
-        setRole(tenantRow.role || defaultRole);
+        // Las altas por Google quedaban guardadas con rol 'usuario', que no
+        // existe en la app (solo admin/ventas) y terminaba en "Acceso
+        // Denegado". Ese rol solo lo tuvo el dueño que creó la carnicería.
+        setRole(ROLES_VALIDOS.includes(tenantRow.role) ? tenantRow.role : defaultRole);
         try { localStorage.setItem('argentum_current_tenant_id', tenantRow.tenant_id); } catch (e) {}
         resolvedUserIdRef.current = sessionUser.id;
         await checkTrialAndLicense(sessionUser, tenantRow.tenant_id);
@@ -365,7 +373,7 @@ export const AuthProvider = ({ children }) => {
           const isVentas = currentUser.email?.toLowerCase().includes('ventas');
           // Este es solo un valor optimista/temporal mientras resolvemos el
           // tenant real en fetchTenantAndRole; no decide accesos por sí solo.
-          const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'usuario');
+          const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
           if (isMounted) {
             setRole(defaultRole);
             setTenantId(currentUser.user_metadata?.tenant_id || null);
@@ -422,7 +430,7 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const isVentas = currentUser.email?.toLowerCase().includes('ventas');
-        const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'usuario');
+        const defaultRole = isVentas ? 'ventas' : (currentUser.user_metadata?.role || 'admin');
         if (isMounted) {
           setRole(defaultRole);
         }
