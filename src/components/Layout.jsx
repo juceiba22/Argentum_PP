@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare, ShieldCheck, CreditCard, Building2 } from 'lucide-react';
+import { Users, LogOut, Menu, X, Wallet, Package, Store, Megaphone, Truck, ShoppingCart, Activity, BarChart2, Receipt, UploadCloud, List, PieChart, MessageSquare, ShieldCheck, CreditCard, Building2, Beef } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { useAuth } from '../context/AuthContext';
 
@@ -61,6 +61,7 @@ export default function Layout() {
       allowed: ['admin'],
       subItems: [
         { path: '/erp/proveedores', label: 'Proveedores / Frigoríficos', icon: <Truck size={20} />, allowed: ['admin'] },
+        { path: '/desposte', label: 'Desposte Media Res', icon: <Beef size={20} />, allowed: ['admin'] },
         { path: '/inventario', label: 'Inventario de Cortes', icon: <Package size={20} />, allowed: ['admin'] }
       ]
     },

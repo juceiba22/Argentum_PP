@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Landing from './pages/Landing';
 import Clientes from './pages/Clientes';
 import Inventario from './pages/Inventario';
+import DesposteMediaRes from './pages/DesposteMediaRes';
 import Market from './pages/Market';
 import GestionPromociones from './pages/GestionPromociones';
 import PromocionesPublicas from './pages/PromocionesPublicas';
@@ -137,6 +138,7 @@ function App() {
               <Route path="/configuracion-mercadopago" element={<ProtectedRoute allowedRoles={['admin']}><ConfiguracionMercadoPago /></ProtectedRoute>} />
               <Route path="/importaciones" element={<ProtectedRoute allowedRoles={['admin']}><Importaciones /></ProtectedRoute>} />
               <Route path="/inventario" element={<ProtectedRoute allowedRoles={['admin']}><Inventario /></ProtectedRoute>} />
+              <Route path="/desposte" element={<ProtectedRoute allowedRoles={['admin']}><DesposteMediaRes /></ProtectedRoute>} />
               <Route path="/market" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><Market /></ProtectedRoute>} />
               <Route path="/ventas-home" element={<ProtectedRoute allowedRoles={['admin', 'ventas']}><VentasHome /></ProtectedRoute>} />
               <Route path="/gestion-promociones" element={<ProtectedRoute allowedRoles={['admin']}><GestionPromociones /></ProtectedRoute>} />
