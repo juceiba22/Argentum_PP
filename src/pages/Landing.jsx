@@ -1,13 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Scale, Receipt, CreditCard, Beef, Truck, Calculator, Wallet, Megaphone,
   Users, ShieldCheck, ArrowRight, Check, ChevronDown, Menu, X
 } from 'lucide-react';
 import { STARTER_PRODUCTS_CARNICERIA } from '../utils/starterProducts';
+import { getPrecioLicencia } from '../services/licenciasApi';
 import './Landing.css';
 
 const CORTES_INICIALES = STARTER_PRODUCTS_CARNICERIA.length;
+
+// Precio de referencia mientras responde /api/licencias/precio (que manda el
+// valor real configurado en LICENCIA_PRECIO_ANUAL).
+const PRECIO_ANUAL_REFERENCIA = 299999;
+
+const INCLUYE_LICENCIA = [
+  'Mostrador por kilo y caja con todos los medios de cobro',
+  'Factura electrónica ARCA ilimitada, sin certificado propio',
+  'Desposte de media res, stock de cortes y costo real por kg',
+  'Compras, gastos, caja y estadísticas',
+  'Catálogo online y pedidos por WhatsApp',
+  'Soporte y actualizaciones incluidos'
+];
+
+const fmtPesos = (n) => '$' + Math.round(n).toLocaleString('es-AR');
 
 const FUNCIONES = [
   {
@@ -52,8 +68,8 @@ const FUNCIONES = [
   },
   {
     icon: Users,
-    titulo: 'Clientes y vendedores',
-    texto: 'Historial de compras de cada cliente y un perfil de vendedor de mostrador que solo ve la caja y las ventas.'
+    titulo: 'Clientes con historial',
+    texto: 'Registrá a tus clientes habituales y mirá qué compran, cuánto gastan y cada cuánto vuelven.'
   }
 ];
 
@@ -82,16 +98,16 @@ const PREGUNTAS = [
     a: 'En el mostrador elegís el corte, ingresás el peso que marca tu balanza y el sistema calcula el importe con el precio por kilo vigente. También podés vender por gramos o por unidad.'
   },
   {
+    q: '¿Puedo comprar la licencia sin hacer la prueba?',
+    a: 'Sí. Tocá "Comprar la licencia": creás la cuenta de tu carnicería y te lleva directo al pago. La licencia vale 12 meses desde el día que pagás.'
+  },
+  {
     q: '¿Qué pasa cuando terminan los 15 días de prueba?',
     a: 'Tus datos quedan guardados. Para seguir operando activás la licencia anual (pagando online o con un código) y continuás exactamente donde estabas.'
   },
   {
     q: '¿Puedo usarlo desde el celular o la tablet?',
     a: 'Sí. Argentum funciona en el navegador, así que lo usás desde la PC del mostrador, una tablet o tu celular, sin instalar nada.'
-  },
-  {
-    q: '¿Puedo tener empleados usando el sistema?',
-    a: 'Sí. Además del perfil de dueño, hay un perfil de vendedor que solo accede a la caja, las ventas y las promociones, sin ver tus números.'
   }
 ];
 
@@ -147,6 +163,11 @@ function Pregunta({ q, a }) {
 
 export default function Landing() {
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [precioAnual, setPrecioAnual] = useState(PRECIO_ANUAL_REFERENCIA);
+
+  useEffect(() => {
+    getPrecioLicencia().then(p => setPrecioAnual(p.precio)).catch(() => {});
+  }, []);
 
   return (
     <div className="lp">
@@ -157,6 +178,7 @@ export default function Landing() {
             <a href="#funciones">Funciones</a>
             <a href="#costos">Costo por kilo</a>
             <a href="#como-funciona">Cómo funciona</a>
+            <a href="#precio">Precio</a>
             <a href="#preguntas">Preguntas</a>
             <Link to="/login" className="lp-nav-login">Ingresar</Link>
             <Link to="/login?registro=1" className="lp-btn lp-btn-primary lp-btn-sm">Probar gratis</Link>
@@ -273,6 +295,40 @@ export default function Landing() {
                 </li>
               ))}
             </ol>
+          </div>
+        </section>
+
+        <section id="precio" className="lp-section lp-section-precio">
+          <div className="lp-container">
+            <div className="lp-section-head lp-center">
+              <p className="lp-eyebrow">Precio</p>
+              <h2 className="lp-h2">Un solo plan, con todo incluido.</h2>
+              <p className="lp-sub">Sin costo de alta, sin módulos aparte y sin letra chica.</p>
+            </div>
+            <div className="lp-precio-card">
+              <div className="lp-precio-head">
+                <span className="lp-pill">Licencia anual</span>
+                <div className="lp-precio-monto">
+                  {fmtPesos(precioAnual)}<span>/ año</span>
+                </div>
+                <div className="lp-precio-mes">Equivale a {fmtPesos(precioAnual / 12)} por mes</div>
+              </div>
+              <ul className="lp-precio-lista">
+                {INCLUYE_LICENCIA.map(item => (
+                  <li key={item}><Check size={18} /> {item}</li>
+                ))}
+              </ul>
+              <div className="lp-precio-ctas">
+                <Link to="/login?registro=1&comprar=1" className="lp-btn lp-btn-primary">
+                  Comprar la licencia <ArrowRight size={18} />
+                </Link>
+                <Link to="/login?registro=1" className="lp-btn lp-btn-ghost">Probar 15 días gratis</Link>
+              </div>
+              <p className="lp-precio-nota">
+                Pagás con Mercado Pago (tarjeta, dinero en cuenta o efectivo) o por transferencia.
+                Si probás primero, tus datos quedan guardados cuando activás la licencia.
+              </p>
+            </div>
           </div>
         </section>
 

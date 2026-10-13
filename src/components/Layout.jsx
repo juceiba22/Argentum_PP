@@ -32,6 +32,7 @@ export default function Layout() {
   const navItems = [
     // Suelta fuera de grupos
     { path: '/ventas-home', label: 'Inicio de Mostrador', icon: <Store size={20} />, allowed: ['ventas', 'admin'] },
+    { path: '/licencia', label: 'Mi Licencia', icon: <BadgeCheck size={20} />, allowed: ['admin'] },
     
     // Grupo 1: Mostrador
     { 
@@ -40,7 +41,6 @@ export default function Layout() {
       allowed: ['admin', 'ventas'],
       subItems: [
         { path: '/mi-comercio', label: 'Mi Carnicería', icon: <Building2 size={20} />, allowed: ['admin', 'ventas'] },
-        { path: '/licencia', label: 'Mi Licencia', icon: <BadgeCheck size={20} />, allowed: ['admin'] },
         { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
         { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
         { path: '/market', label: 'Caja Mostrador (POS)', icon: <Store size={20} />, allowed: ['admin', 'ventas'] },
@@ -92,6 +92,11 @@ export default function Layout() {
   ];
 
   const currentRole = role || 'admin';
+
+  // Últimos 3 días de prueba sin licencia: aviso arriba de todas las pantallas
+  // (menos en Mi Licencia, donde ya está el panel de pago).
+  const avisoVencimiento = isTrialActive && !isLicenseActive && daysRemainingTrial <= 3
+    && currentRole !== 'ventas' && !location.pathname.startsWith('/licencia');
   const visibleNavItems = navItems
     .filter(item => item.allowed.includes(currentRole))
     .map(item => {
@@ -176,7 +181,7 @@ export default function Layout() {
               justifyContent: 'center',
               gap: '6px'
             }}>
-              <span>⚡ Prueba: {daysRemainingTrial} días restantes</span>
+              <span>⚡ Prueba: {daysRemainingTrial} {daysRemainingTrial === 1 ? 'día' : 'días'} · <u>Activar licencia</u></span>
             </Link>
           )}
         </div>
@@ -261,6 +266,23 @@ export default function Layout() {
       )}
 
       <main className="main-content">
+        {avisoVencimiento && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap',
+            padding: '12px 18px', marginBottom: '24px', borderRadius: '12px',
+            background: 'var(--accent-soft)', border: '1px solid rgba(142, 27, 27, 0.25)'
+          }}>
+            <span style={{ fontWeight: 600 }}>
+              {daysRemainingTrial <= 1
+                ? 'Hoy es el último día de tu prueba gratuita.'
+                : `Te quedan ${daysRemainingTrial} días de prueba gratuita.`}
+              {' '}Activá tu licencia para no cortar la venta.
+            </span>
+            <Link to="/licencia" className="btn btn-primary" style={{ minHeight: '40px', padding: '0 20px', fontSize: '0.92rem' }}>
+              Activar licencia
+            </Link>
+          </div>
+        )}
         <Outlet />
       </main>
     </div>

@@ -8,6 +8,7 @@ import {
   getPrecioLicencia,
   iniciarPagoLicencia
 } from '../services/licenciasApi';
+import { limpiarIntencionCompra } from '../utils/intencionCompra';
 
 const fmtFecha = (fecha) => new Date(fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -15,7 +16,7 @@ const fmtFecha = (fecha) => new Date(fecha).toLocaleDateString('es-AR', { day: '
 // página "Mi Licencia" y en la pantalla de prueba vencida (PaywallScreen).
 export default function LicenciaPanel() {
   const {
-    tenantId, role, refetchTenantInfo,
+    user, tenantId, role, refetchTenantInfo,
     isLicenseActive, licenciaValidaHasta, isTrialActive, daysRemainingTrial
   } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -39,6 +40,12 @@ export default function LicenciaPanel() {
   useEffect(() => { refetchRef.current = refetchTenantInfo; });
 
   const esVendedor = role === 'ventas';
+  // Llegó desde "Comprar la licencia" de la landing (ver App.jsx).
+  const [vieneAComprar] = useState(searchParams.get('comprar') === '1');
+
+  useEffect(() => {
+    if (vieneAComprar) limpiarIntencionCompra(user);
+  }, [vieneAComprar, user]);
 
   useEffect(() => {
     getPrecioLicencia().then(setPrecio).catch(() => setPrecio(null));
@@ -48,7 +55,7 @@ export default function LicenciaPanel() {
   // limpia la URL para que no reaparezca al recargar.
   useEffect(() => {
     const pago = searchParams.get('pago');
-    if (pago && pago !== 'aprobado') setSearchParams({}, { replace: true });
+    if ((pago && pago !== 'aprobado') || searchParams.get('comprar')) setSearchParams({}, { replace: true });
   }, [searchParams, setSearchParams]);
 
   // Mientras esperamos el webhook, releemos la licencia cada 3 s (hasta 1 min).
@@ -132,6 +139,15 @@ export default function LicenciaPanel() {
           </div>
         </div>
       </div>
+
+      {vieneAComprar && !isLicenseActive && (
+        <div className="glass-panel" style={{ padding: '18px 22px', borderColor: 'var(--accent-primary)' }}>
+          <div style={{ fontWeight: 700, marginBottom: '4px' }}>¡Tu carnicería ya está creada!</div>
+          <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+            Completá el pago con Mercado Pago para activar tu licencia anual. Mientras tanto ya podés usar el sistema con la prueba gratuita.
+          </div>
+        </div>
+      )}
 
       {esperandoPago && (
         <div className="glass-panel" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '10px' }}>

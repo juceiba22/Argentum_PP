@@ -25,6 +25,7 @@ import Importaciones from './pages/Importaciones';
 import PerfilComercio from './pages/PerfilComercio';
 import { ActivityProvider } from './context/ActivityContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { hayIntencionCompra } from './utils/intencionCompra';
 import './index.css';
 
 
@@ -83,9 +84,14 @@ const PantallaCargando = () => (
 
 // Pantalla de inicio de la app según el rol del usuario logueado.
 const HomeSegunRol = ({ user, role }) => {
+  const { isLicenseActive } = useAuth();
   const effectiveRole = role || user?.user_metadata?.role || 'admin';
   if (effectiveRole === 'ventas') {
     return <Navigate to="/ventas-home" replace />;
+  }
+  // Entró desde "Comprar la licencia" de la landing: directo al pago.
+  if (!isLicenseActive && hayIntencionCompra(user)) {
+    return <Navigate to="/licencia?comprar=1" replace />;
   }
   return <Navigate to="/market" replace />; // POS por defecto para admin
 };

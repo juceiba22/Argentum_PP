@@ -218,6 +218,33 @@
 .lp-step h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 8px; }
 .lp-step p { color: var(--lp-muted); }
 
+/* Precio */
+.lp-center { margin-left: auto; margin-right: auto; text-align: center; }
+.lp-center .lp-sub { margin: 0 auto; }
+.lp-precio-card {
+  max-width: 560px; margin: 0 auto;
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-line);
+  border-top: 4px solid var(--lp-accent);
+  border-radius: 18px;
+  padding: 36px;
+  box-shadow: 0 30px 60px -30px rgba(60, 20, 10, 0.3);
+}
+.lp-precio-head { text-align: center; margin-bottom: 28px; }
+.lp-precio-monto {
+  font-family: 'Source Serif 4', serif;
+  font-size: clamp(2.6rem, 6vw, 3.4rem); font-weight: 600; letter-spacing: -0.03em;
+  margin-top: 14px; line-height: 1.1; font-variant-numeric: tabular-nums;
+}
+.lp-precio-monto span { font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 500; color: var(--lp-muted); margin-left: 6px; letter-spacing: 0; }
+.lp-precio-mes { color: var(--lp-muted); font-size: 0.95rem; margin-top: 6px; }
+.lp-precio-lista { list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+.lp-precio-lista li { display: flex; gap: 10px; align-items: flex-start; }
+.lp-precio-lista svg { color: var(--lp-ok); flex-shrink: 0; margin-top: 3px; }
+.lp-precio-ctas { display: flex; flex-direction: column; gap: 10px; }
+.lp-precio-ctas .lp-btn { width: 100%; }
+.lp-precio-nota { font-size: 0.82rem; color: var(--lp-muted); text-align: center; margin-top: 16px; }
+
 /* Confianza */
 .lp-trust { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
 .lp-trust-item { display: flex; gap: 14px; align-items: flex-start; }
@@ -295,4 +322,5 @@
   .lp-lead { font-size: 1.08rem; }
   .lp-cta-row .lp-btn { flex: 1 1 100%; }
   .lp-footer-inner { flex-direction: column; text-align: center; }
+  .lp-precio-card { padding: 28px 20px; }
 }

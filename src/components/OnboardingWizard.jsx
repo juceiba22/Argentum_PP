@@ -7,7 +7,7 @@ import {
 import { supabase } from '../services/supabaseClient';
 import { RUBRO_CARNICERIA, STARTER_PRODUCTS_CARNICERIA } from '../utils/starterProducts';
 
-export default function OnboardingWizard({ onBackToLogin }) {
+export default function OnboardingWizard({ onBackToLogin, quiereComprar = false }) {
   const navigate = useNavigate();
 
   // Paso actual (1 al 4, o 5 para Pantalla de Éxito)
@@ -132,7 +132,8 @@ export default function OnboardingWizard({ onBackToLogin }) {
             localidad: formData.localidad,
             codigo_postal: formData.codigo_postal,
             afip_punto_de_venta: formData.afip_punto_de_venta,
-            necesita_crear_pto_venta: !formData.tienePuntoVenta
+            necesita_crear_pto_venta: !formData.tienePuntoVenta,
+            ...(quiereComprar ? { intencion_compra: true } : {})
           }
         }
       });

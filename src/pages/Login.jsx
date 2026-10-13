@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, Mail, AlertCircle, UserPlus, LogIn, ArrowLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import OnboardingWizard from '../components/OnboardingWizard';
+import { marcarIntencionCompra } from '../utils/intencionCompra';
 
 // Cuando Supabase no puede completar el login con Google (redirect URL no
 // autorizada en el proveedor, cuenta ya existente sin auto-linking habilitado,
@@ -37,10 +38,15 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   // La landing linkea "/login?registro=1" para abrir directo el alta.
   const [modo, setModo] = useState(searchParams.get('registro') ? 'registro' : 'login'); // 'login' | 'registro'
+  const quiereComprar = searchParams.get('comprar') === '1';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorAuth, setErrorAuth] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (quiereComprar) marcarIntencionCompra();
+  }, [quiereComprar]);
 
   useEffect(() => {
     const oauthError = leerErrorOAuthDeUrl();
@@ -125,7 +131,7 @@ export default function Login() {
       background: 'radial-gradient(circle at top right, rgba(142, 27, 27, 0.05), transparent 50%), radial-gradient(circle at bottom left, rgba(142, 27, 27, 0.05), transparent 50%)'
     }}>
       {modo === 'registro' ? (
-        <OnboardingWizard onBackToLogin={() => setModo('login')} />
+        <OnboardingWizard onBackToLogin={() => setModo('login')} quiereComprar={quiereComprar} />
       ) : (
         <div className="glass-panel animate-fade-in" style={{ padding: '40px', width: '100%', maxWidth: '440px' }}>
           <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '12px' }}>
