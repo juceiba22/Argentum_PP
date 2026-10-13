@@ -548,7 +548,7 @@ export default function Market() {
       <div style={{ flex: isMobile ? '1 1 100%' : '1 1 60%' }}>
         <header style={{ marginBottom: '32px' }}>
           <h1 style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Punto de Venta</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Seleccione promociones o productos para agregarlos al carrito</p>
+          <p style={{ color: 'var(--text-secondary)' }}>Seleccioná promociones o cortes para agregarlos al pedido</p>
         </header>
 
         {mensaje && (

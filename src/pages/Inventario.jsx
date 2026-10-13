@@ -144,8 +144,8 @@ export default function Inventario() {
     <div className="animate-fade-in">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Control de Inventario</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Gestión de mercadería, stock y costos</p>
+          <h1 style={{ fontSize: '2rem', marginBottom: '8px' }}>Inventario de Cortes</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>Stock por kg, costos y mercadería de tu carnicería</p>
         </div>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <button 
@@ -188,8 +188,8 @@ export default function Inventario() {
           
           <form onSubmit={handleAgregar} style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div className="input-group" style={{ flex: '2', minWidth: '200px', marginBottom: 0 }}>
-              <label className="input-label">Nombre del Insumo</label>
-              <input type="text" className="input-field" value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)} placeholder="Ej: Harina 0000" />
+              <label className="input-label">Corte / Producto</label>
+              <input type="text" className="input-field" value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)} placeholder="Ej: Vacío, Bondiola, Chorizo" />
             </div>
             <div className="input-group" style={{ flex: '1', minWidth: '100px', marginBottom: 0 }}>
               <label className="input-label">Cantidad</label>

@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import { seedProductosIniciales } from '../utils/starterProducts';
+import { seedProductosIniciales, RUBRO_CARNICERIA } from '../utils/starterProducts';
 
 const AuthContext = createContext();
 
@@ -121,7 +121,6 @@ export const AuthProvider = ({ children }) => {
 
       let assignedTenantId = null;
       let isNewTenant = false;
-      let rubroParaSeed = null;
 
       // 2/3/3.5. Alta de tenant + vínculo en tenant_users, atómicos en el
       // servidor (función SECURITY DEFINER "provision_tenant_for_current_user",
@@ -150,7 +149,6 @@ export const AuthProvider = ({ children }) => {
       const userSlug = sessionUser.email ? sessionUser.email.split('@')[0] : 'comercio';
       const nombreNuevoComercio = meta.nombre_comercio || `Comercio (${userSlug})`;
       const userCuit = meta.cuit || '00-00000000-0';
-      rubroParaSeed = meta.rubro || null;
 
       try {
         const { data: provisionData, error: provisionErr } = await supabase.rpc(
@@ -158,7 +156,9 @@ export const AuthProvider = ({ children }) => {
           {
             p_nombre_comercio: nombreNuevoComercio,
             p_razon_social: meta.razon_social || nombreNuevoComercio,
-            p_rubro: rubroParaSeed,
+            // Argentum es exclusivo para carnicerías: todo tenant nuevo (por
+            // OnboardingWizard o por Google) nace con ese rubro.
+            p_rubro: RUBRO_CARNICERIA,
             p_cuit: userCuit,
             p_condicion_fiscal: meta.condicion_fiscal || 'Monotributista',
             p_domicilio_fiscal: meta.domicilio_fiscal || null,
@@ -185,19 +185,11 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (assignedTenantId) {
-        // 3.6 Poblar catálogo inicial de productos por defecto. Solo para un
-        // tenant recién creado (no para el admin recuperando el historico) Y
-        // que ya trae un rubro elegido (viene de OnboardingWizard). Un alta
-        // por Google nunca pasa por el wizard -- user_metadata no tiene
-        // "rubro" -- así que antes esto sembraba el catálogo genérico
-        // "general / otro" y el tenant quedaba con rubro=null para siempre
-        // (nada en la app volvía a pedírselo). Ahora, si no hay rubro, se
-        // deja sin sembrar: RubroGate (ver App.jsx) obliga a elegir un rubro
-        // en el primer uso y ahí sí siembra el catálogo correcto una única
-        // vez, ya con el rubro real guardado en tenants.rubro.
-        if (isNewTenant && rubroParaSeed) {
+        // 3.6 Poblar el catálogo inicial de cortes. Solo para un tenant
+        // recién creado (no para el admin recuperando el histórico).
+        if (isNewTenant) {
           try {
-            await seedProductosIniciales(assignedTenantId, rubroParaSeed);
+            await seedProductosIniciales(assignedTenantId);
           } catch (errSeed) {
             console.warn('No se pudieron cargar los productos iniciales:', errSeed);
           }

@@ -5,21 +5,7 @@ import {
   ArrowRight, ArrowLeft, AlertCircle, Loader2, Check, Store, Mail
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
-
-export const RUBROS_CATALOGO = [
-  { value: 'Carnicería', label: '🥩 Carnicería' },
-  { value: 'Petshop', label: '🐶 Petshop' },
-  { value: 'Minimercado', label: '🛒 Minimercado' },
-  { value: 'Librería', label: '📚 Librería' },
-  { value: 'Dietética', label: '🌿 Dietética' },
-  { value: 'Fiambrería', label: '🧀 Fiambrería' },
-  { value: 'Verdulería', label: '🍎 Verdulería' },
-  { value: 'Ferretería', label: '🔧 Ferretería' },
-  { value: 'Cervecería', label: '🍺 Cervecería' },
-  { value: 'Cafetería', label: '☕ Cafetería' },
-  { value: 'Artículos de Limpieza', label: '🧼 Artículos de Limpieza' },
-  { value: 'General / Otro', label: '🏪 General / Otro' }
-];
+import { RUBRO_CARNICERIA, STARTER_PRODUCTS_CARNICERIA } from '../utils/starterProducts';
 
 export default function OnboardingWizard({ onBackToLogin }) {
   const navigate = useNavigate();
@@ -43,7 +29,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
     // Paso 2: Tu comercio
     nombre_comercio: '',
     razon_social: '',
-    rubro: 'Carnicería',
+    rubro: RUBRO_CARNICERIA,
     cuit: '',
     condicion_fiscal: 'Monotributista',
 
@@ -89,8 +75,8 @@ export default function OnboardingWizard({ onBackToLogin }) {
     }
 
     if (paso === 2) {
-      if (!formData.nombre_comercio || !formData.cuit || !formData.rubro) {
-        setErrorMsg('Por favor ingresá el nombre de tu comercio, CUIT y rubro.');
+      if (!formData.nombre_comercio || !formData.cuit) {
+        setErrorMsg('Por favor ingresá el nombre de tu carnicería y el CUIT.');
         return;
       }
       setPaso(3);
@@ -174,7 +160,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
             Argentum
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-            Registro y Configuración Inicial de Comercio
+            Alta de tu carnicería en 4 pasos
           </p>
 
           {/* Progress Bar (Pasos 1 a 4) */}
@@ -276,15 +262,15 @@ export default function OnboardingWizard({ onBackToLogin }) {
         )}
 
         {/* ========================================================================= */}
-        {/* PASO 2 — TU COMERCIO Y RUBRO */}
+        {/* PASO 2 — TU CARNICERÍA */}
         {/* ========================================================================= */}
         {paso === 2 && (
           <form onSubmit={handleSiguientePaso} className="animate-fade-in">
             <div style={{ marginBottom: '20px', textAlign: 'center' }}>
               <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                PASO 2 — Tu comercio
+                PASO 2 — Tu carnicería
               </h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>¿Cómo se llama tu comercio y a qué rubro pertenece?</p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>¿Cómo se llama tu carnicería?</p>
             </div>
 
             <div className="input-group">
@@ -292,24 +278,8 @@ export default function OnboardingWizard({ onBackToLogin }) {
               <input type="text" name="nombre_comercio" className="input-field" placeholder="Ej: Don Pedro" value={formData.nombre_comercio} onChange={handleChange} required />
             </div>
 
-            <div className="input-group">
-              <label className="input-label">Rubro del Comercio *</label>
-              <select 
-                name="rubro" 
-                className="input-field" 
-                value={formData.rubro} 
-                onChange={handleChange}
-                style={{ cursor: 'pointer', fontWeight: 600 }}
-              >
-                {RUBROS_CATALOGO.map(r => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
-                Cargaremos automáticamente un catálogo inicial de 15 productos de {formData.rubro} para que pruebes el sistema de inmediato.
-              </span>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '-6px 0 16px 0' }}>
+              🥩 Vamos a cargar automáticamente un catálogo inicial de {STARTER_PRODUCTS_CARNICERIA.length} cortes (vacuno, cerdo, pollo, embutidos y achuras) para que empieces a vender desde el primer día.
             </div>
 
             <div className="input-group">
@@ -496,7 +466,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
                 Casi listo, {formData.nombre || 'bienvenido/a'}
               </p>
               <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: '6px', maxWidth: '480px', margin: '6px auto 0 auto' }}>
-                Te mandamos un email de confirmación a <strong>{formData.email}</strong>. Hacé clic en el enlace (revisá también spam) para activar tu cuenta. Una vez que confirmes e inicies sesión por primera vez, vamos a crear automáticamente tu comercio <strong>{formData.nombre_comercio}</strong> (Rubro: <strong>{formData.rubro}</strong>) con 15 productos iniciales cargados.
+                Te mandamos un email de confirmación a <strong>{formData.email}</strong>. Hacé clic en el enlace (revisá también spam) para activar tu cuenta. Una vez que confirmes e inicies sesión por primera vez, vamos a crear automáticamente tu carnicería <strong>{formData.nombre_comercio}</strong> con {STARTER_PRODUCTS_CARNICERIA.length} cortes iniciales cargados.
               </p>
               <div style={{ marginTop: '16px', padding: '12px', backgroundColor: 'rgba(210, 142, 61, 0.1)', borderRadius: '8px', border: '1px solid rgba(210, 142, 61, 0.3)' }}>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>
@@ -508,7 +478,7 @@ export default function OnboardingWizard({ onBackToLogin }) {
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <button 
                 type="button" 
-                onClick={() => (onBackToLogin ? onBackToLogin() : navigate('/'))} 
+                onClick={() => (onBackToLogin ? onBackToLogin() : navigate('/login'))} 
                 className="btn btn-primary" 
                 style={{ padding: '14px 40px', fontSize: '1.05rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '10px' }}
               >

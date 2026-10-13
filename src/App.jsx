@@ -1,6 +1,7 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Landing from './pages/Landing';
 import Clientes from './pages/Clientes';
 import Inventario from './pages/Inventario';
 import Market from './pages/Market';
@@ -40,7 +41,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // Validación Centralizada: Si el trial de 15 días expiró y no tiene licencia activa, desplegar Paywall
@@ -71,26 +72,46 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
-// Componente para manejar la redirección post-login
+const PantallaCargando = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: '#0f172a', color: '#f8fafc' }}>
+    <p style={{ fontSize: '1.2rem', fontFamily: 'system-ui, sans-serif', fontWeight: 600 }}>Cargando...</p>
+  </div>
+);
+
+// Pantalla de inicio de la app según el rol del usuario logueado.
+const HomeSegunRol = ({ user, role }) => {
+  const effectiveRole = role || user?.user_metadata?.role || 'admin';
+  if (effectiveRole === 'ventas') {
+    return <Navigate to="/ventas-home" replace />;
+  }
+  return <Navigate to="/market" replace />; // POS por defecto para admin
+};
+
+// "/": landing pública para visitantes; si ya hay sesión, directo a la app.
+const LandingRedirect = () => {
+  const { user, role, loading } = useAuth();
+  const location = useLocation();
+
+  if (loading) return <PantallaCargando />;
+  if (user) return <HomeSegunRol user={user} role={role} />;
+
+  // "Continuar con Google" vuelve siempre a "/" (es la URL autorizada en
+  // Supabase). Si vuelve con error, lo derivamos al login con los mismos
+  // parámetros para que Login.jsx lo muestre.
+  if (/(^|[?#&])error(_code|_description)?=/.test(`${location.search}${location.hash}`)) {
+    return <Navigate to={`/login${location.search}${location.hash}`} replace />;
+  }
+
+  return <Landing />;
+};
+
+// "/login": formulario de ingreso y alta; si ya hay sesión, directo a la app.
 const LoginRedirect = () => {
   const { user, role, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', backgroundColor: '#0f172a', color: '#f8fafc' }}>
-        <p style={{ fontSize: '1.2rem', fontFamily: 'system-ui, sans-serif', fontWeight: 600 }}>Cargando...</p>
-      </div>
-    );
-  }
-  
-  if (user) {
-    const effectiveRole = role || user?.user_metadata?.role || 'admin';
-    if (effectiveRole === 'ventas') {
-      return <Navigate to="/ventas-home" replace />;
-    }
-    return <Navigate to="/market" replace />; // POS por defecto para admin
-  }
-  
+  if (loading) return <PantallaCargando />;
+  if (user) return <HomeSegunRol user={user} role={role} />;
+
   return <Login />;
 };
 
@@ -100,8 +121,9 @@ function App() {
       <ActivityProvider>
         <Router>
           <Routes>
-            {/* Ruta Pública (Login) */}
-            <Route path="/" element={<LoginRedirect />} />
+            {/* Rutas Públicas (Landing y Login) */}
+            <Route path="/" element={<LandingRedirect />} />
+            <Route path="/login" element={<LoginRedirect />} />
             
             {/* Ruta Pública de Promociones */}
             <Route path="/promociones" element={<PromocionesPublicas />} />

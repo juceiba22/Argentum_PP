@@ -8,11 +8,20 @@ const CATEGORIAS_Y_RUBROS = {
     'Seguros',
     'Servicio de agua',
     'Servicio de luz',
+    'Servicio de gas',
     'Impuestos',
     'Alquileres',
-    'Servicio de telefonía móvil'
+    'Servicio de telefonía móvil',
+    'Mantenimiento de cámara frigorífica',
+    'Habilitación municipal / Bromatología',
+    'Insumos de mostrador (bolsas, film, bandejas)'
   ],
   'Depreciación de Capital': [
+    'Cámara frigorífica',
+    'Heladera exhibidora',
+    'Sierra sin fin',
+    'Picadora de carne',
+    'Balanza',
     'Equipamiento'
   ],
   'Salario / Ganancia': [

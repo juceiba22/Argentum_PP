@@ -22,18 +22,18 @@ export default function Layout() {
 
   const navItems = [
     // Suelta fuera de grupos
-    { path: '/ventas-home', label: 'Inicio de Ventas', icon: <Store size={20} />, allowed: ['ventas', 'admin'] },
+    { path: '/ventas-home', label: 'Inicio de Mostrador', icon: <Store size={20} />, allowed: ['ventas', 'admin'] },
     
-    // Grupo 1: Mercado
+    // Grupo 1: Mostrador
     { 
-      label: 'Mercado', 
+      label: 'Mostrador', 
       icon: <Store size={20} />, 
       allowed: ['admin', 'ventas'],
       subItems: [
-        { path: '/mi-comercio', label: 'Mi Comercio / Perfil', icon: <Building2 size={20} />, allowed: ['admin', 'ventas'] },
+        { path: '/mi-comercio', label: 'Mi Carnicería', icon: <Building2 size={20} />, allowed: ['admin', 'ventas'] },
         { path: '/clientes', label: 'Clientes', icon: <Users size={20} />, allowed: ['admin'] },
         { path: '/gestion-promociones', label: 'Promociones', icon: <Megaphone size={20} />, allowed: ['admin'] },
-        { path: '/market', label: 'POS / Terminal', icon: <Store size={20} />, allowed: ['admin', 'ventas'] },
+        { path: '/market', label: 'Caja Mostrador (POS)', icon: <Store size={20} />, allowed: ['admin', 'ventas'] },
         { path: '/configuracion-mercadopago', label: 'Config. MP Point', icon: <CreditCard size={20} />, allowed: ['admin'] }
       ]
     },
@@ -56,12 +56,12 @@ export default function Layout() {
 
     // Grupo 3: Stock e Inventario
     { 
-      label: 'Stock e Inventario', 
+      label: 'Stock y Cortes', 
       icon: <Package size={20} />, 
       allowed: ['admin'],
       subItems: [
-        { path: '/erp/proveedores', label: 'Alta Proveedores', icon: <Truck size={20} />, allowed: ['admin'] },
-        { path: '/inventario', label: 'Inventario', icon: <Package size={20} />, allowed: ['admin'] }
+        { path: '/erp/proveedores', label: 'Proveedores / Frigoríficos', icon: <Truck size={20} />, allowed: ['admin'] },
+        { path: '/inventario', label: 'Inventario de Cortes', icon: <Package size={20} />, allowed: ['admin'] }
       ]
     },
 
@@ -71,8 +71,8 @@ export default function Layout() {
       icon: <PieChart size={20} />, 
       allowed: ['admin'],
       subItems: [
-        { path: '/erp/dashboard-proveedores', label: 'Estadísticas del Negocio', icon: <BarChart2 size={20} />, allowed: ['admin'] },
-        { path: '/erp/calculadora-costos', label: 'Calculadora Costos', icon: <BarChart2 size={20} />, allowed: ['admin'] }
+        { path: '/erp/dashboard-proveedores', label: 'Estadísticas de la Carnicería', icon: <BarChart2 size={20} />, allowed: ['admin'] },
+        { path: '/erp/calculadora-costos', label: 'Costo Real por Kg', icon: <BarChart2 size={20} />, allowed: ['admin'] }
       ]
     }
   ];
@@ -94,7 +94,7 @@ export default function Layout() {
   const handleLogout = async (e) => {
     e.preventDefault();
     await supabase.auth.signOut();
-    navigate('/');
+    navigate('/login');
   };
 
   return (
@@ -117,7 +117,7 @@ export default function Layout() {
         
         <div className="sidebar-header">
           <h2 className="brand-title">Argentum</h2>
-          <p className="brand-subtitle">Gestión Interna</p>
+          <p className="brand-subtitle">Gestión para Carnicerías</p>
 
           {tenantInfo && (
             <Link
@@ -132,10 +132,10 @@ export default function Layout() {
                 textDecoration: 'none',
                 color: 'inherit'
               }}
-              title="Ver perfil del comercio"
+              title="Ver perfil de la carnicería"
             >
               <div style={{ fontWeight: 700, fontSize: '0.88rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {tenantInfo.nombre_comercio || 'Mi comercio'}
+                {tenantInfo.nombre_comercio || 'Mi carnicería'}
               </div>
               {tenantInfo.rubro && (
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>

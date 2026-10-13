@@ -12,7 +12,7 @@ export default function PaywallScreen() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate('/');
+    navigate('/login');
   };
 
   const handleIrAlCheckout = () => {
@@ -77,7 +77,7 @@ export default function PaywallScreen() {
         </h2>
 
         <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.5, marginBottom: '24px' }}>
-          El periodo de prueba gratuita para la cuenta <strong style={{ color: '#f8fafc' }}>{user?.email}</strong> venció el {fechaVencimientoFormateada}. Para continuar operando tu comercio sin interrupciones, activa tu <strong>Licencia Pro</strong>.
+          El periodo de prueba gratuita para la cuenta <strong style={{ color: '#f8fafc' }}>{user?.email}</strong> venció el {fechaVencimientoFormateada}. Para seguir operando tu carnicería sin interrupciones, activa tu <strong>Licencia Pro</strong>.
         </p>
 
         {/* Card Beneficios del Plan Pro */}
@@ -101,7 +101,7 @@ export default function PaywallScreen() {
               <CheckCircle2 size={16} color="var(--success)" /> Terminal Punto de Venta (POS) & Mercado Pago Point
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <CheckCircle2 size={16} color="var(--success)" /> Gestión de Inventario & Reportes de Inteligencia
+              <CheckCircle2 size={16} color="var(--success)" /> Stock por kg de cortes & Costo real por kilo
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <CheckCircle2 size={16} color="var(--success)" /> Resguardo de Comprobantes & Soporte Prioritario

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, AlertCircle, UserPlus, LogIn } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Lock, Mail, AlertCircle, UserPlus, LogIn, ArrowLeft } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import OnboardingWizard from '../components/OnboardingWizard';
 
@@ -34,7 +34,9 @@ function leerErrorOAuthDeUrl() {
 
 export default function Login() {
   const navigate = useNavigate();
-  const [modo, setModo] = useState('login'); // 'login' | 'registro'
+  const [searchParams] = useSearchParams();
+  // La landing linkea "/login?registro=1" para abrir directo el alta.
+  const [modo, setModo] = useState(searchParams.get('registro') ? 'registro' : 'login'); // 'login' | 'registro'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorAuth, setErrorAuth] = useState('');
@@ -126,11 +128,14 @@ export default function Login() {
         <OnboardingWizard onBackToLogin={() => setModo('login')} />
       ) : (
         <div className="glass-panel animate-fade-in" style={{ padding: '40px', width: '100%', maxWidth: '440px' }}>
+          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '12px' }}>
+            <ArrowLeft size={16} /> Volver al inicio
+          </Link>
           <div style={{ textAlign: 'center', marginBottom: '28px' }}>
             <h1 className="brand-title" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>
               Argentum
             </h1>
-            <p style={{ color: 'var(--text-secondary)' }}>Plataforma POS y Facturación Electrónica</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Sistema de gestión para carnicerías</p>
           </div>
 
           {/* Selector de Modo (Iniciar Sesión vs Crear Cuenta) */}
@@ -264,13 +269,13 @@ export default function Login() {
           </form>
 
           <div style={{ marginTop: '24px', textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-            ¿Comercio nuevo?{' '}
+            ¿Tenés una carnicería?{' '}
             <button 
               type="button" 
               onClick={() => setModo('registro')} 
               style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
             >
-              Dá de alta tu comercio en 4 pasos
+              Dala de alta en 4 pasos
             </button>
           </div>
         </div>

@@ -2,26 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabaseClient';
+import { RUBRO_CARNICERIA } from '../utils/starterProducts';
 import {
   Building2, Store, Hash, MapPin, Calendar, CheckCircle2, Clock,
   ShieldCheck, CreditCard, Loader2, XCircle, Save, User, Mail, Phone,
   AlertCircle, Sparkles, Receipt
 } from 'lucide-react';
-
-const RUBROS_CATALOGO = [
-  { value: 'Carnicería', label: '🥩 Carnicería' },
-  { value: 'Petshop', label: '🐶 Petshop' },
-  { value: 'Minimercado', label: '🛒 Minimercado' },
-  { value: 'Librería', label: '📚 Librería' },
-  { value: 'Dietética', label: '🌿 Dietética' },
-  { value: 'Fiambrería', label: '🧀 Fiambrería' },
-  { value: 'Verdulería', label: '🍎 Verdulería' },
-  { value: 'Ferretería', label: '🔧 Ferretería' },
-  { value: 'Cervecería', label: '🍺 Cervecería' },
-  { value: 'Cafetería', label: '☕ Cafetería' },
-  { value: 'Artículos de Limpieza', label: '🧼 Artículos de Limpieza' },
-  { value: 'General / Otro', label: '🏪 General / Otro' }
-];
 
 const Badge = ({ ok, textOk, textNo }) => (
   <div style={{
@@ -64,7 +50,7 @@ export default function PerfilComercio() {
     // Datos del Comercio
     nombre_comercio: '',
     razon_social: '',
-    rubro: 'Carnicería',
+    rubro: RUBRO_CARNICERIA,
     cuit: '',
     condicion_fiscal: 'Monotributista',
 
@@ -90,7 +76,7 @@ export default function PerfilComercio() {
 
         nombre_comercio: tenantInfo?.nombre_comercio || meta.nombre_comercio || '',
         razon_social: tenantInfo?.razon_social || '',
-        rubro: tenantInfo?.rubro || meta.rubro || 'Carnicería',
+        rubro: RUBRO_CARNICERIA,
         cuit: tenantInfo?.cuit || meta.cuit || '',
         condicion_fiscal: tenantInfo?.condicion_fiscal || 'Monotributista',
 
@@ -206,10 +192,10 @@ export default function PerfilComercio() {
       <div style={{ marginBottom: '24px' }}>
         <h1 style={{ fontSize: '2rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Building2 size={32} style={{ color: 'var(--accent-primary)' }} />
-          Perfil y Datos del Comercio
+          Perfil de tu Carnicería
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
-          Completa o actualiza la información de tu negocio para la Facturación Electrónica y tickets de venta.
+          Completá o actualizá los datos de tu carnicería para la Facturación Electrónica y tickets de venta.
         </p>
       </div>
 
@@ -327,24 +313,18 @@ export default function PerfilComercio() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginTop: '16px' }}>
             <div className="input-group" style={{ marginBottom: 0 }}>
-              <label className="input-label">Rubro del Comercio *</label>
-              <select 
-                name="rubro" 
-                className="input-field" 
-                value={formData.rubro} 
-                onChange={handleChange}
-                style={{ cursor: 'pointer', fontWeight: 600 }}
-              >
-                {RUBROS_CATALOGO.map(r => (
-                  <option key={r.value} value={r.value}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
+              <label className="input-label">Rubro</label>
+              <input
+                type="text"
+                className="input-field"
+                value="🥩 Carnicería"
+                readOnly
+                style={{ fontWeight: 600, cursor: 'default' }}
+              />
             </div>
 
             <div className="input-group" style={{ marginBottom: 0 }}>
-              <label className="input-label">CUIT del Comercio *</label>
+              <label className="input-label">CUIT *</label>
               <input 
                 type="text" 
                 name="cuit" 

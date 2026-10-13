@@ -1,16 +1,41 @@
-# React + Vite
+# Argentum · Software de gestión para carnicerías
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Argentum es un ERP/POS web pensado exclusivamente para carnicerías argentinas.
 
-Currently, two official plugins are available:
+## Qué incluye
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Mostrador (POS) por kilo**: venta por peso de balanza, gramos o unidades.
+- **Facturación electrónica ARCA**: Facturas A y B con CAE, por delegación del web service (sin certificado propio).
+- **Cobros**: efectivo, Mercado Pago Point integrado, Cuenta DNI, tarjetas y transferencia.
+- **Stock de cortes** en kg y **compras a frigoríficos/proveedores**.
+- **Costo real por kg**: prorrateo de gastos fijos, sueldos y amortización de equipos (cámara, sierra, picadora).
+- **Caja y liquidez**: apertura/cierre de caja, gastos e ingresos.
+- **Promociones** y catálogo online público (`/promociones`) con pedidos por WhatsApp.
+- **Clientes** con historial y perfil de **vendedor de mostrador**.
 
-## React Compiler
+Cada alta nueva se crea con rubro *Carnicería* y un catálogo inicial de cortes
+(`src/utils/starterProducts.js`).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Rutas principales
 
-## Expanding the ESLint configuration
+| Ruta | Descripción |
+| --- | --- |
+| `/` | Landing pública (si hay sesión, redirige a la app) |
+| `/login` | Ingreso y alta (`/login?registro=1` abre directo el alta) |
+| `/promociones` | Catálogo público de ofertas |
+| `/market` | Mostrador / POS |
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Stack
+
+React 19 + Vite, Supabase (auth, base de datos y edge functions) y funciones
+serverless en Vercel (`api/`) para ARCA y Mercado Pago.
+
+## Desarrollo
+
+```bash
+npm install
+cp .env.example .env   # completar credenciales
+npm run dev
+```
+
+Build de producción: `npm run build`. El deploy a producción se hace desde la rama `main`.
