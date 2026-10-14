@@ -194,11 +194,12 @@ export default function Landing() {
           <div className="lp-container lp-hero-content">
             <p className="lp-eyebrow lp-eyebrow-light">Software de gestión para carnicerías</p>
             <h1 className="lp-h1">
-              Tu carnicería, <em>al kilo</em> y en orden.
+              Gestioná tu carnicería <em>al más bajo costo</em>.
             </h1>
             <p className="lp-lead">
               Vendé por peso, despostá la media res, facturá con ARCA, cobrá con Mercado Pago Point
               y sabé cuánto te cuesta de verdad cada kilo que sale del mostrador.
+              Ahorrate gran parte de los costos del contador.
             </p>
             <div className="lp-cta-row">
               <Link to="/login?registro=1" className="lp-btn lp-btn-primary">
