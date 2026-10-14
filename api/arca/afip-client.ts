@@ -1,16 +1,8 @@
+import { supabaseAdmin as supabase } from '../_shared/supabaseAdmin.js';
 import { createRequire } from 'module';
-import { createClient } from '@supabase/supabase-js';
 const require = createRequire(import.meta.url);
 const Afip = require('@afipsdk/afip.js');
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = 
-  process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 
-  process.env.SUPABASE_KEY || 
-  '';
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
  * Función auxiliar para parsear credenciales en formato PEM o Base64

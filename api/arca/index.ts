@@ -1,16 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as supabase } from '../_shared/supabaseAdmin.js';
 import { getAfipClientForTenant } from './afip-client.js';
 import { verifyTenantAccess } from '../_shared/verifyTenantAuth.js';
 import type { EmitirFacturaPayload, ARCAServerStatus } from './types.js';
 
-const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseKey = 
-  process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || 
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 
-  process.env.SUPABASE_KEY || 
-  '';
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
  * El AdminClient interno de @afipsdk/afip.js (ver node_modules/@afipsdk/afip.js/src/Afip.js)

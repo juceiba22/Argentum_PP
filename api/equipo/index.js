@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '../_shared/supabaseAdmin.js';
 import { Resend } from 'resend';
 import { verifyTenantAccess } from '../_shared/verifyTenantAuth.js';
 
@@ -42,10 +42,7 @@ async function handleNotificar(req, res) {
     return res.status(401).json({ success: false, error: authErr.message });
   }
 
-  const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error('Falta SUPABASE_URL y/o SUPABASE_SERVICE_ROLE_KEY en el servidor.');
-  const supabase = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const supabase = getSupabaseAdmin();
 
   // La invitación tiene que ser de esta carnicería y estar pendiente.
   const { data: invitacion } = await supabase
