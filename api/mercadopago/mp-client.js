@@ -5,10 +5,16 @@ import { MercadoPagoConfig } from 'mercadopago';
 /**
  * Helper auxiliar que consulta las credenciales específicas del tenant en Supabase
  * (`mp_access_token` y `mp_point_device_id`) e inicializa el cliente de Mercado Pago.
+ *
+ * Usa SOLO las credenciales que cargó cada carnicería en Config. MP Point.
+ * Antes, si faltaban, caía en MP_ACCESS_TOKEN / MP_POINT_DEVICE_ID del
+ * servidor (la cuenta de Argentum): una carnicería sin configurar podía
+ * terminar cobrando con la cuenta de la plataforma. Ahora, sin credenciales
+ * propias, el cobro se rechaza con un mensaje para configurarlas.
  */
 export async function getMercadoPagoCredentialsForTenant(tenantId) {
-  let accessToken = process.env.MP_ACCESS_TOKEN ? process.env.MP_ACCESS_TOKEN.trim() : null;
-  let deviceId = process.env.MP_POINT_DEVICE_ID ? process.env.MP_POINT_DEVICE_ID.trim() : null;
+  let accessToken = null;
+  let deviceId = null;
 
   if (tenantId) {
     try {

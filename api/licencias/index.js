@@ -15,7 +15,7 @@ import { verifyTenantAccess } from '../_shared/verifyTenantAuth.js';
  *
  * Variables de entorno (Vercel):
  *   MP_LICENCIAS_ACCESS_TOKEN  Access Token de la cuenta de MP de Argentum
- *                              (cae a MP_ACCESS_TOKEN si no está).
+ *                              (obligatoria; no usa MP_ACCESS_TOKEN).
  *   SUPABASE_SERVICE_ROLE_KEY  Obligatoria: la orden y la emisión no tienen
  *                              policies para el cliente.
  *   LICENCIA_PRECIO_ANUAL      Precio en ARS (default 299999).
@@ -37,7 +37,7 @@ const precioLicencia = () => {
   return Number.isFinite(precio) && precio > 0 ? precio : PRECIO_DEFAULT;
 };
 
-const mpAccessToken = () => (process.env.MP_LICENCIAS_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN || '').trim();
+const mpAccessToken = () => (process.env.MP_LICENCIAS_ACCESS_TOKEN || '').trim();
 
 export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
@@ -84,7 +84,7 @@ async function handleCheckout(req, res) {
 
   const token = mpAccessToken();
   if (!token) {
-    return res.status(500).json({ success: false, error: 'El pago online todavía no está configurado (falta el Access Token de Mercado Pago).' });
+    return res.status(500).json({ success: false, error: 'El pago online todavía no está configurado (falta MP_LICENCIAS_ACCESS_TOKEN en el servidor).' });
   }
 
   const baseUrl = (process.env.APP_URL || req.headers.origin || '').replace(/\/$/, '');
